@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV KML Converter with Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .converter-box {
+            border: 2px dashed #3498db;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .file-format {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-convert {
+            background: #27ae60;
+        }
+
+        .btn-convert:hover {
+            background: #219653;
+        }
+
+        .btn-example {
+            background: #9b59b6;
+        }
+
+        .btn-example:hover {
+            background: #8e44ad;
+        }
+
+        .file-info {
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        #loading {
+            display: none;
+            margin: 15px 0;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin: 10px 0;
+        }
+
+        .button-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .action-button:hover {
+            background-color: #3367d6;
+        }
+
+        .separator {
+            width: 1px;
+            height: 20px;
+            background-color: #ccc;
+        }
+
+        .example-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #map-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .map-controls {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .map-toggle {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .map-toggle:hover {
+            background: #e67e22;
+        }
+
+        /* Folder Form Styles */
+        .folder-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        
+        .folder-form h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .folder-form-group {
+            margin-bottom: 10px;
+        }
+        
+        .folder-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .folder-form input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .folder-form input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Icon Selection Styles */
+        .icon-selection {
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .icon-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .icon-option:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .icon-option.selected {
+            background-color: #bbdefb;
+            border: 1px solid #64b5f6;
+        }
+        
+        .icon-option img {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .icon-option span {
+            font-size: 12px;
+            margin-top: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV KML Converter with Map</h1>
+
+        <p>Alat ini memungkinkan Anda mengkonversi antara format CSV (Comma-Separated Values) dan KML (Keyhole Markup
+            Language) untuk data geospasial secara langsung di browser tanpa server backend, dan menampilkan hasilnya di peta.</p>
+
+        <div class="example-section">
+            <h3>Contoh File CSV</h3>
+            <button class="btn btn-example" id="downloadExample">Download Contoh CSV</button>
+            <p>Unduh contoh file CSV untuk melihat format yang benar</p>
+        </div>
+
+        <div class="converter-box">
+            <h3>Upload File Anda</h3>
+            <input type="file" id="fileInput" accept=".csv,.kml,.txt">
+            <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
+
+            <!-- Folder Form Section -->
+            <div class="folder-form" id="folderForm" style="display: none;">
+                <h4>Pengaturan Folder KML</h4>
+                <div class="folder-form-group">
+                    <label for="folderName">Nama Folder:</label>
+                    <input type="text" id="folderName" placeholder="Masukkan nama folder untuk KML">
+                </div>
+                <div class="folder-form-group">
+                    <label for="folderDescription">Deskripsi Folder (opsional):</label>
+                    <input type="text" id="folderDescription" placeholder="Masukkan deskripsi folder">
+                </div>
+            </div>
+
+            <!-- Icon Selection Section -->
+            <div class="icon-selection" id="iconSelection">
+                <h4>Pilih Icon untuk Placemark</h4>
+                <div class="icon-grid" id="iconGrid"></div>
+            </div>
+
+            <div id="loading">Memproses...</div>
+            <div id="error" class="error"></div>
+
+            <div>
+                <button class="btn" id="convertToKML">Convert CSV to KML</button>
+                <button class="btn" id="convertToCSV">Convert KML to CSV</button>
+            </div>
+
+            <div id="downloadSection" style="display:none;">
+                <h3>Konversi Selesai!</h3>
+                <button class="btn btn-convert" id="downloadBtn">Download File Hasil</button>
+                <button class="map-toggle" id="showMapBtn">Tampilkan di Peta</button>
+            </div>
+        </div>
+
+        <div id="map-container">
+            <h3>Peta Hasil Konversi</h3>
+            <div id="map"></div>
+            <div class="map-controls">
+                <button class="map-toggle" id="hideMapBtn">Sembunyikan Peta</button>
+            </div>
+        </div>
+
+        <div class="file-format">
+            <h3>Format File yang Didukung</h3>
+
+            <h4>Format CSV untuk Konversi ke KML:</h4>
+            <p>File CSV harus memiliki kolom dengan header berikut (minimal):</p>
+            <ul>
+                <li><strong>name</strong>: Nama lokasi/poin</li>
+                <li><strong>latitude</strong>: Koordinat lintang (dalam derajat desimal)</li>
+                <li><strong>longitude</strong>: Koordinat bujur (dalam derajat desimal)</li>
+                <li><strong>description</strong> (opsional): Deskripsi tambahan</li>
+            </ul>
+            <p>Contoh isi file CSV:</p>
+            <pre>name,latitude,longitude,description
+Tugu Monas,-6.175392,106.827153,Monumen Nasional
+Bundaran HI,-6.194444,106.822956,Bundaran Hotel Indonesia</pre>
+
+            <h4>Format KML untuk Konversi ke CSV:</h4>
+            <p>File KML harus berisi Placemark dengan koordinat point/polygon. Contoh struktur KML:</p>
+            <pre>&lt;Placemark&gt;
+  &lt;name&gt;Tugu Monas&lt;/name&gt;
+  &lt;description&gt;Monumen Nasional&lt;/description&gt;
+  &lt;Style&gt;
+    &lt;IconStyle&gt;
+      &lt;Icon&gt;
+        &lt;href&gt;http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png&lt;/href&gt;
+      &lt;/Icon&gt;
+    &lt;/IconStyle&gt;
+  &lt;/Style&gt;
+  &lt;Point&gt;
+    &lt;coordinates&gt;106.827153,-6.175392,0&lt;/coordinates&gt;
+  &lt;/Point&gt;
+&lt;/Placemark&gt;</pre>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Variabel untuk menyimpan hasil konversi
+        let convertedContent = null;
+        let convertedFileName = '';
+        let convertedFileType = '';
+        let map = null;
+        let markers = [];
+        let selectedIcon = '';
+
+        // Daftar icon dari Google KML shapes
+        const kmlIcons = [
+            { name: 'Placemark', url: 'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png' },
+            { name: 'TIANG', url: 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png' },
+            { name: 'MH/HH', url: 'http://maps.google.com/mapfiles/kml/shapes/placemark_square.png' },
+            { name: 'ODC', url: 'http://maps.google.com/mapfiles/kml/shapes/triangle.png' },
+            { name: 'CLOSURE', url: 'http://maps.google.com/mapfiles/kml/shapes/forbidden.png' },
+            { name: 'TITIK CROSSING', url: 'http://maps.google.com/mapfiles/kml/shapes/arrow.png' },
+            { name: 'OTN PLAN', url: 'http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png' },
+            { name: 'Mini OLT', url: 'http://maps.google.com/mapfiles/kml/shapes/electronics.png' },
+            { name: 'PELANGGAN', url: 'http://maps.google.com/mapfiles/kml/shapes/ranger_station.png' },
+            { name: 'SLACK SUPPORT', url: 'http://maps.google.com/mapfiles/kml/shapes/target.png' },
+            { name: 'STASIUN', url: 'http://maps.google.com/mapfiles/kml/shapes/bus.png' },
+            { name: 'STO', url: 'http://maps.google.com/mapfiles/kml/shapes/homegardenbusiness.png' },
+            // Additional icons requested
+            { name: 'ODP EKSISTING', url: 'http://maps.google.com/mapfiles/kml/paddle/red-circle.png' },
+            { name: 'NODE B', url: 'http://maps.google.com/mapfiles/kml/shapes/picnic.png' },
+            { name: 'ODP PLAN', url: 'http://maps.google.com/mapfiles/kml/paddle/wht-circle.png' }
+        ];
+
+        // Elemen UI
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertToKMLBtn = document.getElementById('convertToKML');
+        const convertToCSVBtn = document.getElementById('convertToCSV');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const downloadExampleBtn = document.getElementById('downloadExample');
+        const showMapBtn = document.getElementById('showMapBtn');
+        const hideMapBtn = document.getElementById('hideMapBtn');
+        const mapContainer = document.getElementById('map-container');
+        const mapElement = document.getElementById('map');
+        const folderForm = document.getElementById('folderForm');
+        const folderNameInput = document.getElementById('folderName');
+        const folderDescriptionInput = document.getElementById('folderDescription');
+        const iconSelection = document.getElementById('iconSelection');
+        const iconGrid = document.getElementById('iconGrid');
+
+        // Contoh file CSV
+        const exampleCSV = `name,latitude,longitude,description
+Tugu Monas,-6.175392,106.827153,Monumen Nasional
+Bundaran HI,-6.194444,106.822956,Bundaran Hotel Indonesia
+Museum Nasional,-6.176742,106.821999,Museum Gajah
+Monumen Selamat Datang,-6.186486,106.822999,Patung Selamat Datang
+Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
+
+        // Inisialisasi peta
+        function initMap() {
+            if (!map) {
+                map = L.map('map').setView([-6.175392, 106.827153], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+        }
+
+        // Membuat grid icon
+        function createIconGrid() {
+            kmlIcons.forEach(icon => {
+                const iconOption = document.createElement('div');
+                iconOption.className = 'icon-option';
+                iconOption.innerHTML = `
+                    <img src="${icon.url}" alt="${icon.name}">
+                    <span>${icon.name}</span>
+                `;
+                iconOption.addEventListener('click', () => {
+                    // Hapus seleksi sebelumnya
+                    document.querySelectorAll('.icon-option').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    // Tambahkan seleksi baru
+                    iconOption.classList.add('selected');
+                    selectedIcon = icon.url;
+                });
+                iconGrid.appendChild(iconOption);
+            });
+        }
+
+        // Menampilkan KML di peta dengan parser sederhana
+        function displayKmlOnMap(kmlContent) {
+            initMap();
+            
+            // Hapus marker sebelumnya jika ada
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            try {
+                // Parser sederhana untuk Placemark point
+                const placemarkRegex = /<Placemark>([\s\S]*?)<\/Placemark>/g;
+                let match;
+                const bounds = [];
+
+                while ((match = placemarkRegex.exec(kmlContent)) !== null) {
+                    const placemarkContent = match[1];
+                    
+                    // Ekstrak name
+                    const nameMatch = placemarkContent.match(/<name>([\s\S]*?)<\/name>/);
+                    const name = nameMatch ? nameMatch[1].trim() : 'Unnamed Location';
+                    
+                    // Ekstrak description
+                    const descMatch = placemarkContent.match(/<description>([\s\S]*?)<\/description>/);
+                    const description = descMatch ? descMatch[1].trim() : '';
+                    
+                    // Ekstrak icon
+                    let iconUrl = 'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'; // default
+                    const iconMatch = placemarkContent.match(/<href>([\s\S]*?)<\/href>/);
+                    if (iconMatch) {
+                        iconUrl = iconMatch[1].trim();
+                    }
+                    
+                    // Ekstrak coordinates
+                    const coordMatch = placemarkContent.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
+                    if (!coordMatch) continue;
+                    
+                    const coords = coordMatch[1].trim().split(',');
+                    if (coords.length < 2) continue;
+                    
+                    const lng = parseFloat(coords[0]);
+                    const lat = parseFloat(coords[1]);
+                    
+                    // Buat marker dengan icon custom dan tambahkan ke peta
+                    const customIcon = L.icon({
+                        iconUrl: iconUrl,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32],
+                        popupAnchor: [0, -32]
+                    });
+                    
+                    const marker = L.marker([lat, lng], {icon: customIcon}).addTo(map)
+                        .bindPopup(`<b>${name}</b><br>${description}`);
+                    
+                    markers.push(marker);
+                    bounds.push([lat, lng]);
+                }
+                
+                if (markers.length > 0) {
+                    // Zoom ke semua marker
+                    map.fitBounds(bounds);
+                } else {
+                    throw new Error('Tidak ditemukan Placemark dengan koordinat yang valid dalam file KML');
+                }
+            } catch (err) {
+                console.error('Error displaying KML:', err);
+                errorDiv.textContent = 'Gagal menampilkan KML di peta: ' + err.message;
+            }
+        }
+
+        // Event listener untuk tombol contoh CSV
+        downloadExampleBtn.addEventListener('click', function() {
+            const blob = new Blob([exampleCSV], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'contoh_file_csv.csv';
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        });
+
+        // Event listener untuk tombol tampilkan peta
+        showMapBtn.addEventListener('click', function() {
+            if (convertedContent && convertedFileType === 'application/vnd.google-earth.kml+xml') {
+                mapContainer.style.display = 'block';
+                displayKmlOnMap(convertedContent);
+            } else {
+                errorDiv.textContent = 'Hanya bisa menampilkan hasil konversi KML di peta';
+            }
+        });
+
+        // Event listener untuk tombol sembunyikan peta
+        hideMapBtn.addEventListener('click', function() {
+            mapContainer.style.display = 'none';
+        });
+
+        // Event listener untuk file input
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileInfo.textContent = `File dipilih: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                errorDiv.textContent = '';
+                downloadSection.style.display = 'none';
+                mapContainer.style.display = 'none';
+                
+                // Tampilkan form folder dan icon selection hanya untuk konversi CSV ke KML
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    folderForm.style.display = 'block';
+                    iconSelection.style.display = 'block';
+                } else {
+                    folderForm.style.display = 'none';
+                    iconSelection.style.display = 'none';
+                }
+            }
+        });
+
+        // Fungsi untuk memproses CSV ke KML
+        function csvToKml(csvText, folderName = '', folderDescription = '', iconUrl = '') {
+            try {
+                const lines = csvText.split('\n');
+                const headers = lines[0].split(',');
+
+                // Cek kolom minimal
+                const requiredColumns = ['name', 'latitude', 'longitude'];
+                for (const col of requiredColumns) {
+                    if (!headers.includes(col)) {
+                        throw new Error(`Kolom '${col}' tidak ditemukan dalam file CSV`);
+                    }
+                }
+
+                // Buat KML
+                let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>${folderName ? escapeXml(folderName) : 'Converted from CSV'}</name>
+    <description>Generated by CSV to KML Converter</description>`;
+
+                // Jika ada nama folder, tambahkan sebagai Folder
+                if (folderName) {
+                    kml += `
+    <Folder>
+        <name>${escapeXml(folderName)}</name>
+        ${folderDescription ? `<description>${escapeXml(folderDescription)}</description>` : ''}`;
+                }
+
+                // Proses setiap baris data
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+
+                    const values = lines[i].split(',');
+                    const data = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        data[headers[j].trim()] = values[j] ? values[j].trim() : '';
+                    }
+
+                    kml += `
+        <Placemark>
+            <name>${escapeXml(data.name)}</name>
+            ${data.description ? `<description>${escapeXml(data.description)}</description>` : ''}
+            <Style>
+                <IconStyle>
+                    <Icon>
+                        <href>${iconUrl || 'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'}</href>
+                    </Icon>
+                </IconStyle>
+            </Style>
+            <Point>
+                <coordinates>${data.longitude},${data.latitude},0</coordinates>
+            </Point>
+        </Placemark>`;
+                }
+
+                // Tutup Folder jika ada
+                if (folderName) {
+                    kml += `
+    </Folder>`;
+                }
+
+                kml += `
+</Document>
+</kml>`;
+
+                return kml;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Fungsi untuk memproses KML ke CSV
+        function kmlToCsv(kmlText) {
+            try {
+                // Parser KML sederhana (tidak menggunakan DOMParser untuk kompatibilitas)
+                const placemarks = [];
+                const placemarkRegex = /<Placemark>([\s\S]*?)<\/Placemark>/g;
+                let match;
+
+                while ((match = placemarkRegex.exec(kmlText)) !== null) {
+                    const placemarkContent = match[1];
+
+                    const nameMatch = placemarkContent.match(/<name>([\s\S]*?)<\/name>/);
+                    const descMatch = placemarkContent.match(/<description>([\s\S]*?)<\/description>/);
+                    const coordMatch = placemarkContent.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
+
+                    if (!coordMatch) continue;
+
+                    const coords = coordMatch[1].trim().split(',');
+                    if (coords.length < 2) continue;
+
+                    placemarks.push({
+                        name: nameMatch ? nameMatch[1].trim() : '',
+                        longitude: coords[0],
+                        latitude: coords[1],
+                        description: descMatch ? descMatch[1].trim() : ''
+                    });
+                }
+
+                if (placemarks.length === 0) {
+                    throw new Error('Tidak ditemukan Placemark dengan koordinat yang valid dalam file KML');
+                }
+
+                // Buat CSV
+                let csv = 'name,latitude,longitude,description\n';
+                for (const pm of placemarks) {
+                    csv += `"${pm.name}","${pm.latitude}","${pm.longitude}","${pm.description}"\n`;
+                }
+
+                return csv;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Helper function untuk escape XML
+        function escapeXml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        // Event listener untuk tombol konversi
+        convertToKMLBtn.addEventListener('click', function () {
+            if (!fileInput.files.length) {
+                errorDiv.textContent = 'Silakan pilih file CSV terlebih dahulu';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                errorDiv.textContent = 'File harus berformat CSV (.csv) untuk konversi ini';
+                return;
+            }
+
+            loading.style.display = 'block';
+            errorDiv.textContent = '';
+            downloadSection.style.display = 'none';
+            mapContainer.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const csvText = e.target.result;
+                    const folderName = folderNameInput.value.trim();
+                    const folderDescription = folderDescriptionInput.value.trim();
+                    const kmlResult = csvToKml(csvText, folderName, folderDescription, selectedIcon);
+
+                    convertedContent = kmlResult;
+                    convertedFileName = file.name.replace('.csv', '') + '.kml';
+                    convertedFileType = 'application/vnd.google-earth.kml+xml';
+
+                    downloadSection.style.display = 'block';
+                    loading.style.display = 'none';
+                } catch (error) {
+                    errorDiv.textContent = 'Error: ' + error.message;
+                    loading.style.display = 'none';
+                }
+            };
+            reader.onerror = function () {
+                errorDiv.textContent = 'Gagal membaca file';
+                loading.style.display = 'none';
+            };
+            reader.readAsText(file);
+        });
+
+        convertToCSVBtn.addEventListener('click', function () {
+            if (!fileInput.files.length) {
+                errorDiv.textContent = 'Silakan pilih file KML terlebih dahulu';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.kml')) {
+                errorDiv.textContent = 'File harus berformat KML (.kml) untuk konversi ini';
+                return;
+            }
+
+            loading.style.display = 'block';
+            errorDiv.textContent = '';
+            downloadSection.style.display = 'none';
+            mapContainer.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const kmlText = e.target.result;
+                    const csvResult = kmlToCsv(kmlText);
+
+                    convertedContent = csvResult;
+                    convertedFileName = file.name.replace('.kml', '') + '.csv';
+                    convertedFileType = 'text/csv';
+
+                    downloadSection.style.display = 'block';
+                    loading.style.display = 'none';
+                } catch (error) {
+                    errorDiv.textContent = 'Error: ' + error.message;
+                    loading.style.display = 'none';
+                }
+            };
+            reader.onerror = function () {
+                errorDiv.textContent = 'Gagal membaca file';
+                loading.style.display = 'none';
+            };
+            reader.readAsText(file);
+        });
+
+        // Event listener untuk tombol download
+        downloadBtn.addEventListener('click', function () {
+            if (!convertedContent) return;
+
+            const blob = new Blob([convertedContent], {type: convertedFileType});
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = convertedFileName;
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        });
+
+        // Inisialisasi grid icon saat halaman dimuat
+        window.addEventListener('DOMContentLoaded', function() {
+            createIconGrid();
+            // Pilih icon default
+            if (iconGrid.firstChild) {
+                iconGrid.firstChild.classList.add('selected');
+                selectedIcon = kmlIcons[0].url;
+            }
+        });
+    </script>
+</body>
+</html>

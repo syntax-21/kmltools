@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Earth Split Line</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Consistent font */
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5; /* Consistent background */
+            color: #333; /* Consistent text color */
+        }
+        h1 {
+            color: #2c3e50; /* Consistent header color */
+            text-align: center;
+            margin-bottom: 25px; /* Consistent margin */
+            font-size: 24px; /* Consistent font size */
+        }
+        h2 {
+            color: #3498db; /* Consistent sub-header color */
+            margin-top: 30px;
+            border-bottom: 1px solid #eee; /* Consistent border */
+            padding-bottom: 10px;
+            font-size: 1.5em; /* Consistent font size */
+            text-align: center; /* Consistent alignment */
+        }
+        h3 {
+            color: #3498db; /* Consistent sub-header color */
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white; /* Consistent background */
+            padding: 25px; /* Consistent padding */
+            border-radius: 8px; /* Consistent border-radius */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Consistent shadow */
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px; /* Consistent margin */
+            font-weight: 600; /* Consistent font-weight */
+            color: #2c3e50; /* Consistent label color */
+        }
+        input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 10px; /* Consistent padding */
+            border: 1px solid #ddd;
+            border-radius: 4px; /* Consistent border-radius */
+            background: #f9f9f9; /* Consistent background */
+            font-size: 16px; /* Consistent font size */
+        }
+        button {
+            background-color: #3498db; /* Consistent button color */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Consistent padding */
+            border-radius: 4px; /* Consistent border-radius */
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600; /* Consistent font-weight */
+            transition: background-color 0.3s ease; /* Consistent transition */
+        }
+        button:hover {
+            background-color: #2980b9; /* Consistent button hover color */
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px; /* Consistent border-radius */
+            background-color: #e8f4ff; /* Consistent info background */
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        .download-btn {
+            display: inline-block;
+            margin-top: 10px;
+            margin-right: 10px;
+            background-color: #34a853;
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .download-btn:hover {
+            background-color: #2d9248;
+        }
+        .download-option {
+            background-color: #673ab7;
+            margin-top: 15px;
+        }
+        .download-option:hover {
+            background-color: #5e35b1;
+        }
+        .download-options {
+            margin-top: 20px;
+            border-top: 1px solid #eee; /* Consistent border */
+            padding-top: 15px;
+            display: flex; /* Use flex for layout */
+            flex-wrap: wrap; /* Allow wrapping */
+            gap: 10px; /* Gap between buttons */
+            justify-content: center; /* Center buttons */
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .progress {
+            height: 20px;
+            border-radius: 4px;
+            background-color: #1a73e8;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        #map-container {
+            margin-top: 20px;
+            height: 500px;
+            border-radius: 8px; /* Consistent border-radius */
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .map-toggle {
+            background-color: #f39c12; /* Consistent map toggle color */
+            margin-top: 10px;
+        }
+        .map-toggle:hover {
+            background-color: #e67e22;
+        }
+        .segment-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f8e9;
+            border-radius: 4px;
+        }
+        .segment-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .segment-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .highlight-segment {
+            background-color: #ffeb3b;
+        }
+        .tutorial-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+            border: 1px solid #e0e0e0; /* Consistent border */
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-top: 20px;
+            border-radius: 8px; /* Consistent border-radius */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Consistent shadow */
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .steps {
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+        .steps li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Google Earth Split Line</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="kmlFile">Unggah File KML:</label>
+            <input type="file" id="kmlFile" accept=".kml,.xml">
+        </div>
+        <div class="form-group">
+            <label for="segmentLength">Panjang Segmen (meter):</label>
+            <input type="number" id="segmentLength" min="1" value="100">
+        </div>
+        <button id="processBtn">Proses File</button>
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div id="result">
+            <div id="segmentsList"></div>
+            <div id="downloadOptions" class="download-options" style="display: none;">
+                <h3>Opsi Unduhan:</h3>
+                <button id="downloadSingleFileBtn" class="btn download-option">Unduh Semua Segmen dalam 1 File KML</button>
+                <button id="downloadSeparateBtn" class="btn download-option">Unduh Segmen Terpisah</button>
+                <button id="toggleMapBtn" class="btn map-toggle">Tampilkan Peta</button>
+                <div class="progress-bar">
+                    <div id="progress" class="progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>Video Tutorial</h2>
+        <p>Berikut adalah video tutorial cara menggunakan alat Google Earth Split Line:</p>
+        
+        <div class="video-container">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/X42p1Q3nA44?si=NE5tukNbws-EEd_4" 
+                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen></iframe>
+        </div>
+        
+        <h2>Panduan Langkah Demi Langkah</h2>
+        <ol class="steps">
+            <li><strong>Unggah File KML:</strong> Klik tombol "Choose File" atau "Unggah File" dan pilih file KML yang berisi path (LineString) dari Google Earth.</li>
+            <li><strong>Atur Panjang Segmen:</strong> Masukkan panjang setiap segmen dalam meter. Misalnya, jika Anda ingin setiap segmen sepanjang 100 meter, masukkan angka 100.</li>
+            <li><strong>Proses File:</strong> Klik tombol "Proses File" untuk memulai pemisahan path menjadi beberapa segmen.</li>
+            <li><strong>Lihat Hasil:</strong> Setelah pemrosesan selesai, Anda akan melihat jumlah segmen yang berhasil dibuat.</li>
+            <li><strong>Unduh Hasil:</strong> Pilih opsi unduhan:
+                <ul>
+                    <li>"Unduh Semua Segmen dalam 1 File KML" untuk mendapatkan semua segmen dalam satu file</li>
+                    <li>"Unduh Segmen Terpisah" untuk mendapatkan setiap segmen dalam file terpisah</li>
+                </ul>
+            </li>
+            <li><strong>Tampilkan Peta (Opsional):</strong> Klik "Tampilkan Peta" untuk melihat visualisasi segmen-segmen pada peta interaktif.</li>
+        </ol>
+        
+        <h2>Catatan Penting</h2>
+        <ul class="steps">
+            <li>Pastikan file KML Anda berisi path (LineString) yang valid.</li>
+            <li>Alat ini bekerja dengan koordinat geografis (lintang/bujur).</li>
+            <li>Untuk hasil terbaik, gunakan path dengan titik-titik yang cukup rapat.</li>
+            <li>Semakin kecil panjang segmen yang Anda tentukan, semakin banyak segmen yang akan dihasilkan.</li>
+        </ul>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        document.getElementById('processBtn').addEventListener('click', processKML);
+        document.getElementById('toggleMapBtn').addEventListener('click', toggleMap);
+        
+        let allSegments = [];
+        let map;
+        let mapLayers = [];
+        let currentHighlightedLayer = null;
+
+        function initMap() {
+            if (!map) {
+                map = L.map('map').setView([-2.5489, 118.0149], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+            return map;
+        }
+
+        function toggleMap() {
+            const mapContainer = document.getElementById('map-container');
+            const toggleBtn = document.getElementById('toggleMapBtn');
+            
+            if (mapContainer.style.display === 'none' || !mapContainer.style.display) {
+                mapContainer.style.display = 'block';
+                toggleBtn.textContent = 'Sembunyikan Peta';
+                
+                if (!map) {
+                    initMap();
+                }
+                
+                displaySegmentsOnMap();
+            } else {
+                mapContainer.style.display = 'none';
+                toggleBtn.textContent = 'Tampilkan Peta';
+            }
+        }
+
+        function displaySegmentsOnMap() {
+            mapLayers.forEach(layer => {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            mapLayers = [];
+            
+            if (allSegments.length === 0) return;
+            
+            const featureGroup = L.featureGroup().addTo(map);
+            mapLayers.push(featureGroup);
+            
+            allSegments.forEach((segment, index) => {
+                // Pastikan segmen memiliki setidaknya 2 koordinat untuk membentuk garis
+                if (segment.coords.length < 2) {
+                    // console.warn(`Segmen ${segment.name} (index ${index}) memiliki kurang dari 2 koordinat, tidak akan ditampilkan sebagai polyline.`);
+                    return; // Lewati segmen ini jika tidak cukup titik
+                }
+
+                const latLngs = segment.coords.map(coord => [coord.lat, coord.lon]);
+                
+                const polyline = L.polyline(latLngs, {
+                    color: getColorForSegment(index),
+                    weight: 5,
+                    opacity: 0.7
+                }).addTo(featureGroup);
+                
+                polyline.bindPopup(`<b>${segment.name}</b><br>Jumlah titik: ${segment.coords.length}`);
+                mapLayers.push(polyline);
+                
+                polyline.on('mouseover', function() {
+                    if (currentHighlightedLayer) {
+                        currentHighlightedLayer.setStyle({
+                            weight: 5,
+                            opacity: 0.7
+                        });
+                    }
+                    this.setStyle({
+                        weight: 8,
+                        opacity: 1
+                    });
+                    currentHighlightedLayer = this;
+                });
+                
+                polyline.on('mouseout', function() {
+                    if (currentHighlightedLayer === this) {
+                        this.setStyle({
+                            weight: 5,
+                            opacity: 0.7
+                        });
+                        currentHighlightedLayer = null;
+                    }
+                });
+                
+                if (segment.coords.length > 0) {
+                    const startCoord = segment.coords[0];
+                    const endCoord = segment.coords[segment.coords.length - 1];
+                    
+                    const startMarker = L.marker([startCoord.lat, startCoord.lon], {
+                        icon: L.divIcon({
+                            className: 'segment-marker start-marker',
+                            html: '⏹️',
+                            iconSize: [20, 20]
+                        })
+                    }).addTo(featureGroup).bindPopup(`<b>${segment.name}</b><br>Titik Awal`);
+                    
+                    const endMarker = L.marker([endCoord.lat, endCoord.lon], {
+                        icon: L.divIcon({
+                            className: 'segment-marker end-marker',
+                            html: '⏹️',
+                            iconSize: [20, 20]
+                        })
+                    }).addTo(featureGroup).bindPopup(`<b>${segment.name}</b><br>Titik Akhir`);
+                    
+                    mapLayers.push(startMarker, endMarker);
+                }
+            });
+            
+            // Hanya fit bounds jika ada polyline yang valid
+            if (featureGroup.getLayers().length > 0 && featureGroup.getBounds().isValid()) {
+                map.fitBounds(featureGroup.getBounds(), { padding: [50, 50] });
+            } else {
+                console.warn("Tidak ada polyline yang valid untuk ditampilkan di peta atau bounds tidak valid.");
+            }
+        }
+
+        function getColorForSegment(index) {
+            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080'];
+            return colors[index % colors.length];
+        }
+
+        async function processKML() {
+            const fileInput = document.getElementById('kmlFile');
+            const segmentLength = parseFloat(document.getElementById('segmentLength').value);
+            
+            if (!fileInput.files.length) {
+                alert('Silakan pilih file KML terlebih dahulu.');
+                return;
+            }
+            
+            if (isNaN(segmentLength) || segmentLength <= 0) {
+                alert('Masukkan panjang segmen yang valid (lebih dari 0 meter).');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const kmlContent = e.target.result;
+                    const parser = new DOMParser();
+                    const kmlDoc = parser.parseFromString(kmlContent, 'text/xml');
+                    
+                    // Periksa apakah parsing berhasil
+                    if (kmlDoc.getElementsByTagName('parsererror').length > 0) {
+                        const errorText = kmlDoc.getElementsByTagName('parsererror')[0].textContent;
+                        alert('Gagal memparsing file KML. Pastikan format KML valid. Error: ' + errorText);
+                        console.error('KML Parsing Error:', errorText);
+                        document.getElementById('result').style.display = 'none';
+                        return;
+                    }
+
+                    const placemarks = kmlDoc.getElementsByTagName('Placemark');
+                    const resultDiv = document.getElementById('result');
+                    const segmentsList = document.getElementById('segmentsList');
+                    segmentsList.innerHTML = '';
+                    
+                    if (placemarks.length === 0) {
+                        segmentsList.innerHTML = '<p>Tidak ditemukan Placemark dalam file KML.</p>';
+                        resultDiv.style.display = 'block';
+                        document.getElementById('downloadOptions').style.display = 'none';
+                        document.getElementById('map-container').style.display = 'none';
+                        return;
+                    }
+                    
+                    allSegments = [];
+                    let processedCount = 0;
+                    let foundLineString = false;
+
+                    for (let i = 0; i < placemarks.length; i++) {
+                        const placemark = placemarks[i];
+                        const lineString = placemark.getElementsByTagName('LineString')[0];
+                        
+                        if (!lineString) {
+                            console.log(`Placemark ${i} tidak memiliki LineString.`);
+                            continue; // Lewati jika tidak ada LineString
+                        }
+                        
+                        foundLineString = true; // Setel flag jika LineString ditemukan
+
+                        const coordinatesElement = lineString.getElementsByTagName('coordinates')[0];
+                        if (!coordinatesElement || !coordinatesElement.textContent.trim()) {
+                            console.warn(`LineString di Placemark ${i} tidak memiliki koordinat yang valid.`);
+                            continue; // Lewati jika koordinat kosong
+                        }
+                        
+                        const coordArray = coordinatesElement.textContent.trim().split(/\s+/)
+                            .map(coord => {
+                                const parts = coord.split(',');
+                                // Pastikan koordinat memiliki setidaknya lat dan lon
+                                if (parts.length < 2) {
+                                    console.warn(`Koordinat tidak lengkap: ${coord}`);
+                                    return null; // Tandai sebagai tidak valid
+                                }
+                                return {
+                                    lon: parseFloat(parts[0]),
+                                    lat: parseFloat(parts[1]),
+                                    alt: parts.length > 2 ? parseFloat(parts[2]) : 0
+                                };
+                            }).filter(coord => coord !== null && !isNaN(coord.lat) && !isNaN(coord.lon)); // Filter koordinat tidak valid
+
+                        if (coordArray.length < 2) {
+                            console.warn(`LineString di Placemark ${i} hanya memiliki ${coordArray.length} titik valid. Minimal 2 titik diperlukan.`);
+                            continue; // Lewati jika kurang dari 2 titik
+                        }
+                        
+                        const segments = splitPathIntoSegments(coordArray, segmentLength);
+                        
+                        segments.forEach((segment, index) => {
+                            // Pastikan segmen yang dihasilkan memiliki setidaknya 2 titik
+                            if (segment.length < 2) {
+                                console.warn(`Segmen yang dihasilkan untuk Placemark ${i}, sub-segmen ${index} memiliki kurang dari 2 titik. Dilewati.`);
+                                return;
+                            }
+
+                            // --- LOGIKA PENAMAAN YANG DIPERBAIKI (Revisi Terakhir) ---
+                            let baseName = '';
+                            const originalNameElement = placemark.getElementsByTagName('name')[0];
+                            if (originalNameElement && originalNameElement.textContent.trim()) {
+                                baseName = originalNameElement.textContent.trim();
+                            } else {
+                                // Fallback ke nama file, jika tidak ada, gunakan nama default
+                                baseName = file.name.split('.').slice(0, -1).join('.') || `Jalur Diproses ${i + 1}`;
+                            }
+
+                            const segmentName = `${baseName} - Segmen ${index + 1}`;
+                            const segmentKml = createSegmentKML(segmentName, segment, index + 1); // Teruskan segmentName yang sudah final
+                            
+                            allSegments.push({
+                                name: segmentName,
+                                content: segmentKml,
+                                coords: segment,
+                                fileName: `${baseName.replace(/[^a-z0-9]/gi, '_')}_Segmen_${index + 1}.kml`
+                            });
+                            
+                            processedCount++;
+                        });
+                    }
+                    
+                    if (!foundLineString) {
+                        segmentsList.innerHTML = '<p>File KML tidak berisi LineString yang valid untuk diproses. Pastikan Anda mengunggah jalur, bukan hanya titik atau poligon.</p>';
+                        document.getElementById('downloadOptions').style.display = 'none';
+                        document.getElementById('map-container').style.display = 'none';
+                    } else if (processedCount > 0) {
+                        segmentsList.innerHTML = `<p>Berhasil memproses ${processedCount} segmen path.</p>`;
+                        document.getElementById('downloadOptions').style.display = 'block';
+                        
+                        document.getElementById('downloadSingleFileBtn').onclick = downloadAllInOneFile;
+                        document.getElementById('downloadSeparateBtn').onclick = downloadSeparateFiles;
+                        
+                        document.getElementById('toggleMapBtn').style.display = 'inline-block';
+                    } else {
+                        segmentsList.innerHTML = '<p>Ditemukan LineString, tetapi tidak ada segmen valid yang dapat dibuat. Periksa panjang segmen atau kualitas data KML.</p>';
+                        document.getElementById('downloadOptions').style.display = 'none';
+                        document.getElementById('map-container').style.display = 'none';
+                    }
+                    
+                    resultDiv.style.display = 'block';
+                } catch (error) {
+                    console.error('Kesalahan umum saat memproses file KML:', error);
+                    alert('Terjadi kesalahan saat memproses file KML: ' + error.message + '. Periksa konsol browser untuk detail lebih lanjut.');
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Gagal membaca file.');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function downloadAllInOneFile() {
+            const progressBar = document.getElementById('progress');
+            progressBar.style.width = '0%';
+            
+            let combinedKml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Path Segments Combined</name>
+    <description>Generated by Google Earth Path Splitter</description>`;
+            
+            // Add styles for all possible segments (8 colors)
+            const colors = [
+                'ff0000ff', // Red (AABBGGRR)
+                'ff00ff00', // Green
+                'ffff0000', // Blue
+                'ffffff00', // Yellow
+                'ffff00ff', // Magenta
+                'ff00ffff', // Cyan
+                'ff00a5ff', // Orange (AABBGGRR for FFA500)
+                'ff800080'  // Purple (AABBGGRR for 800080)
+            ];
+            
+            colors.forEach((color, index) => {
+                combinedKml += `
+    <Style id="styleSegment${index + 1}">
+        <LineStyle>
+            <color>${color}</color>
+            <width>4</width>
+        </LineStyle>
+    </Style>`;
+            });
+            
+            // Add all segments
+            allSegments.forEach((segment, index) => {
+                // Pastikan segmen memiliki setidaknya 2 koordinat untuk KML LineString
+                if (segment.coords.length < 2) {
+                    console.warn(`Segmen ${segment.name} (index ${index}) memiliki kurang dari 2 koordinat, tidak akan dimasukkan ke KML gabungan.`);
+                    return; // Lewati segmen ini
+                }
+
+                const styleIndex = (index % colors.length) + 1;
+                combinedKml += `
+    <Placemark>
+        <name>${segment.name}</name>
+        <styleUrl>#styleSegment${styleIndex}</styleUrl>
+        <LineString>
+            <extrude>1</extrude>
+            <tessellate>1</tessellate>
+            <altitudeMode>clampedToGround</altitudeMode> <!-- DIUBAH DI SINI -->
+            <coordinates>${segment.coords.map(coord => 
+                `${coord.lon},${coord.lat},${coord.alt}`).join(' ')}</coordinates>
+        </LineString>
+    </Placemark>`;
+                
+                progressBar.style.width = `${((index + 1) / allSegments.length) * 100}%`;
+            });
+            
+            combinedKml += `
+</Document>
+</kml>`;
+            
+            const blob = new Blob([combinedKml], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = 'combined_path_segments.kml';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+            }, 2000);
+        }
+
+        async function downloadSeparateFiles() {
+            const progressBar = document.getElementById('progress');
+            progressBar.style.width = '0%';
+            
+            for (let i = 0; i < allSegments.length; i++) {
+                const segment = allSegments[i];
+                // Pastikan segmen memiliki setidaknya 2 koordinat untuk KML LineString
+                if (segment.coords.length < 2) {
+                    console.warn(`Segmen ${segment.name} (index ${i}) memiliki kurang dari 2 koordinat, tidak akan diunduh terpisah.`);
+                    continue; // Lewati segmen ini
+                }
+
+                const blob = new Blob([segment.content], { type: 'application/vnd.google-earth.kml+xml' });
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = segment.fileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                progressBar.style.width = `${((i + 1) / allSegments.length) * 100}%`;
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+            }, 2000);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth's radius in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function splitPathIntoSegments(coordinates, segmentLength) {
+            const segments = [];
+            // Pastikan koordinat awal valid
+            if (coordinates.length === 0) return segments;
+
+            let currentSegment = [coordinates[0]];
+            let accumulatedDistance = 0;
+
+            for (let i = 1; i < coordinates.length; i++) {
+                const prevCoord = coordinates[i-1];
+                const currCoord = coordinates[i];
+                
+                const distance = calculateDistance(
+                    prevCoord.lat, prevCoord.lon,
+                    currCoord.lat, currCoord.lon
+                );
+                
+                if (distance > segmentLength) {
+                    // Jika jarak antar titik lebih besar dari panjang segmen, interpolasi
+                    const numIntervals = Math.ceil(distance / segmentLength);
+                    // Jarak aktual untuk setiap sub-interval, pastikan tidak nol
+                    const intervalDistance = distance / numIntervals; 
+                    
+                    for (let j = 1; j <= numIntervals; j++) {
+                        const fraction = j / numIntervals;
+                        const newLat = prevCoord.lat + (currCoord.lat - prevCoord.lat) * fraction;
+                        const newLon = prevCoord.lon + (currCoord.lon - prevCoord.lon) * fraction;
+                        const newAlt = prevCoord.alt + (currCoord.alt - prevCoord.alt) * fraction;
+                        
+                        const newPoint = {
+                            lat: newLat,
+                            lon: newLon,
+                            alt: newAlt
+                        };
+                        
+                        currentSegment.push(newPoint);
+                        accumulatedDistance += intervalDistance;
+                        
+                        if (accumulatedDistance >= segmentLength) {
+                            // Hanya tambahkan segmen jika memiliki setidaknya 2 titik
+                            if (currentSegment.length >= 2) {
+                                segments.push([...currentSegment]);
+                            }
+                            currentSegment = [newPoint];
+                            accumulatedDistance = 0;
+                        }
+                    }
+                } else {
+                    currentSegment.push(currCoord);
+                    accumulatedDistance += distance;
+                    
+                    if (accumulatedDistance >= segmentLength) {
+                        // Hanya tambahkan segmen jika memiliki setidaknya 2 titik
+                        if (currentSegment.length >= 2) {
+                            segments.push([...currentSegment]);
+                        }
+                        currentSegment = [currCoord];
+                        accumulatedDistance = 0;
+                    }
+                }
+            }
+            
+            // Tambahkan segmen terakhir jika memiliki lebih dari satu titik
+            if (currentSegment.length >= 2) {
+                segments.push(currentSegment);
+            }
+            
+            return segments;
+        }
+
+        // Fungsi createSegmentKML sekarang hanya menerima nama yang sudah final
+        function createSegmentKML(finalSegmentName, segmentCoords, segmentNumber) {
+            // Pastikan segmentCoords memiliki setidaknya 2 koordinat untuk KML LineString
+            if (segmentCoords.length < 2) {
+                console.error(`createSegmentKML dipanggil dengan kurang dari 2 koordinat untuk ${finalSegmentName}.`);
+                return ''; // Kembalikan string kosong atau tangani error
+            }
+
+            const coordinatesStr = segmentCoords.map(coord => 
+                `${coord.lon},${coord.lat},${coord.alt}`).join(' ');
+            
+            // Color palette (AABBGGRR format)
+            const colors = [
+                'ff0000ff', // Red
+                'ff00ff00', // Green
+                'ffff0000', // Blue
+                'ffffff00', // Yellow
+                'ffff00ff', // Magenta
+                'ff00ffff', // Cyan
+                'ff00a5ff', // Orange (AABBGGRR for FFA500)
+                'ff800080'  // Purple (AABBGGRR for 800080)
+            ];
+            const color = colors[(segmentNumber - 1) % colors.length];
+            
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <Style id="styleSegment">
+        <LineStyle>
+            <color>${color}</color>
+            <width>4</width>
+        </LineStyle>
+        <PolyStyle>
+            <color>7f00ff00</color>
+        </PolyStyle>
+    </Style>
+    <Placemark>
+        <name>${finalSegmentName}</name>
+        <styleUrl>#styleSegment</styleUrl>
+        <LineString>
+            <extrude>1</extrude>
+            <tessellate>1</tessellate>
+            <altitudeMode>clampedToGround</altitudeMode> <!-- DIUBAH DI SINI -->
+            <coordinates>${coordinatesStr}</coordinates>
+        </LineString>
+    </Placemark>
+</Document>
+</kml>`;
+        }
+    </script>
+    <script>
+        // Ini adalah script pelacak pengunjung, mungkin tidak relevan untuk fungsionalitas utama
+        // fetch('track_visitors.php?tool=Split Line'); 
+    </script>
+</body>
+</html>

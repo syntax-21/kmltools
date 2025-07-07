@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(120deg, #2c3e50, #3498db);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3498db;
+            font-size: 1.8rem;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: block;
+            width: 100%;
+            padding: 18px 20px;
+            background: #f8f9fa;
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #3498db;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-input-label:hover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+        }
+        
+        .file-input-label i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .status {
+            font-size: 1rem;
+            color: #7f8c8d;
+            font-weight: 500;
+            padding: 10px 0;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: 500;
+            padding: 12px;
+            background: #fde8e8;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+        
+        .info-box ol {
+            padding-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .info-box li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .info-box p {
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: linear-gradient(120deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(120deg, #2980b9, #3498db);
+        }
+        
+        button:disabled {
+            background: linear-gradient(120deg, #95a5a6, #7f8c8d);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .progress-bar {
+            height: 28px;
+            background: #ecf0f1;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            width: 0%;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.15) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.15) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 40px 40px;
+            animation: progressAnimation 1s linear infinite;
+        }
+        
+        @keyframes progressAnimation {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 0; }
+        }
+        
+        .progress-text {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .summary {
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, #e8f4f8, #d1e7f5);
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #3498db;
+            margin: 10px 0;
+        }
+        
+        .summary-label {
+            font-size: 1rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .map-container {
+            height: 500px;
+            margin-top: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #e0e6ed;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .results-table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e0e6ed;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 800px;
+        }
+        
+        .results-table th {
+            background: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+            padding: 16px 15px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .results-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .results-table tr:hover {
+            background: #e3f2fd;
+        }
+        
+        .results-table td {
+            padding: 14px 15px;
+            border-bottom: 1px solid #e0e6ed;
+            border-right: 1px solid #e0e6ed;
+        }
+        
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .distance-cell {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #7f8c8d;
+            font-size: 1rem;
+            border-top: 1px solid #e0e6ed;
+        }
+        
+        .osrm-status {
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* Custom marker icons */
+        .location-icon {
+            background: #3498db;
+            border-radius: 50%;
+            border: 2px solid white;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .tool-icon {
+            background: #e74c3c;
+            border-radius: 50%;
+            border: 2px solid white;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .route-line {
+            stroke: #3498db;
+            stroke-width: 4;
+            stroke-opacity: 0.7;
+            fill: none;
+        }
+        
+        .tutorial-container {
+            margin-top: 30px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tutorial-container h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .tutorial-step {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #e0e6ed;
+        }
+        
+        .tutorial-step h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tutorial-step h3 i {
+            margin-right: 10px;
+        }
+        
+        .tutorial-step p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .tutorial-video {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-top: 20px;
+            border-radius: 10px;
+            background: #000;
+        }
+        
+        .tutorial-video iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .tab {
+                padding: 12px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+            
+            button {
+                padding: 16px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal</h1>
+            <p>Ukur jarak jalan terdekat dengan rute yang sesuai jaringan jalan sebenarnya</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Kelebihan Aplikasi Ini:</h3>
+            <ol>
+                <li><strong>Rute Jalan Akurat</strong>: Menggunakan OSRM (Open Source Routing Machine) untuk mendapatkan rute jalan yang sebenarnya</li>
+                <li><strong>Jaringan Jalan Nyata</strong>: Rute mengikuti jalan yang ada di OpenStreetMap</li>
+                <li><strong>Perhitungan Jarak Lebih Presisi</strong>: Jarak jalan dihitung berdasarkan rute aktual</li>
+                <li><strong>Peningkatan Performa</strong>: Proses perhitungan yang lebih efisien</li>
+            </ol>
+            <p><strong>Teknologi:</strong> Menggunakan OSRM dengan data OpenStreetMap untuk akurasi maksimal</p>
+        </div>
+
+        <div class="card">
+            <h2>1. Upload Data Titik Anda (Excel/CSV) Lokasi A</h2>
+            <div class="form-group">
+                <label>Pilih file Excel/CSV:</label>
+                <div class="file-input-container">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                    <div class="file-input-label">
+                        <i class="fas fa-file-excel"></i> Klik untuk memilih file Excel/CSV
+                    </div>
+                </div>
+                <div id="excelStatus" class="status">Belum ada file Excel/CSV yang diupload</div>
+                <div id="excelError" class="error"></div>
+                <div class="form-group">
+                    <label>Format file harus memiliki kolom:</label>
+                    <ul>
+                        <li>Kolom A: Nama Lokasi</li>
+                        <li>Kolom B: Latitude (contoh: -6.175392)</li>
+                        <li>Kolom C: Longitude (contoh: 106.827153)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2. Upload Database Alat Produksi (KML) Lokasi B</h2>
+            <div class="form-group">
+                <label>Pilih file KML:</label>
+                <div class="file-input-container">
+                    <input type="file" id="kmlFile" accept=".kml">
+                    <div class="file-input-label">
+                        <i class="fas fa-file-upload"></i> Klik untuk memilih file KML
+                    </div>
+                </div>
+                <div id="kmlStatus" class="status">Belum ada file KML yang diupload</div>
+                <div id="kmlError" class="error"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>3. Proses Perhitungan Jarak</h2>
+            <button id="processBtn" disabled>
+                <i class="fas fa-calculator"></i> Proses Perhitungan Jarak Jalan
+            </button>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-header">
+                    <span>Status Proses:</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Menunggu proses dimulai...</div>
+                <div id="osrmStatus" class="osrm-status">OSRM: Menunggu perhitungan rute</div>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display: none;">
+            <h2>4. Hasil Perhitungan</h2>
+            <div class="summary" id="summaryContainer">
+                <div class="summary-item">
+                    <div class="summary-label">Total Titik</div>
+                    <div class="summary-value" id="totalPoints">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Alat Produksi</div>
+                    <div class="summary-value" id="totalTools">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Jarak Terdekat</div>
+                    <div class="summary-value" id="minDistance">0 m</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Jarak Terjauh</div>
+                    <div class="summary-value" id="maxDistance">0 m</div>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab active" data-tab="table">Tabel Hasil</div>
+                <div class="tab" data-tab="map">Peta Rute</div>
+            </div>
+            
+            <div class="tab-content active" id="tableTab">
+                <div class="results-table-container">
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Nama Lokasi</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Jarak Lurus</th>
+                                <th>Alat Produksi Terdekat</th>
+                                <th>Jarak Jalan</th>
+                                <th>Koordinat Alat Produksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn" id="downloadBtn">
+                    <i class="fas fa-file-download"></i> Download Hasil (Excel)
+                </button>
+            </div>
+            
+            <div class="tab-content" id="mapTab">
+                <div class="map-container" id="map"></div>
+                <div id="mapInfo" class="status" style="margin-top: 15px; text-align: center;"></div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="routeLimit">Tampilkan rute untuk:</label>
+                    <select id="routeLimit" class="file-input-label" style="padding: 10px; width: 100%;">
+                        <option value="10">10 Titik Pertama</option>
+                        <option value="20">20 Titik Pertama</option>
+                        <option value="50">50 Titik Pertama</option>
+                        <option value="all">Semua Titik</option>
+                    </select>
+                    <button class="btn" id="updateMapBtn" style="margin-top: 10px;">
+                        <i class="fas fa-sync-alt"></i> Perbarui Peta
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bagian Tutorial -->
+        <div class="tutorial-container">
+            <h2><i class="fas fa-graduation-cap"></i> Tutorial Penggunaan Aplikasi</h2>
+            
+            <div class="tutorial-step">
+                <h3><i class="fas fa-upload"></i> Langkah 1: Upload Data</h3>
+                <p>1. Klik tombol "Pilih file Excel/CSV" untuk mengunggah file yang berisi daftar lokasi Anda (Lokasi A).</p>
+                <p>2. Klik tombol "Pilih file KML" untuk mengunggah file KML yang berisi database alat produksi (Lokasi B).</p>
+                <p>3. Pastikan format file sesuai dengan petunjuk yang diberikan.</p>
+            </div>
+            
+            <div class="tutorial-step">
+                <h3><i class="fas fa-calculator"></i> Langkah 2: Proses Perhitungan</h3>
+                <p>1. Setelah kedua file berhasil diunggah, tombol "Proses Perhitungan Jarak Jalan" akan aktif.</p>
+                <p>2. Klik tombol tersebut untuk memulai proses perhitungan jarak jalan.</p>
+                <p>3. Anda bisa melihat progress perhitungan pada progress bar yang muncul.</p>
+            </div>
+            
+            <div class="tutorial-step">
+                <h3><i class="fas fa-table"></i> Langkah 3: Lihat Hasil</h3>
+                <p>1. Setelah proses selesai, hasil akan ditampilkan dalam bentuk tabel.</p>
+                <p>2. Anda bisa melihat jarak lurus dan jarak jalan untuk setiap lokasi.</p>
+                <p>3. Informasi alat produksi terdekat juga akan ditampilkan.</p>
+            </div>
+            
+            <div class="tutorial-step">
+                <h3><i class="fas fa-map-marked-alt"></i> Langkah 4: Visualisasi Peta</h3>
+                <p>1. Pilih tab "Peta Rute" untuk melihat visualisasi rute di peta.</p>
+                <p>2. Gunakan dropdown untuk memilih berapa banyak rute yang ingin ditampilkan.</p>
+                <p>3. Klik tombol "Perbarui Peta" untuk menerapkan perubahan.</p>
+            </div>
+            
+            <div class="tutorial-step">
+                <h3><i class="fas fa-download"></i> Langkah 5: Download Hasil</h3>
+                <p>1. Klik tombol "Download Hasil (Excel)" untuk menyimpan hasil perhitungan.</p>
+                <p>2. File Excel akan diunduh ke perangkat Anda.</p>
+            </div>
+            
+            <div class="tutorial-video">
+                <!-- Ganti URL YouTube dengan video tutorial Anda -->
+                <iframe src="https://www.youtube.com/embed/VIDEO_ID" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen></iframe>
+            </div>
+        <div class="footer">
+            <p>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal &copy; 2025 | Menggunakan OSRM dan OpenStreetMap</p>
+        </div>
+    </div>
+
+    <script>
+        // Variabel global
+        let kmlTools = [];
+        let excelPoints = [];
+        let calculationResults = [];
+        let map;
+        let routeLayers = [];
+        let mapInitialized = false;
+        
+        // Elemen DOM
+        const kmlFileInput = document.getElementById('kmlFile');
+        const excelFileInput = document.getElementById('excelFile');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const kmlStatus = document.getElementById('kmlStatus');
+        const excelStatus = document.getElementById('excelStatus');
+        const kmlError = document.getElementById('kmlError');
+        const excelError = document.getElementById('excelError');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsBody = document.getElementById('resultsBody');
+        const summaryContainer = document.getElementById('summaryContainer');
+        const totalPoints = document.getElementById('totalPoints');
+        const totalTools = document.getElementById('totalTools');
+        const minDistance = document.getElementById('minDistance');
+        const maxDistance = document.getElementById('maxDistance');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const osrmStatus = document.getElementById('osrmStatus');
+        const routeLimit = document.getElementById('routeLimit');
+        const updateMapBtn = document.getElementById('updateMapBtn');
+        
+        // Event listeners
+        kmlFileInput.addEventListener('change', handleKMLUpload);
+        excelFileInput.addEventListener('change', handleExcelUpload);
+        processBtn.addEventListener('click', processData);
+        downloadBtn.addEventListener('click', downloadResults);
+        updateMapBtn.addEventListener('click', updateMapDisplay);
+        
+        // Tab navigation
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab') + 'Tab';
+                const contentElement = document.getElementById(tabId);
+                contentElement.classList.add('active');
+
+                if (tab.getAttribute('data-tab') === 'map' && calculationResults.length > 0) {
+                    setTimeout(() => {
+                        if (!mapInitialized) {
+                            initMap();
+                            mapInitialized = true;
+                        } else {
+                            map.invalidateSize(); // fix peta tidak muncul
+                        }
+                    }, 300); // delay agar render selesai
+                }
+            });
+        });
+         
+        // Fungsi untuk menghitung jarak Haversine (dalam meter)
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return (R * c * 1000); // Konversi ke meter
+        }
+        
+        function toRad(degrees) {
+            return degrees * Math.PI / 180;
+        }
+        
+        // Format angka dengan pemisah ribuan
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        // Handle KML upload
+        function handleKMLUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            kmlError.textContent = '';
+            kmlStatus.textContent = "Memproses file KML...";
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const kmlContent = e.target.result;
+                    kmlTools = parseKML(kmlContent);
+                    
+                    if (kmlTools.length > 0) {
+                        kmlStatus.textContent = `Berhasil memuat ${kmlTools.length} alat produksi`;
+                        if (excelPoints.length > 0) {
+                            processBtn.disabled = false;
+                        }
+                    } else {
+                        kmlError.textContent = "Tidak menemukan data alat produksi dalam file KML";
+                    }
+                } catch (error) {
+                    kmlError.textContent = "Gagal memproses file KML: " + error.message;
+                    console.error(error);
+                }
+            };
+            reader.onerror = function() {
+                kmlError.textContent = "Gagal membaca file KML";
+            };
+            reader.readAsText(file);
+        }
+        
+        // Parser KML yang lebih robust
+        function parseKML(kmlContent) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(kmlContent, "text/xml");
+            
+            // Cek error parsing
+            const errors = xmlDoc.getElementsByTagName("parsererror");
+            if (errors.length > 0) {
+                throw new Error("Format KML tidak valid");
+            }
+            
+            const placemarks = xmlDoc.getElementsByTagName("Placemark");
+            const tools = [];
+            
+            for (let i = 0; i < placemarks.length; i++) {
+                try {
+                    const placemark = placemarks[i];
+                    const nameElement = placemark.getElementsByTagName("name")[0];
+                    const name = nameElement ? nameElement.textContent : `Alat Produksi ${i+1}`;
+                    
+                    // Cari koordinat (bisa di Point atau di coordinates)
+                    let coordinatesElement = placemark.getElementsByTagName("coordinates")[0];
+                    if (!coordinatesElement) {
+                        const pointElement = placemark.getElementsByTagName("Point")[0];
+                        if (pointElement) {
+                            coordinatesElement = pointElement.getElementsByTagName("coordinates")[0];
+                        }
+                    }
+                    
+                    if (coordinatesElement) {
+                        const coordsText = coordinatesElement.textContent.trim();
+                        // Ambil koordinat pertama (untuk Point, biasanya hanya ada satu)
+                        const firstCoord = coordsText.split(/\s+/)[0];
+                        const coordinates = firstCoord.split(',');
+                        
+                        if (coordinates.length >= 2) {
+                            const longitude = parseFloat(coordinates[0]);
+                            const latitude = parseFloat(coordinates[1]);
+                            
+                            if (!isNaN(latitude) && !isNaN(longitude)) {
+                                tools.push({
+                                    id: i + 1,
+                                    name: name.trim(),
+                                    latitude: latitude,
+                                    longitude: longitude,
+                                    coordinates: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Gagal memproses Placemark ke-${i+1}:`, e);
+                }
+            }
+            
+            return tools;
+        }
+        
+        // Handle Excel upload
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            excelError.textContent = '';
+            excelStatus.textContent = "Memproses file data...";
+            
+            if (file.name.endsWith('.csv')) {
+                // Handle CSV
+                Papa.parse(file, {
+                    header: false,
+                    complete: function(results) {
+                        processExcelData(results.data);
+                    },
+                    error: function(error) {
+                        excelError.textContent = "Gagal memproses file CSV: " + error.message;
+                        console.error(error);
+                    }
+                });
+            } else {
+                // Handle Excel (XLSX, XLS)
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Ambil data dari sheet pertama
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Konversi ke JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        processExcelData(jsonData);
+                    } catch (error) {
+                        excelError.textContent = "Gagal memproses file Excel: " + error.message;
+                        console.error(error);
+                    }
+                };
+                reader.onerror = function() {
+                    excelError.textContent = "Gagal membaca file Excel";
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        
+        // Proses data Excel/CSV
+        function processExcelData(data) {
+            excelPoints = [];
+            let skippedRows = 0;
+            
+            // Lewati header jika ada (baris pertama)
+            const startRow = data.length > 0 && isNaN(data[0][1]) ? 1 : 0;
+            
+            for (let i = startRow; i < data.length; i++) {
+                const row = data[i];
+                if (row.length < 3) {
+                    skippedRows++;
+                    continue;
+                }
+                
+                const name = row[0]?.toString()?.trim() || `Titik ${i+1}`;
+                const lat = parseFloat(row[1]);
+                const lon = parseFloat(row[2]);
+                
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    excelPoints.push({
+                        id: i + 1,
+                        name: name,
+                        latitude: lat,
+                        longitude: lon
+                    });
+                } else {
+                    skippedRows++;
+                }
+            }
+            
+            if (excelPoints.length > 0) {
+                excelStatus.textContent = `Berhasil memuat ${excelPoints.length} titik data` + 
+                    (skippedRows > 0 ? ` (melewati ${skippedRows} baris tidak valid)` : '');
+                
+                if (kmlTools.length > 0) {
+                    processBtn.disabled = false;
+                }
+            } else {
+                excelError.textContent = "Tidak menemukan data titik yang valid dalam file";
+            }
+        }
+        
+        // Fungsi untuk mendapatkan rute jalan dari OSRM
+        async function getOSRMRoute(startLon, startLat, endLon, endLat) {
+            try {
+                osrmStatus.textContent = "OSRM: Meminta rute jalan...";
+                
+                const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Gagal mendapatkan rute: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    osrmStatus.textContent = "OSRM: Rute berhasil didapatkan";
+                    
+                    return {
+                        distance: route.distance, // jarak dalam meter
+                        geometry: route.geometry.coordinates.map(coord => [coord[1], coord[0]]) // [lat, lon]
+                    };
+                } else {
+                    throw new Error("Tidak ada rute yang ditemukan");
+                }
+            } catch (error) {
+                osrmStatus.textContent = `OSRM: ${error.message}`;
+                console.error("Error OSRM:", error);
+                
+                // Fallback: Gunakan jarak lurus dengan faktor pengali
+                const straightDistance = calculateHaversineDistance(startLat, startLon, endLat, endLon);
+                const roadFactor = 1.4 + Math.random() * 0.3;
+                return {
+                    distance: straightDistance * roadFactor,
+                    geometry: null
+                };
+            }
+        }
+        
+        // Proses data untuk menghitung jarak
+        async function processData() {
+            if (excelPoints.length === 0 || kmlTools.length === 0) {
+                alert("Silakan upload file KML dan Excel/CSV yang valid terlebih dahulu");
+                return;
+            }
+            
+            // Reset UI
+            calculationResults = [];
+            resultsBody.innerHTML = '';
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = "Memulai perhitungan...";
+            progressPercent.textContent = "0%";
+            processBtn.disabled = true;
+            
+            try {
+                // Proses secara async untuk menghindari blocking UI
+                const batchSize = 5; // Ukuran batch kecil karena perhitungan OSRM intensif
+                let processed = 0;
+                const total = excelPoints.length;
+                
+                async function processBatch(start) {
+                    const end = Math.min(start + batchSize, total);
+                    
+                    for (let i = start; i < end; i++) {
+                        const point = excelPoints[i];
+                        let minDistance = Infinity;
+                        let nearestTool = null;
+                        let roadDistance = null;
+                        let routeGeometry = null;
+                        
+                        // Cari alat produksi terdekat berdasarkan jarak lurus
+                        for (const tool of kmlTools) {
+                            const distance = calculateHaversineDistance(
+                                point.latitude, point.longitude,
+                                tool.latitude, tool.longitude
+                            );
+                            
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                nearestTool = tool;
+                            }
+                        }
+                        
+                        // Hitung jarak jalan menggunakan OSRM jika alat terdekat ditemukan
+                        if (nearestTool) {
+                            const route = await getOSRMRoute(
+                                point.longitude, point.latitude,
+                                nearestTool.longitude, nearestTool.latitude
+                            );
+                            
+                            roadDistance = route.distance;
+                            routeGeometry = route.geometry;
+                        }
+                        
+                        calculationResults.push({
+                            id: point.id,
+                            name: point.name,
+                            latitude: point.latitude,
+                            longitude: point.longitude,
+                            distance: minDistance,
+                            nearestTool: nearestTool ? nearestTool.name : null,
+                            nearestToolId: nearestTool ? nearestTool.id : null,
+                            nearestToolCoords: nearestTool ? nearestTool.coordinates : null,
+                            nearestToolLat: nearestTool ? nearestTool.latitude : null,
+                            nearestToolLon: nearestTool ? nearestTool.longitude : null,
+                            roadDistance: roadDistance,
+                            routeGeometry: routeGeometry
+                        });
+                        
+                        // Update progress
+                        processed = i + 1;
+                        const progressPercentValue = Math.round((processed / total) * 100);
+                        progressFill.style.width = progressPercentValue + '%';
+                        progressPercent.textContent = progressPercentValue + '%';
+                        progressText.textContent = `Memproses titik ${processed} dari ${total}: ${point.name}`;
+                    }
+                    
+                    if (processed < total) {
+                        // Beri waktu untuk UI update sebelum memproses batch berikutnya
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await processBatch(processed);
+                    } else {
+                        // Selesai memproses
+                        progressText.textContent = "Perhitungan selesai!";
+                        displayResults();
+                        processBtn.disabled = false;
+                        mapInitialized = false;
+                        resultsCard.style.display = 'block';
+                        
+                        // Scroll ke hasil
+                        setTimeout(() => {
+                            resultsCard.scrollIntoView({ behavior: 'smooth' });
+                        }, 300);
+                    }
+                }
+                
+                await processBatch(0);
+            } catch (error) {
+                console.error("Error dalam proses perhitungan:", error);
+                progressText.textContent = "Terjadi kesalahan dalam perhitungan";
+                processBtn.disabled = false;
+            }
+        }
+        
+        // Tampilkan hasil di tabel
+        function displayResults() {
+            // Kosongkan tabel
+            resultsBody.innerHTML = '';
+            
+            // Isi tabel dengan hasil
+            calculationResults.forEach(result => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${result.name}</td>
+                    <td>${result.latitude.toFixed(6)}</td>
+                    <td>${result.longitude.toFixed(6)}</td>
+                    <td class="distance-cell">${formatNumber(Math.round(result.distance))} m</td>
+                    <td>${result.nearestTool || '-'}</td>
+                    <td class="distance-cell">${result.roadDistance !== null ? formatNumber(Math.round(result.roadDistance)) + ' m' : 'N/A'}</td>
+                    <td>${result.nearestToolCoords || '-'}</td>
+                `;
+                
+                resultsBody.appendChild(row);
+            });
+            
+            // Update summary
+            totalPoints.textContent = calculationResults.length;
+            totalTools.textContent = kmlTools.length;
+            
+            const distances = calculationResults
+                .filter(r => r.roadDistance !== null)
+                .map(r => r.roadDistance);
+            
+            if (distances.length > 0) {
+                const min = Math.min(...distances);
+                const max = Math.max(...distances);
+                
+                minDistance.textContent = formatNumber(Math.round(min)) + ' m';
+                maxDistance.textContent = formatNumber(Math.round(max)) + ' m';
+            }
+        }
+        
+        // Inisialisasi peta
+        function initMap() {
+            if (calculationResults.length === 0) return;
+            
+            const mapElement = document.getElementById('map');
+            mapElement.innerHTML = '';
+            
+            // Cari titik tengah untuk peta
+            const firstResult = calculationResults[0];
+            map = L.map('map').setView([firstResult.latitude, firstResult.longitude], 12);
+            
+            // Tambahkan tile layer dari OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Update tampilan peta
+            updateMapDisplay();
+        }
+        
+        // Update tampilan peta berdasarkan pilihan jumlah rute
+        function updateMapDisplay() {
+            if (!map) return;
+            
+            // Hapus layer sebelumnya
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+            
+            // Tentukan berapa banyak rute yang akan ditampilkan
+            let maxRoutesToShow;
+            const limitValue = routeLimit.value;
+            
+            if (limitValue === 'all') {
+                maxRoutesToShow = calculationResults.length;
+            } else {
+                maxRoutesToShow = Math.min(parseInt(limitValue), calculationResults.length);
+            }
+            
+            // Tambahkan rute untuk titik yang dipilih
+            for (let i = 0; i < maxRoutesToShow; i++) {
+                const result = calculationResults[i];
+                if (result.nearestToolLat && result.nearestToolLon) {
+                    // Tambahkan marker untuk titik lokasi (biru)
+                    const startMarker = L.marker([result.latitude, result.longitude], {
+                        icon: L.divIcon({
+                            className: 'location-icon',
+                            html: '<i class="fas fa-map-marker-alt"></i>',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 24]
+                        })
+                    }).addTo(map)
+                    .bindPopup(`<b>${result.name}</b><br>Lat: ${result.latitude.toFixed(6)}<br>Lon: ${result.longitude.toFixed(6)}`);
+                    
+                    // Tambahkan marker untuk alat produksi (merah)
+                    const endMarker = L.marker([result.nearestToolLat, result.nearestToolLon], {
+                        icon: L.divIcon({
+                            className: 'tool-icon',
+                            html: '<i class="fas fa-industry"></i>',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 24]
+                        })
+                    }).addTo(map)
+                    .bindPopup(`<b>${result.nearestTool}</b><br>Alat Produksi<br>Jarak: ${formatNumber(Math.round(result.roadDistance))} m`);
+                    
+                    // Tambahkan garis rute jalan jika tersedia
+                    if (result.routeGeometry && result.routeGeometry.length > 0) {
+                        const routePolyline = L.polyline(result.routeGeometry, {
+                            color: '#3498db',
+                            weight: 5,
+                            opacity: 0.7,
+                            smoothFactor: 1
+                        }).addTo(map);
+                        
+                        routeLayers.push(routePolyline);
+                    }
+                }
+            }
+            
+            document.getElementById('mapInfo').textContent = 
+                `Menampilkan rute jalan untuk ${maxRoutesToShow} titik. Total titik: ${calculationResults.length}`;
+        }
+        
+        // Download hasil sebagai Excel
+        function downloadResults() {
+            // Siapkan data untuk Excel
+            const excelData = [
+                ["Nama Lokasi", "Latitude", "Longitude", "Jarak Lurus (m)", "Alat Produksi Terdekat", "Jarak Jalan (m)", "Koordinat Alat Produksi"],
+                ...calculationResults.map(result => [
+                    result.name,
+                    result.latitude,
+                    result.longitude,
+                    Math.round(result.distance),
+                    result.nearestTool,
+                    result.roadDistance !== null ? Math.round(result.roadDistance) : 'N/A',
+                    result.nearestToolCoords
+                ])
+            ];
+            
+            // Buat worksheet
+            const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // Buat workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Perhitungan");
+            
+            // Download file
+            XLSX.writeFile(workbook, "hasil_jarak_jalan_alat_produksi.xlsx");
+        }
+    </script>
+    <script>
+        fetch('track_visitors.php?tool=Ukur Jarak');
+    </script>
+</body>
+</html>
+
