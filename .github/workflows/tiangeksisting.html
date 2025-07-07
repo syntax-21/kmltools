@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Placemarker Tiang Eksisting Google Earth</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+        h3 {
+            color: #3498db;
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .upload-section {
+            margin-bottom: 25px;
+        }
+        .upload-group {
+            background: white;
+            border-radius: 8px; /* Consistent border-radius */
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        .upload-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .file-input-container {
+            margin-bottom: 15px;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            font-size: 16px; /* Consistent font size */
+        }
+        .file-list {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-top: 10px;
+            min-height: 20px;
+            border: 1px dashed #ccc;
+            color: #666; /* Consistent text color */
+        }
+        .download-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap; /* Allow wrapping */
+            justify-content: center; /* Center items */
+        }
+        .download-card {
+            flex: 1;
+            min-width: 250px; /* Ensure cards don't get too small */
+            padding: 15px;
+            background: #e8f4ff;
+            border-radius: 8px; /* Consistent border-radius */
+            text-align: center;
+            border: 1px solid #d0e3ff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        .download-card p {
+            margin: 0 0 10px 0;
+            font-weight: 500;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 25px 0;
+            flex-wrap: wrap; /* Allow wrapping */
+        }
+        .result-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px; /* Consistent border-radius */
+            margin-top: 20px;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px; /* Consistent border-radius */
+            border: 1px solid #ddd;
+        }
+        .map-container {
+            position: relative;
+            margin-top: 20px;
+            display: none;
+            border-radius: 8px; /* Consistent border-radius */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+            overflow: hidden;
+        }
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #eee; /* Lighter border */
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #2c3e50; /* Consistent header text color */
+        }
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .tutorial-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            margin: 20px 0;
+            border-radius: 8px; /* Consistent border-radius */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Consistent shadow */
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .download-options {
+                flex-direction: column;
+            }
+            .tutorial-section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auto Placemarker Tiang Eksisting Google Earth</h1>
+        
+        <div class="upload-section">
+            <div class="upload-group">
+                <label for="kmlFiles">1. Upload file KML "Kabel/Untitled Path"</label>
+                <div class="file-input-container">
+                    <input type="file" id="kmlFiles" accept=".kml" multiple>
+                </div>
+                <div class="file-list" id="kmlFileList">Tidak ada file KML yang dipilih</div>
+            </div>
+            
+            <div class="upload-group">
+                <label for="excelFile">2. Upload file Excel dengan data Tiang Eksisting</label>
+                <div class="file-input-container">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls">
+                </div>
+                <div class="file-list" id="excelFileList">Tidak ada file Excel yang dipilih</div>
+            </div>
+            
+            <div class="download-options">
+                <div class="download-card">
+                    <p>Belum punya template Excel?</p>
+                    <button class="btn" id="downloadExcelTemplate">Download Template</button>
+                </div>
+                
+                <div class="download-card">
+                    <p>Download database Tiang Eksisting terbaru</p>
+                    <button class="btn" onclick="window.open('https://ihld.telkom.co.id/d/tiang', '_blank')">Download Database</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn" id="processBtn">Proses File</button>
+            <button class="btn" id="downloadBtn" disabled>Download KML Hasil</button>
+            <button class="btn" id="showMapBtn" disabled>Tampilkan Peta</button>
+        </div>
+        
+        <div class="result-section" id="result">
+            <div id="statusMessage"></div>
+            <div id="resultContent"></div>
+        </div>
+        
+        <div class="map-container" id="mapContainer">
+            <div class="map-controls">
+                <button class="btn" id="hideMapBtn">Sembunyikan Peta</button>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- Video Tutorial Section -->
+        <div class="tutorial-section">
+            <h3>Video Tutorial Penggunaan Aplikasi</h3>
+            <div class="video-container">
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" 
+                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen></iframe>
+            </div>
+            <p>Lihat tutorial lengkap untuk memahami cara penggunaan aplikasi ini:</p>
+            <ol>
+                <li>Cara mengupload file KML dan Excel</li>
+                <li>Proses pembuatan placemarker</li>
+                <li>Melihat hasil di peta</li>
+                <li>Download file KML hasil</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Variabel global
+        let kmlFiles = [];
+        let excelData = [];
+        let processedKml = null;
+        let map = null;
+        let pathLayers = [];
+        let markerLayers = [];
+        
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event listeners
+            document.getElementById('kmlFiles').addEventListener('change', handleKmlUpload);
+            document.getElementById('excelFile').addEventListener('change', handleExcelUpload);
+            document.getElementById('processBtn').addEventListener('click', processFiles);
+            document.getElementById('downloadBtn').addEventListener('click', downloadResult);
+            document.getElementById('showMapBtn').addEventListener('click', showMap);
+            document.getElementById('hideMapBtn').addEventListener('click', hideMap);
+            document.getElementById('downloadExcelTemplate').addEventListener('click', downloadExcelTemplate);
+        });
+        
+        // Handle KML upload
+        function handleKmlUpload(e) {
+            kmlFiles = Array.from(e.target.files);
+            updateFileList('kmlFileList', kmlFiles);
+        }
+        
+        // Handle Excel upload
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    excelData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    // Validasi data
+                    if (excelData.length === 0 || !excelData[0].Latitude || !excelData[0].Longitude) {
+                        throw new Error("Format Excel tidak sesuai. Pastikan ada kolom Latitude dan Longitude");
+                    }
+                    
+                    updateFileList('excelFileList', [file]);
+                    showStatus(`Berhasil membaca ${excelData.length} data dari Excel`, 'success');
+                } catch (error) {
+                    console.error('Error reading Excel:', error);
+                    showError(`Gagal membaca file Excel: ${error.message}`);
+                }
+            };
+            reader.onerror = function() {
+                showError('Gagal membaca file Excel');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Proses file
+        async function processFiles() {
+            if (kmlFiles.length === 0) {
+                showError('Silakan upload setidaknya satu file KML');
+                return;
+            }
+            
+            if (!excelData || excelData.length === 0) {
+                showError('Silakan upload file Excel dengan data Tiang Eksisting');
+                return;
+            }
+            
+            try {
+                showLoading('Memproses data...');
+                document.getElementById('result').style.display = 'block';
+                
+                // Gabungkan semua KML paths dan ekstrak koordinatnya
+                let combinedKml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Placemarkers with Paths</name>`;
+                
+                let allPathCoordinates = [];
+                let pathNames = [];
+                
+                // Proses setiap file KML
+                for (const file of kmlFiles) {
+                    const kmlText = await readFileAsText(file);
+                    const pathsData = extractPathsAndCoordinates(kmlText);
+                    combinedKml += pathsData.kml;
+                    allPathCoordinates = allPathCoordinates.concat(pathsData.coordinates);
+                    pathNames.push(file.name.replace('.kml', ''));
+                }
+                
+                // Filter placemarker yang dekat dengan path (dalam 100 meter)
+                const nearbyPlacemarkers = filterPlacemarkersNearPath(excelData, allPathCoordinates, 0.1);
+                
+                // Tambahkan placemarker yang dekat dengan path
+                combinedKml += generatePlacemarkersKml(nearbyPlacemarkers);
+                combinedKml += `</Document></kml>`;
+                
+                processedKml = combinedKml;
+                
+                // Siapkan data untuk peta
+                prepareMapData(allPathCoordinates, nearbyPlacemarkers, pathNames);
+                
+                // Tampilkan hasil
+                showResults(nearbyPlacemarkers, pathNames);
+                
+                // Aktifkan tombol
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('showMapBtn').disabled = false;
+                
+                showStatus('Proses selesai!', 'success');
+                
+            } catch (error) {
+                console.error('Error processing files:', error);
+                showError(`Terjadi kesalahan: ${error.message}`);
+            }
+        }
+        
+        // Download hasil
+        function downloadResult() {
+            if (processedKml) {
+                const blob = new Blob([processedKml], { type: 'application/vnd.google-earth.kml+xml' });
+                saveAs(blob, 'placemarkers_with_paths.kml');
+                showStatus('File KML berhasil didownload', 'success');
+            }
+        }
+        
+        // Download template Excel
+        function downloadExcelTemplate() {
+            const template = [
+                {
+                    "Nama": "Tiang_001",
+                    "Latitude": -6.2087634,
+                    "Longitude": 106.845599,
+                    "Deskripsi": "Tiang eksisting jalan utama",
+                    "Jenis": "Beton"
+                },
+                {
+                    "Nama": "Tiang_002",
+                    "Latitude": -6.914744,
+                    "Longitude": 107.609810,
+                    "Deskripsi": "Tiang persimpangan",
+                    "Jenis": "Besi"
+                }
+            ];
+            
+            const ws = XLSX.utils.json_to_sheet(template);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Tiang Eksisting");
+            
+            XLSX.writeFile(wb, "template_tiang_eksisting.xlsx");
+            showStatus('Template Excel berhasil didownload', 'success');
+        }
+        
+        // Tampilkan peta
+        function showMap() {
+            document.getElementById('mapContainer').style.display = 'block';
+            
+            if (!map) {
+                // Inisialisasi peta
+                map = L.map('map').setView([-7.0, 113.0], 12);
+                
+                // Tambahkan base layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                
+                // Tambahkan path ke peta
+                pathLayers.forEach(layer => {
+                    layer.addTo(map);
+                });
+                
+                // Tambahkan marker ke peta
+                markerLayers.forEach(layer => {
+                    layer.addTo(map);
+                });
+                
+                // Fit bounds ke seluruh layer
+                if (pathLayers.length > 0 || markerLayers.length > 0) {
+                    const group = new L.FeatureGroup([...pathLayers, ...markerLayers]);
+                    map.fitBounds(group.getBounds());
+                }
+            }
+        }
+        
+        // Sembunyikan peta
+        function hideMap() {
+            document.getElementById('mapContainer').style.display = 'none';
+        }
+        
+        // Fungsi pembantu
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error(`Gagal membaca file ${file.name}`));
+                reader.readAsText(file);
+            });
+        }
+        
+        function extractPathsAndCoordinates(kmlText) {
+            try {
+                const parser = new DOMParser();
+                const kmlDoc = parser.parseFromString(kmlText, 'text/xml');
+                const placemarks = kmlDoc.getElementsByTagName('Placemark');
+                
+                let pathsKml = '';
+                let coordinates = [];
+                
+                for (let i = 0; i < placemarks.length; i++) {
+                    const placemark = placemarks[i];
+                    const lineStrings = placemark.getElementsByTagName('LineString');
+                    
+                    if (lineStrings.length > 0) {
+                        pathsKml += placemark.outerHTML;
+                        
+                        // Ekstrak koordinat dari LineString
+                        const coordElements = placemark.getElementsByTagName('coordinates');
+                        if (coordElements.length > 0) {
+                            const coordText = coordElements[0].textContent.trim();
+                            const coordPairs = coordText.split(' ').filter(pair => pair.trim() !== '');
+                            
+                            coordPairs.forEach(pair => {
+                                const [longitude, latitude] = pair.split(',').map(Number);
+                                if (!isNaN(latitude) && !isNaN(longitude)) {
+                                    coordinates.push({ latitude, longitude });
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                if (coordinates.length === 0) {
+                    throw new Error("Tidak menemukan koordinat path dalam file KML");
+                }
+                
+                return { kml: pathsKml, coordinates };
+            } catch (error) {
+                console.error('Error parsing KML:', error);
+                throw new Error("Format KML tidak valid");
+            }
+        }
+        
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        function filterPlacemarkersNearPath(placemarkers, pathCoordinates, maxDistanceKm) {
+            return placemarkers.filter(placemarker => {
+                let minDistance = Infinity;
+                
+                for (const pathPoint of pathCoordinates) {
+                    const distance = haversineDistance(
+                        placemarker.Latitude,
+                        placemarker.Longitude,
+                        pathPoint.latitude,
+                        pathPoint.longitude
+                    );
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        if (minDistance <= maxDistanceKm) break;
+                    }
+                }
+                
+                return minDistance <= maxDistanceKm;
+            });
+        }
+        
+        function generatePlacemarkersKml(placemarkers) {
+            let placemarkersKml = '';
+            const colors = ['FF0000FF', 'FF00FF00', 'FFFF0000', 'FFFFFF00', 'FFFF00FF', 'FF00FFFF'];
+            let colorIndex = 0;
+            
+            placemarkers.forEach(item => {
+                const color = colors[colorIndex % colors.length];
+                colorIndex++;
+                
+                placemarkersKml += `
+    <Placemark>
+        <name>${item.Nama || 'Unnamed'}</name>
+        <description>${item.Deskripsi || ''}</description>
+        <Style>
+            <IconStyle>
+                <color>${color}</color>
+                <scale>1.2</scale>
+                <Icon>
+                    <href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+                </Icon>
+            </IconStyle>
+        </Style>
+        <Point>
+            <coordinates>${item.Longitude},${item.Latitude},0</coordinates>
+        </Point>
+    </Placemark>`;
+            });
+            
+            return placemarkersKml;
+        }
+        
+        function prepareMapData(pathCoordinates, placemarkers, pathNames) {
+            // Reset layers
+            pathLayers = [];
+            markerLayers = [];
+            
+            // Buat polyline untuk setiap path
+            const pathGroups = groupCoordinatesByPath(pathCoordinates, pathNames);
+            
+            pathGroups.forEach((group, index) => {
+                const color = getColorForIndex(index);
+                const polyline = L.polyline(
+                    group.coords.map(c => [c.latitude, c.longitude]),
+                    { color, weight: 5 }
+                ).bindPopup(`<b>${group.name}</b><br>${group.coords.length} titik`);
+                
+                pathLayers.push(polyline);
+            });
+            
+            // Buat marker untuk placemarkers
+            const iconColors = ['red', 'blue', 'green', 'orange', 'purple', 'darkred'];
+            
+            placemarkers.forEach(item => {
+                const color = iconColors[Math.floor(Math.random() * iconColors.length)];
+                const icon = L.divIcon({
+                    className: 'custom-icon',
+                    html: `<div style="background-color:${color}; width:20px; height:20px; border-radius:50%; border:2px solid white"></div>`,
+                    iconSize: [24, 24]
+                });
+                
+                const marker = L.marker([item.Latitude, item.Longitude], { icon })
+                    .bindPopup(`<b>${item.Nama || 'Unnamed'}</b><br>${item.Deskripsi || ''}`);
+                
+                markerLayers.push(marker);
+            });
+        }
+        
+        function groupCoordinatesByPath(coordinates, pathNames) {
+            // Implementasi sederhana - bagi rata koordinat ke beberapa path
+            const groupSize = Math.ceil(coordinates.length / pathNames.length);
+            const groups = [];
+            
+            for (let i = 0; i < pathNames.length; i++) {
+                const start = i * groupSize;
+                const end = start + groupSize;
+                groups.push({
+                    name: pathNames[i],
+                    coords: coordinates.slice(start, end)
+                });
+            }
+            
+            return groups;
+        }
+        
+        function getColorForIndex(index) {
+            const colors = ['#FF0000', '#0000FF', '#00FF00', '#FFFF00', '#FF00FF', '#00FFFF'];
+            return colors[index % colors.length];
+        }
+        
+        function showResults(placemarkers, pathNames) {
+            let html = `
+                <h3>Hasil Pemrosesan</h3>
+                <p><strong>${placemarkers.length}</strong> dari ${excelData.length} tiang eksisting berada dekat path</p>
+                <p><strong>${pathNames.length}</strong> path diproses</p>
+                
+                <h4>Daftar Tiang Eksisting</h4>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Deskripsi</th>
+                        </tr>`;
+            
+            placemarkers.forEach(item => {
+                html += `
+                        <tr>
+                            <td>${item.Nama || 'Unnamed'}</td>
+                            <td>${item.Latitude}</td>
+                            <td>${item.Longitude}</td>
+                            <td>${item.Deskripsi || ''}</td>
+                        </tr>`;
+            });
+            
+            html += `
+                    </table>
+                </div>
+                
+                <h4>Daftar Path</h4>
+                <ul style="column-count: 2;">`;
+            
+            pathNames.forEach(name => {
+                html += `<li>${name}</li>`;
+            });
+            
+            html += `</ul>`;
+            
+            document.getElementById('resultContent').innerHTML = html;
+        }
+        
+        function showLoading(message) {
+            document.getElementById('statusMessage').innerHTML = `
+                <div class="status-message loading">
+                    <p>${message}</p>
+                </div>`;
+        }
+        
+        function showStatus(message, type) {
+            document.getElementById('statusMessage').innerHTML = `
+                <div class="status-message ${type}">
+                    <p>${message}</p>
+                </div>`;
+        }
+        
+        function showError(message) {
+            showStatus(message, 'error');
+        }
+        
+        function updateFileList(elementId, files) {
+            const element = document.getElementById(elementId);
+            if (files.length === 0) {
+                element.textContent = `Tidak ada file ${elementId.includes('kml') ? 'KML' : 'Excel'} yang dipilih`;
+                return;
+            }
+            
+            let html = '<ul style="margin: 0; padding-left: 20px;">';
+            files.forEach(file => {
+                html += `<li>${file.name} (${formatFileSize(file.size)})</li>`;
+            });
+            html += '</ul>';
+            element.innerHTML = html;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
+

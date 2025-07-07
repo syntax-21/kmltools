@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Placemark Along Path - Map Tool</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50; /* Consistent header color */
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px; /* Consistent font size */
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+        h3 {
+            color: #3498db; /* Consistent sub-header color */
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .upload-section {
+            border: 2px dashed #3498db; /* Consistent border color */
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px; /* Consistent border-radius */
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        .upload-section.active {
+            border-color: #2980b9; /* Darker on active */
+            background-color: #e8f0fe;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50; /* Consistent label color */
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            background: #f9f9f9; /* Consistent background */
+        }
+        button {
+            background-color: #3498db; /* Consistent button color */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9; /* Consistent button hover color */
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Consistent border-radius */
+            background-color: #f9f9f9;
+            min-height: 100px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        #coordinateTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        #coordinateTable th, #coordinateTable td {
+            border: 1px solid #eee; /* Lighter border */
+            padding: 8px;
+            text-align: left;
+        }
+        #coordinateTable th {
+            background-color: #f2f2f2;
+            color: #2c3e50; /* Consistent header text color */
+        }
+        .instructions {
+            background-color: #e8f4ff; /* Consistent info background */
+            padding: 15px;
+            border-radius: 8px; /* Consistent border-radius */
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db; /* Consistent border color */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        #fileInfo {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .error {
+            color: #e74c3c; /* Consistent error color */
+            font-weight: bold;
+            background-color: #f8d7da; /* Consistent error background */
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            color: #155724; /* Consistent success color */
+            font-weight: bold;
+            background-color: #d4edda; /* Consistent success background */
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Consistent border-radius */
+            display: none; /* Hidden by default */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+        }
+        .button-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .action-button {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            text-align: center;
+        }
+        .action-button:hover {
+            background-color: #3367d6;
+        }
+        .separator {
+            width: 1px;
+            height: 20px;
+            background-color: #ccc;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 4px;
+        }
+        
+        /* Video Tutorial Section Styles */
+        .tutorial-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
+        }
+        
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .tutorial-steps {
+            margin-top: 20px;
+            padding: 0 20px;
+        }
+        
+        .tutorial-steps ol {
+            padding-left: 20px;
+        }
+        
+        .tutorial-steps li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .tutorial-section {
+                padding: 15px;
+            }
+            
+            .tutorial-steps {
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auto Placemark Generator Tiang New Google Earth</h1>
+        
+        <div class="instructions">
+            <h3>Petunjuk Penggunaan:</h3>
+            <ol>
+                <li>Buat path (jalur) di Google Earth dan simpan sebagai KML/KMZ</li>
+                <li>Upload file tersebut di tool ini</li>
+                <li>Tentukan jarak antar placemark (dalam meter)</li>
+                <li>Generate file KML baru dengan placemark di sepanjang path</li>
+                <li>Buka file hasil di Google Earth atau lihat preview di peta</li>
+            </ol>
+        </div>
+        
+        <div class="upload-section" id="dropZone">
+            <h3>Upload Google Earth Path File (KML/KMZ)</h3>
+            <input type="file" id="fileInput" accept=".kml,.kmz">
+            <p>atau drag & drop file ke sini</p>
+            <div id="fileInfo"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="interval">Jarak Antar Placemark (meter):</label>
+            <input type="number" id="interval" min="1" value="100">
+        </div>
+        
+        <div class="form-group">
+            <label for="placemarkName">Nama Placemark (opsional):</label>
+            <input type="text" id="placemarkName" placeholder="Kosongkan untuk nama default">
+        </div>
+        
+        <button class="btn" id="generateBtn" disabled>Generate Placemark KML</button>
+        <button class="btn" id="previewBtn" disabled>Preview Koordinat</button>
+        <button class="btn" id="mapBtn" disabled>Tampilkan di Peta</button>
+        
+        <div id="output"></div>
+        <div id="map"></div>
+
+        <!-- Video Tutorial Section -->
+        <div class="tutorial-section">
+            <h3>Video Tutorial Penggunaan Aplikasi</h3>
+            <div class="video-container">
+                <!-- Replace YOUR_VIDEO_ID with your actual YouTube video ID -->
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/mwyKtqE4A_I?si=HP7kMiyy6bI06dM2" 
+                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen></iframe>
+            </div>
+            <div class="tutorial-steps">
+                <p>Ikuti langkah-langkah berikut dalam video tutorial:</p>
+                <ol>
+                    <li>Cara membuat path di Google Earth</li>
+                    <li>Proses export file KML/KMZ</li>
+                    <li>Upload file ke aplikasi ini</li>
+                    <li>Pengaturan jarak antar placemark</li>
+                    <li>Generate dan download file hasil</li>
+                    <li>Preview hasil di peta interaktif</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Tambahkan JSZip untuk menangani file KMZ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    
+    <script>
+        // Global variables
+        let paths = []; // Array to store multiple paths
+        let fileName = '';
+        let map;
+        let markers = [];
+        let polylines = [];
+        
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const intervalInput = document.getElementById('interval');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewBtn = document.getElementById('previewBtn');
+        const mapBtn = document.getElementById('mapBtn');
+        const outputDiv = document.getElementById('output');
+        const fileInfoDiv = document.getElementById('fileInfo');
+        const mapDiv = document.getElementById('map'); // Get the map div
+        
+        // Event listeners
+        fileInput.addEventListener('change', handleFileSelect);
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+        dropZone.addEventListener('drop', handleDrop);
+        generateBtn.addEventListener('click', generateKML);
+        previewBtn.addEventListener('click', previewCoordinates);
+        mapBtn.addEventListener('click', displayOnMap);
+        
+        // Functions
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('active');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('active');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('active');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: fileInput });
+            }
+        }
+
+        // --- NEW FUNCTION: Reset UI ---
+        function resetUI() {
+            outputDiv.innerHTML = ''; // Clear output messages
+            fileInfoDiv.textContent = ''; // Clear file info
+            
+            // Clear map if it exists
+            if (map) {
+                markers.forEach(marker => map.removeLayer(marker));
+                polylines.forEach(polyline => map.removeLayer(polyline));
+                markers = [];
+                polylines = [];
+                mapDiv.style.display = 'none'; // Hide map
+            }
+
+            // Disable buttons initially
+            generateBtn.disabled = true;
+            previewBtn.disabled = true;
+            mapBtn.disabled = true;
+            
+            paths = []; // Clear paths data
+            fileName = ''; // Clear file name
+        }
+        
+        function handleFileSelect(event) {
+            resetUI(); // Call resetUI at the beginning of file selection
+            
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+            
+            // Display file info
+            fileInfoDiv.textContent = `File terpilih: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+            
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.kmz')) {
+                reader.onload = function(e) {
+                    JSZip.loadAsync(e.target.result).then(function(zip) {
+                        const kmlFile = Object.keys(zip.files).find(name => name.endsWith('.kml'));
+                        if (kmlFile) {
+                            zip.file(kmlFile).async('string').then(parseKML);
+                        } else {
+                            showError('File KMZ tidak mengandung file KML');
+                            resetButtons(); // Ensure buttons are reset on error
+                        }
+                    }).catch(function(error) {
+                        showError('Gagal membaca file KMZ: ' + error.message);
+                        resetButtons(); // Ensure buttons are reset on error
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (file.name.endsWith('.kml')) {
+                reader.onload = function(e) {
+                    parseKML(e.target.result);
+                };
+                reader.readAsText(file);
+            } else {
+                showError('Format file tidak didukung. Harap upload file KML atau KMZ.');
+                resetButtons(); // Ensure buttons are reset on error
+                return;
+            }
+        }
+        
+        function parseKML(kmlText) {
+            try {
+                paths = []; // Clear previous paths
+                const parser = new DOMParser();
+                const kmlDoc = parser.parseFromString(kmlText, 'text/xml');
+                
+                // Check for parsing errors
+                const errors = kmlDoc.getElementsByTagName('parsererror');
+                if (errors.length > 0) {
+                    showError('Gagal parsing KML: ' + errors[0].textContent);
+                    resetButtons(); // Ensure buttons are reset on error
+                    return;
+                }
+                
+                // Find all LineString coordinates in the KML
+                const lineStrings = kmlDoc.getElementsByTagName('LineString');
+                
+                if (lineStrings.length === 0) {
+                    showError('Tidak ditemukan path (LineString) dalam file KML');
+                    resetButtons(); // Ensure buttons are reset on error
+                    return;
+                }
+                
+                for (let i = 0; i < lineStrings.length; i++) {
+                    const coordinatesText = lineStrings[i].getElementsByTagName('coordinates')[0].textContent.trim();
+                    const coordsArray = coordinatesText.split(/\s+/).filter(coord => coord.trim() !== '');
+                    
+                    const path = coordsArray.map(coord => {
+                        const [lon, lat, alt] = coord.split(',').map(Number);
+                        return { lat, lon, alt: alt || 0 };
+                    });
+                    
+                    paths.push(path);
+                }
+                
+                // Enable buttons
+                generateBtn.disabled = false;
+                previewBtn.disabled = false;
+                mapBtn.disabled = false;
+                
+                showSuccess(`Berhasil memuat ${paths.length} path dari file KML`);
+                
+            } catch (error) {
+                showError('Error parsing KML: ' + error.message);
+                resetButtons(); // Ensure buttons are reset on error
+            }
+        }
+
+        // --- NEW FUNCTION: Helper to reset buttons ---
+        function resetButtons() {
+            generateBtn.disabled = true;
+            previewBtn.disabled = true;
+            mapBtn.disabled = true;
+        }
+        
+        function showError(message) {
+            outputDiv.innerHTML = `<p class="error">${message}</p>`;
+        }
+        
+        function showSuccess(message) {
+            outputDiv.innerHTML = `<p class="success">${message}</p>`;
+        }
+        
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth radius in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+            
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            
+            return R * c;
+        }
+        
+        function getIntermediatePoint(lat1, lon1, lat2, lon2, fraction) {
+            const φ1 = lat1 * Math.PI / 180;
+            const λ1 = lon1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const λ2 = lon2 * Math.PI / 180;
+            
+            // Calculate the angular distance between the points
+            const Δφ = φ2 - φ1;
+            const Δλ = λ2 - λ1;
+            
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const δ = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            
+            // If the points are the same, return the first point
+            if (δ === 0) {
+                return { lat: lat1, lon: lon1 };
+            }
+
+            const A = Math.sin((1-fraction)*δ) / Math.sin(δ);
+            const B = Math.sin(fraction*δ) / Math.sin(δ);
+            
+            const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
+            const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
+            const z = A * Math.sin(φ1) + B * Math.sin(φ2);
+            
+            const φ3 = Math.atan2(z, Math.sqrt(x*x + y*y));
+            const λ3 = Math.atan2(y, x);
+            
+            return {
+                lat: φ3 * 180 / Math.PI,
+                lon: λ3 * 180 / Math.PI
+            };
+        }
+        
+        // Modified function to generate placemarks
+        function generatePlacemarksAlongPath(path, interval) {
+            const placemarks = [];
+            
+            if (path.length < 2 || interval <= 0) {
+                return placemarks;
+            }
+
+            // Always add the first point of the path
+            placemarks.push({
+                lat: path[0].lat,
+                lon: path[0].lon,
+                alt: path[0].alt,
+                distance: 0
+            });
+
+            let accumulatedDistance = 0;
+            let nextPlacemarkDistance = interval; // The distance at which the next placemark should be placed
+
+            for (let i = 0; i < path.length - 1; i++) {
+                const p1 = path[i];
+                const p2 = path[i+1];
+                const segmentLength = haversineDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+
+                // While the next placemark distance falls within or at the end of the current segment
+                while (nextPlacemarkDistance <= accumulatedDistance + segmentLength) {
+                    const distanceIntoSegment = nextPlacemarkDistance - accumulatedDistance;
+                    const fraction = distanceIntoSegment / segmentLength;
+
+                    const point = getIntermediatePoint(p1.lat, p1.lon, p2.lat, p2.lon, fraction);
+                    const alt = p1.alt + (p2.alt - p1.alt) * fraction;
+
+                    placemarks.push({
+                        lat: point.lat,
+                        lon: point.lon,
+                        alt: alt,
+                        distance: nextPlacemarkDistance
+                    });
+                    nextPlacemarkDistance += interval;
+                }
+                accumulatedDistance += segmentLength;
+            }
+            
+            return placemarks;
+        }
+        
+        function generateKML() {
+            outputDiv.innerHTML = ''; // Clear previous output
+            const interval = parseFloat(intervalInput.value);
+            if (isNaN(interval) || interval <= 0) {
+                showError('Masukkan jarak yang valid (angka positif)');
+                return;
+            }
+            
+            const customPlacemarkName = document.getElementById('placemarkName').value;
+            
+            // Generate placemarks for each path and combine them
+            let allPlacemarks = [];
+            paths.forEach(path => {
+                allPlacemarks.push(...generatePlacemarksAlongPath(path, interval));
+            });
+            
+            if (allPlacemarks.length === 0) {
+                showError('Tidak ada placemark yang dihasilkan');
+                return;
+            }
+
+            // Assign names to placemarks
+            allPlacemarks = allPlacemarks.map((pm, index) => ({
+                ...pm,
+                name: customPlacemarkName ? customPlacemarkName : `Placemark ${index + 1}`
+            }));
+            
+            // Create KML content with folder structure
+            let kmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>
+        <name>${fileName}_Placemarks</name>
+        
+        <!-- Main Folder for LOP Structure -->
+        <Folder>
+            <name>Nama LOP</name>
+            
+            <Folder>
+                <name>CATUAN</name>
+            </Folder>
+            
+            <Folder>
+                <name>KABEL</name>
+                <!-- Original Path(s) -->
+                ${paths.map((path, idx) => `
+                <Placemark>
+                    <name>Original Path ${idx + 1}</name>
+                    <LineString>
+                        <coordinates>
+                            ${path.map(p => `${p.lon},${p.lat},${p.alt}`).join(' ')}
+                        </coordinates>
+                    </LineString>
+                </Placemark>
+                `).join('')}
+            </Folder>
+            
+            <Folder>
+                <name>ODP PLAN</name>
+            </Folder>
+            
+            <Folder>
+                <name>POLYGON</name>
+            </Folder>
+            
+            <Folder>
+                <name>PELANGGAN</name>
+            </Folder>
+            
+            <Folder>
+                <name>TIANG</name>
+                <!-- Generated Placemarks -->
+                ${allPlacemarks.map(placemark => `
+                <Placemark>
+                    <name>${placemark.name}</name>
+                    <styleUrl>#placemarkStyle</styleUrl>
+                    <Point>
+                        <coordinates>${placemark.lon},${placemark.lat},${placemark.alt}</coordinates>
+                    </Point>
+                </Placemark>
+                `).join('')}
+                
+                <Folder>
+                    <name>EXIST</name>
+                </Folder>
+                <Folder>
+                    <name>PLAN</name>
+                    <Folder>
+                        <name>PU-S7.0-140</name>
+                    </Folder>
+                    <Folder>
+                        <name>PU-S9.0-140</name>
+                    </Folder>
+                    <Folder>
+                        <name>PU-S7.0-400NM</name>
+                    </Folder>
+                </Folder>
+            </Folder> <!-- Closing TIANG Folder -->
+            
+        </Folder> <!-- Closing Nama LOP Folder -->
+            
+        <Style id="placemarkStyle">
+            <IconStyle>
+                <Icon>
+                    <href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+                </Icon>
+            </IconStyle>
+        </Style>
+    </Document>
+</kml>`;
+            
+            // Create download link
+            const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}_placemarks.kml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showSuccess(`Berhasil menghasilkan ${allPlacemarks.length} placemark dan diunduh sebagai ${a.download}`);
+            // Buttons remain enabled for further actions
+        }
+
+        
+        function previewCoordinates() {
+            outputDiv.innerHTML = ''; // Clear previous output
+            const interval = parseFloat(intervalInput.value);
+            if (isNaN(interval) || interval <= 0) {
+                showError('Masukkan jarak yang valid (angka positif)');
+                return;
+            }
+            
+            if (paths.length === 0) {
+                showError('Tidak ada path yang dimuat untuk di-preview.');
+                return;
+            }
+
+            const customPlacemarkName = document.getElementById('placemarkName').value;
+            
+            // Generate placemarks for all paths
+            let allPlacemarks = [];
+            paths.forEach(path => {
+                allPlacemarks.push(...generatePlacemarksAlongPath(path, interval));
+            });
+
+            if (allPlacemarks.length === 0) {
+                showError('Tidak ada placemark yang dihasilkan untuk preview. Pastikan path memiliki panjang yang cukup.');
+                return;
+            }
+
+            // Assign names to placemarks for preview
+            allPlacemarks = allPlacemarks.map((pm, index) => ({
+                ...pm,
+                name: customPlacemarkName ? customPlacemarkName : `Placemark ${index + 1}`
+            }));
+            
+            // Create table
+            let tableHtml = `<h3>Preview Koordinat (${allPlacemarks.length} placemark)</h3>
+                            <table id="coordinateTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Altitude</th>
+                                        <th>Jarak dari Awal (m)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+            
+            allPlacemarks.forEach((pm, index) => {
+                tableHtml += `<tr>
+                                <td>${index + 1}</td>
+                                <td>${pm.name}</td>
+                                <td>${pm.lat.toFixed(6)}</td>
+                                <td>${pm.lon.toFixed(6)}</td>
+                                <td>${pm.alt.toFixed(2)}</td>
+                                <td>${pm.distance.toFixed(2)}</td>
+                            </tr>`;
+            });
+            
+            tableHtml += `</tbody></table>`;
+            outputDiv.innerHTML = tableHtml;
+            // Buttons remain enabled for further actions
+        }
+        
+        function displayOnMap() {
+            outputDiv.innerHTML = ''; // Clear previous output
+            if (paths.length === 0) {
+                showError('Tidak ada path yang dimuat untuk ditampilkan di peta.');
+                return;
+            }
+
+            // Clear existing layers before adding new ones
+            if (map) {
+                markers.forEach(marker => map.removeLayer(marker));
+                polylines.forEach(polyline => map.removeLayer(polyline));
+                markers = [];
+                polylines = [];
+            }
+
+            // Initialize map if not already done
+            if (!map) {
+                map = L.map('map').setView([-2.5489, 118.0149], 5); // Default center on Indonesia
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            } 
+
+            // Show the map div
+            mapDiv.style.display = 'block';
+            map.invalidateSize(); // Invalidate size after making it visible
+
+            // Add path to map with random color
+            const pathColors = ['red', 'blue', 'green', 'orange', 'purple', 'darkred', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple'];
+            
+            paths.forEach((path, index) => {
+                const latLngs = path.map(p => [p.lat, p.lon]);
+                const randomColor = pathColors[index % pathColors.length]; // Cycle through colors
+                const polyline = L.polyline(latLngs, {
+                    color: randomColor,
+                    weight: 5,
+                    opacity: 0.7,
+                    lineJoin: 'round'
+                }).addTo(map);
+                
+                // Add tooltip to path
+                polyline.bindTooltip(`Path ${index + 1}`, {
+                    permanent: false,
+                    direction: 'top'
+                });
+                
+                polylines.push(polyline);
+            });
+
+            // Add placemarks to map if interval is set
+            const interval = parseFloat(intervalInput.value);
+            if (!isNaN(interval) && interval > 0) {
+                const customPlacemarkName = document.getElementById('placemarkName').value;
+                
+                // Generate placemarks for all paths
+                let allPlacemarks = [];
+                paths.forEach(path => {
+                    allPlacemarks.push(...generatePlacemarksAlongPath(path, interval));
+                });
+
+                // Assign names to placemarks for map display
+                allPlacemarks = allPlacemarks.map((pm, index) => ({
+                    ...pm,
+                    name: customPlacemarkName ? customPlacemarkName : `Placemark ${index + 1}`
+                }));
+
+                allPlacemarks.forEach(pm => {
+                    const marker = L.marker([pm.lat, pm.lon], {
+                        icon: L.icon({
+                            iconUrl: 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 32]
+                        }),
+                        riseOnHover: true
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <b>${pm.name}</b><br>
+                        Latitude: ${pm.lat.toFixed(6)}<br>
+                        Longitude: ${pm.lon.toFixed(6)}<br>
+                        Altitude: ${pm.alt.toFixed(2)} m<br>
+                        Distance: ${pm.distance.toFixed(2)} m from start
+                    `);
+                    
+                    markers.push(marker);
+                });
+            }
+
+            // Fit map to show all features with some padding
+            if (paths.length > 0) {
+                const allPathCoords = paths.flat().map(p => [p.lat, p.lon]);
+                if (allPathCoords.length > 0) {
+                    const bounds = L.latLngBounds(allPathCoords);
+                    map.fitBounds(bounds.pad(0.1)); // 10% padding
+                }
+            }
+            // Buttons remain enabled for further actions
+        }
+    </script>
+<script>
+  fetch('track_visitors.php?tool=Auto Placemark');
+</script>
+<script>
+// Fungsi untuk menghapus cookies
+function deleteCookies() {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    }
+}
+
+// Fungsi untuk menghapus cache
+async function clearCache() {
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        } catch (error) {
+            console.error('Gagal menghapus cache:', error);
+        }
+    }
+}
+
+// Fungsi untuk membersihkan localStorage dan sessionStorage
+function clearStorage() {
+    localStorage.clear();
+    sessionStorage.clear();
+}
+
+// Jalankan pembersihan saat halaman dimuat
+window.addEventListener('load', async function() {
+    // Hapus cookies
+    deleteCookies();
+    
+    // Hapus cache
+    await clearCache();
+    
+    // Hapus storage
+    clearStorage();
+    
+    console.log('Pembersihan cookies, cache, dan storage selesai');
+});
+
+// Tambahkan juga pembersihan saat sebelum unload (untuk berjaga-jaga)
+window.addEventListener('beforeunload', function() {
+    deleteCookies();
+    clearStorage();
+});
+</script>
+</body>
+</html>
