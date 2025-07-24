@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="shortcut icon" type="image/png" href="/kml.png"/>
+  <link rel="icon" href="data:,">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KML Tools</title>
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    /* Size for Telegram WebApp */
+    body.telegram-webapp {
+      width: 666px;
+      height: 990px;
+      overflow: hidden;
+    }
+
+    .header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      border-radius: 4px;
+      font-size: 14px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+    }
+
+    .nav-item:hover {
+      background-color: #3d566e;
+    }
+
+    .nav-item.active {
+      background-color: #3498db;
+    }
+
+    .main-container {
+      min-height: calc(100vh - 60px);
+    }
+
+    .content {
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .footer {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .status-bar {
+      background-color: #ecf0f1;
+      padding: 8px 15px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+
+    iframe {
+      width: 100%;
+      height: calc(100vh - 200px);
+      border: none;
+      margin-top: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Adjust iframe height for Telegram WebApp */
+    body.telegram-webapp iframe {
+      height: calc(990px - 180px);
+    }
+
+    .cache-control {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      z-index: 1000;
+      background-color: #3498db;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease;
+    }
+
+    .cache-control:hover {
+      background-color: #2980b9;
+    }
+
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      th, td {
+        padding: 6px 4px;
+        font-size: 11px;
+      }
+      
+      .cache-control {
+        bottom: 5px;
+        right: 5px;
+        font-size: 10px;
+        padding: 5px 8px;
+      }
+
+      /* Mobile adjustments for Telegram WebApp */
+      body.telegram-webapp {
+        width: 100%;
+        height: 100%;
+      }
+
+      body.telegram-webapp iframe {
+        height: calc(100vh - 180px);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-container">
+    <div class="logo">KML Tools</div>
+    <div class="nav-menu">
+      <div class="nav-item active" data-tab="converter">
+        <i class="fas fa-exchange-alt"></i>
+        Converter CSV to KML
+      </div>
+      <div class="nav-item" data-tab="tiangeksisting">
+        <i class="fas fa-map-marker-alt"></i>
+        Auto Placemark Tiang Eksisting
+      </div>
+      <div class="nav-item" data-tab="tiangnew">
+        <i class="fas fa-map-pin"></i>
+        Auto Placemark Tiang New
+      </div>
+      <div class="nav-item" data-tab="split">
+        <i class="fas fa-cut"></i>
+        Auto Split Line
+      </div>
+      <div class="nav-item" data-tab="ukurallpro">
+        <i class="fas fa-ruler"></i>
+        Ukur Jarak Allpro Masal
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main-container">
+  <div class="content">
+    <div id="converter" class="tab-content active">
+      <iframe src="converter.html?tool=converter"></iframe>
+    </div>
+    <div id="tiangeksisting" class="tab-content">
+      <iframe src="tiangeksisting.html?tool=tiangeksisting"></iframe>
+    </div>
+    <div id="tiangnew" class="tab-content">
+      <iframe src="tiangnew.html?tool=tiangnew"></iframe>
+    </div>
+    <div id="split" class="tab-content">
+      <iframe src="splitline.html?tool=split"></iframe>
+    </div>
+    <div id="ukurallpro" class="tab-content">
+      <iframe src="ukurallpro.html?tool=ukurallpro"></iframe>
+    </div>
+    <div class="status-bar">
+      <div>Ready</div>
+      <div>KML Tools v2.3 Beta</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <hr>
+  <p>Developed By <a href="https://t.me/amirun_rayan" target="_blank" style="color: white;">Amirun Rayan Ariandi</a></p>
+  <p>Tested By <a href="https://t.me/egantarastr" target="_blank" style="color: white;">Egantara Satria Utama S.Kom</a></p>
+  <p>Project Lead By <a href="https://t.me/Herodin" target="_blank" style="color: white;">Herodin Bening Wicaksono S.Kom</a></p>
+  <br>
+  <p>Online Until : <span class="countdown" id="countdown">Loading...</span></p>
+  <br>
+</div>
+
+<div class="cache-control" onclick="clearCacheAndCookies()">
+  <i class="fas fa-broom"></i> Clear Cache & Cookies
+</div>
+
+<script>
+  // Check if running in Telegram WebApp
+  if (window.Telegram && Telegram.WebApp) {
+    document.body.classList.add('telegram-webapp');
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+    
+    // Adjust viewport for Telegram WebApp
+    document.querySelector('meta[name="viewport"]').content = 'width=666, height=990, initial-scale=1.0';
+  }
+
+  // Fungsi untuk membersihkan cache dan cookies
+  function clearCacheAndCookies() {
+    try {
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, 
+          "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
+      // Clear localStorage
+      localStorage.clear();
+
+      // Clear sessionStorage
+      sessionStorage.clear();
+
+      // Clear cache by reloading with nocache
+      window.location.href = window.location.href.split('?')[0] + '?nocache=' + new Date().getTime();
+
+      // Force reload from server
+      window.location.reload(true);
+
+      alert("Cache dan cookies telah dibersihkan. Halaman akan dimuat ulang.");
+    } catch (e) {
+      console.error("Error clearing cache and cookies:", e);
+      alert("Terjadi kesalahan saat membersihkan cache dan cookies.");
+    }
+  }
+
+  // Countdown timer
+  function updateCountdown() {
+    const targetDate = new Date('2026-07-18 23:59:59').getTime();
+    const now = new Date().getTime();
+    const diff = targetDate - now;
+    
+    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
+    const days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    document.getElementById('countdown').innerHTML =
+      `${months} Bulan | ${days} Hari | ${hours} Jam | ${minutes} Menit | ${seconds} Detik`;
+  }
+
+  // Navigasi tab
+  document.body.addEventListener('click', function(e) {
+    if (e.target.closest('.nav-item')) {
+      const item = e.target.closest('.nav-item');
+      
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      const tabId = item.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+    }
+  });
+
+  // Inisialisasi saat halaman dimuat
+  document.addEventListener('DOMContentLoaded', function() {
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  });
+</script>
+</body>
+</html>
