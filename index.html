@@ -1,311 +1,183 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
-  <link rel="shortcut icon" type="image/png" href="kml.png"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KML Tools Workspace - Enterprise Edition</title>
+  <link rel="shortcut icon" type="image/png" href="kml.png">
   <link rel="icon" href="data:,">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>KML Tools</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f5f5f5;
-      color: #333;
-    }
-
-    /* Styles for when running inside Telegram WebApp */
-    body.telegram-webapp {
-      width: 666px; /* Fixed width for Telegram */
-      height: 990px; /* Fixed height for Telegram */
-      overflow: hidden;
-    }
-
-    .header {
-      background-color: #2c3e50;
-      color: white;
-      padding: 15px 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .header-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      max-width: 1200px; /* Added for better centering on large screens */
-      margin: 0 auto;
-    }
-
-    .logo {
-      font-weight: bold;
-      font-size: 20px;
-      margin-bottom: 5px;
-      cursor: pointer;
-    }
-
-    .nav-menu {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .nav-item {
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: background-color 0.3s ease, color 0.3s ease;
-      border-radius: 4px;
-      font-size: 14px;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: white;
-    }
-
-    .nav-item:hover {
-      background-color: #3d566e;
-    }
-
-    .nav-item.active {
-      background-color: #3498db;
-    }
-
-    .main-container {
-      min-height: calc(100vh - 60px);
-    }
-
-    .content {
-      padding: 20px;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 1200px; /* Added for better centering on large screens */
-      margin: 20px auto; /* Added margin for spacing */
-      border-radius: 8px;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .footer {
-      background-color: #2c3e50;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      font-size: 12px;
-    }
-
-    .status-bar {
-      background-color: #ecf0f1;
-      padding: 8px 15px;
-      font-size: 12px;
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-      border-radius: 4px;
-    }
-
-    iframe {
-      width: 100%;
-      height: calc(100vh - 220px); /* Adjusted height for better fit */
-      min-height: 600px; /* Minimum height for iframes */
-      border: none;
-      margin-top: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Adjust iframe height specifically for Telegram WebApp */
-    body.telegram-webapp iframe {
-      height: calc(990px - 180px);
-    }
-
-    .cache-control {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      z-index: 1000;
-      background-color: #3498db;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: background-color 0.3s ease;
-    }
-
-    .cache-control:hover {
-      background-color: #2980b9;
-    }
-
-    @media (max-width: 768px) {
-      .header-container {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .content {
-        padding: 10px;
-        margin: 10px;
-      }
-      .cache-control {
-        font-size: 10px;
-        padding: 5px 8px;
-      }
-      /* Mobile adjustments for Telegram WebApp */
-      body.telegram-webapp {
-        width: 100%;
-        height: 100%;
-      }
-
-      body.telegram-webapp iframe {
-        height: calc(100vh - 180px);
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles/kmltools-pro.css">
 </head>
-<body>
 
-<div class="header">
-  <div class="header-container">
-    <div class="logo">KML Tools</div>
-    <div class="nav-menu">
-      <div class="nav-item active" data-tab="converter">
-        <i class="fas fa-exchange-alt"></i>
-        Converter CSV to KML
+<body class="app-shell dark-theme">
+  <main class="page-shell">
+    <section class="hero-shell glass-card">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow"><i class="fas fa-satellite-dish"></i> Sistem KML Terpusat</span>
+          <h1 class="display-title">KML & Geospatial Intelligence Core</h1>
+          <p class="hero-description" style="font-size: 1.1rem; margin-bottom: 2rem;">
+            Rangkaian utilitas pemrosesan data berbasis browser tingkat lanjut. Sistem memproses ribuan koordinat, rute
+            OSRM, dan KML tanpa mengunggah data ke server eksternal.
+          </p>
+          <div class="status-strip">
+            <span class="status-pill"><i class="fas fa-lock" style="color: var(--neon-green)"></i> Secure Sandbox</span>
+            <span class="status-pill"><i class="fas fa-microchip" style="color: var(--neon-blue)"></i> Edge
+              Computing</span>
+            <span class="status-pill"><i class="fas fa-satellite" style="color: var(--neon-purple)"></i> Spatial
+              Ready</span>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="status-panel card">
+            <strong
+              style="color: var(--neon-blue); letter-spacing: 0.1em; font-size: 0.8rem; text-transform: uppercase;">Node
+              Status</strong>
+            <span style="font-size: 1.5rem; color: #fff; font-weight: 700; margin: 0.5rem 0;">Local Memory</span>
+            <p class="support-text" style="font-size: 0.85rem; opacity: 0.7;">
+              Enkripsi tidak diperlukan. Semua kalkulasi spasial berjalan langsung di dalam RAM perangkat (Client-Side).
+            </p>
+          </div>
+
+        </div>
       </div>
-      <div class="nav-item" data-tab="tiangnew">
-        <i class="fas fa-map-pin"></i>
-        Auto Placemark Tiang New
-      </div>
-      <div class="nav-item" data-tab="split">
-        <i class="fas fa-cut"></i>
-        Auto Split Line
-      </div>
-      <div class="nav-item" data-tab="ukurallpro">
-        <i class="fas fa-ruler"></i>
-        Ukur Jarak Allpro Masal
-      </div>
-    </div>
-  </div>
-</div>
+    </section>
 
-<div class="main-container">
-  <div class="content">
-    <div id="converter" class="tab-content active">
-      <iframe src="converter.html?tool=converter"></iframe>
-    </div>
-    <div id="tiangnew" class="tab-content">
-      <iframe src="tiangnew.html?tool=tiangnew"></iframe>
-    </div>
-    <div id="split" class="tab-content">
-      <iframe src="splitline.html?tool=split"></iframe>
-    </div>
-    <div id="ukurallpro" class="tab-content">
-      <iframe src="ukurallpro.html?tool=ukurallpro"></iframe>
-    </div>
-    <div class="status-bar">
-      <div>Ready</div>
-      <div>KML Tools v2.3 Beta</div>
-    </div>
-  </div>
-</div>
+    <section class="workspace-grid">
+      <aside class="nav-shell glass-card">
+        <div class="card-header" style="margin-bottom: 1rem;">
+          <span class="eyebrow"
+            style="background: rgba(178, 75, 243, 0.1); color: var(--neon-purple); border-color: rgba(178, 75, 243, 0.3);">
+            <i class="fas fa-microchip"></i> Direktori Modul
+          </span>
+          <h2 style="font-size: 1.5rem">Pilih Utilitas</h2>
+        </div>
+        <div class="nav-menu" role="tablist" aria-label="Daftar tool KML">
+          <button class="nav-item active" type="button" role="tab" aria-selected="true" data-tab="converter"
+            data-title="Data Matrix: CSV &lt;-&gt; KML"
+            data-description="Mesin konversi dua arah berkecepatan tinggi antara format tabular CSV dan KML spasial."
+            data-badge="Matriks Konversi" data-status="Menunggu injeksi data koordinat..."
+            data-url="converter.html?tool=converter" data-meta="Format I/O Node">
+            <span class="nav-title"><i class="fas fa-exchange-alt"></i> Konverter CSV &lt;-&gt; KML</span>
+            <span class="nav-copy">Transformasi data koordinat ke dalam placemark visual.</span>
+          </button>
 
-<div class="footer">
-  <hr>
-  <p>Developed By <a href="https://t.me/amirun_rayan" target="_blank" style="color: white;">Amirun Rayan Ariandi</a></p>
-  <p>Tested By <a href="https://t.me/egantarastr" target="_blank" style="color: white;">Egantara Satria Utama S.Kom</a></p>
-  <p>Project Lead By <a href="https://t.me/Herodin" target="_blank" style="color: white;">Herodin Bening Wicaksono S.Kom</a></p>
-  <br>
-  <p>Online Until : <span class="countdown" id="countdown">Loading...</span></p>
-  <br>
-</div>
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="tiangnew"
+            data-title="Generator Node Geospasial"
+            data-description="Algoritma penyebaran otomatis titik (placemark) berdasarkan interval sepanjang vektor rute."
+            data-badge="Sistem Generasi" data-status="Menunggu input lintasan KML..."
+            data-url="tiangnew.html?tool=tiangnew" data-meta="Distribusi Algoritmik">
+            <span class="nav-title"><i class="fas fa-map-pin"></i> Auto Placemark Tiang</span>
+            <span class="nav-copy">Distribusi otomatis titik tiang di sepanjang jalur kabel.</span>
+          </button>
 
-<div class="cache-control" onclick="clearCacheAndCookies()">
-  <i class="fas fa-broom"></i> Clear Cache & Cookies
-</div>
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="asesoristiang"
+            data-title="Kalkulator Material Jaringan"
+            data-description="Sistem scanning cerdas untuk menghitung kebutuhan asesoris pada jalur telekomunikasi eksisting."
+            data-badge="Pemindai Topologi" data-status="Menunggu peta jaringan..."
+            data-url="asesoristiang.html?tool=asesoristiang" data-meta="Estimasi Logistik">
+            <span class="nav-title"><i class="fas fa-sitemap"></i> Hitung Asesoris Eksisting</span>
+            <span class="nav-copy">Kalkulasi presisi untuk total kebutuhan material berdasarkan rute.</span>
+          </button>
 
-<script>
-  // Check if running in Telegram WebApp
-  if (window.Telegram && Telegram.WebApp) {
-    document.body.classList.add('telegram-webapp');
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
-    
-    // Adjust viewport for Telegram WebApp
-    document.querySelector('meta[name="viewport"]').content = 'width=666, height=990, initial-scale=1.0';
-  }
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="split"
+            data-title="Pemotong Vektor (Split Line)"
+            data-description="Sistem pemecahan otomatis jalur KML masif menjadi beberapa blok/segmen parsial."
+            data-badge="Modul Fragmentasi" data-status="Menunggu vektor KML..." data-url="splitline.html?tool=split"
+            data-meta="Segmentasi Garis">
+            <span class="nav-title"><i class="fas fa-cut"></i> Split Line Google Earth</span>
+            <span class="nav-copy">Pecah jalur panjang menjadi beberapa sub-segmen terukur.</span>
+          </button>
 
-  // Fungsi untuk membersihkan cache dan cookies
-  function clearCacheAndCookies() {
-    try {
-      // Clear cookies
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, 
-          "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="ukurallpro"
+            data-title="Pengukur Jarak Aktual (OSRM Core)"
+            data-description="Mesin routing berbasis OpenStreetMap untuk menghitung jarak nyata jalan raya dari titik origin ke destinasi."
+            data-badge="Telemetri Routing" data-status="Menghubungkan ke server routing OSRM..."
+            data-url="ukurallpro.html?tool=ukurallpro" data-meta="OSRM Navigation">
+            <span class="nav-title"><i class="fas fa-ruler-combined"></i> Ukur Jarak Allpro Masal</span>
+            <span class="nav-copy">Kalkulasi jarak tempuh darat secara masif menggunakan rute jalan nyata.</span>
+          </button>
+        </div>
+      </aside>
 
-      // Clear localStorage
-      localStorage.clear();
+      <section class="stage-shell glass-card">
+        <div class="stage-header">
+          <div>
+            <span class="eyebrow" id="activeToolTag"
+              style="background: rgba(0, 248, 157, 0.1); color: var(--neon-green); border-color: rgba(0, 248, 157, 0.3);">Matriks
+              Konversi</span>
+            <h2 id="activeToolFrameTitle"
+              style="font-size: 2rem; margin-top: 0.5rem; text-shadow: 0 0 20px rgba(255,255,255,0.2);">Data Matrix: CSV
+              &lt;-&gt; KML</h2>
+            <p id="workspaceStatus" style="font-family: monospace; color: var(--neon-blue);">Menunggu injeksi data
+              koordinat...</p>
+            <div class="status-strip" style="margin-top: 1rem;">
+              <span class="status-pill"><i class="fas fa-terminal"></i> <span id="activeMeta">Format I/O
+                  Node</span></span>
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            <a id="toolLaunchLink" class="btn btn-outline" href="converter.html?tool=converter" target="_blank"
+              rel="noopener noreferrer">
+              <i class="fas fa-external-link-alt"></i> Ekspansi Layar
+            </a>
+          </div>
+        </div>
 
-      // Clear sessionStorage
-      sessionStorage.clear();
+        <div id="converter" class="tab-content active" data-tool-panel aria-hidden="false">
+          <div class="workspace-panel tool-stage" style="padding:0;">
+            <iframe src="converter.html?tool=converter" data-src="converter.html?tool=converter"
+              title="CSV ke KML Converter"></iframe>
+          </div>
+        </div>
+        <div id="tiangnew" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="workspace-panel tool-stage" style="padding:0;">
+            <iframe data-src="tiangnew.html?tool=tiangnew" title="Auto Placemark Tiang New"></iframe>
+          </div>
+        </div>
+        <div id="asesoristiang" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="workspace-panel tool-stage" style="padding:0;">
+            <iframe data-src="asesoristiang.html?tool=asesoristiang" title="Asesoris Tiang Existing"></iframe>
+          </div>
+        </div>
+        <div id="split" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="workspace-panel tool-stage" style="padding:0;">
+            <iframe data-src="splitline.html?tool=split" title="Google Earth Split Line"></iframe>
+          </div>
+        </div>
+        <div id="ukurallpro" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="workspace-panel tool-stage" style="padding:0;">
+            <iframe data-src="ukurallpro.html?tool=ukurallpro" title="Ukur Jarak Allpro Masal"></iframe>
+          </div>
+        </div>
 
-      // Clear cache by reloading with nocache
-      window.location.href = window.location.href.split('?')[0] + '?nocache=' + new Date().getTime();
+        <div class="footer-card glass-card" style="margin-top: 2rem; background: rgba(0,0,0,0.5);">
+          <div>
+            <p><strong id="activeToolName" style="color: #fff;">Data Matrix: CSV &lt;-&gt; KML</strong></p>
+            <p id="activeToolDescription" style="font-size: 0.85rem; max-width: 500px;">Mesin konversi dua arah
+              berkecepatan tinggi antara format tabular CSV dan KML spasial.</p>
+          </div>
+          <div style="text-align: right; font-size: 0.85rem;">
+            <p><strong>System Architect:</strong> <a href="https://t.me/amirun_rayan" target="_blank"
+                rel="noopener noreferrer">Amirun Rayan Ariandi S.M</a></p>
+            <p><strong>QA Engineering:</strong> <a href="https://t.me/egantarastr" target="_blank"
+                rel="noopener noreferrer">Egantara Satria Utama S.Kom</a></p>
+            <p><strong>Project Lead:</strong> <a href="https://t.me/Herodin" target="_blank"
+                rel="noopener noreferrer">Herodin Bening Wicaksono S.Kom</a></p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
 
-      // Force reload from server
-      window.location.reload(true);
+  <button class="cache-control btn btn-primary" type="button" onclick="clearCacheAndCookies()"
+    style="box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);">
+    <i class="fas fa-sync-alt fa-spin-hover"></i> Force Reload Core
+  </button>
 
-      alert("Cache dan cookies telah dibersihkan. Halaman akan dimuat ulang.");
-    } catch (e) {
-      console.error("Error clearing cache and cookies:", e);
-      alert("Terjadi kesalahan saat membersihkan cache dan cookies.");
-    }
-  }
-
-  // Countdown timer
-  function updateCountdown() {
-    const targetDate = new Date('2026-07-18 23:59:59').getTime();
-    const now = new Date().getTime();
-    const diff = targetDate - now;
-    
-    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
-    const days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
-    document.getElementById('countdown').innerHTML =
-      `${months} Bulan | ${days} Hari | ${hours} Jam | ${minutes} Menit | ${seconds} Detik`;
-  }
-
-  // Navigasi tab
-  document.body.addEventListener('click', function(e) {
-    if (e.target.closest('.nav-item')) {
-      const item = e.target.closest('.nav-item');
-      
-      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      const tabId = item.getAttribute('data-tab');
-      document.getElementById(tabId).classList.add('active');
-    }
-  });
-
-  // Inisialisasi saat halaman dimuat
-  document.addEventListener('DOMContentLoaded', function() {
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-  });
-</script>
+  <script src="scripts/app-shell.js"></script>
 </body>
+
 </html>
