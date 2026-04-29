@@ -1,265 +1,145 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Earth Split Line</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Consistent font */
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            background-color: #f5f5f5; /* Consistent background */
-            color: #333; /* Consistent text color */
-        }
-        h1 {
-            color: #2c3e50; /* Consistent header color */
-            text-align: center;
-            margin-bottom: 25px; /* Consistent margin */
-            font-size: 24px; /* Consistent font size */
-        }
-        h2 {
-            color: #3498db; /* Consistent sub-header color */
-            margin-top: 30px;
-            border-bottom: 1px solid #eee; /* Consistent border */
-            padding-bottom: 10px;
-            font-size: 1.5em; /* Consistent font size */
-            text-align: center; /* Consistent alignment */
-        }
-        h3 {
-            color: #3498db; /* Consistent sub-header color */
-            margin-top: 0;
-            text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 20px;
-        }
-        .container {
-            background-color: white; /* Consistent background */
-            padding: 25px; /* Consistent padding */
-            border-radius: 8px; /* Consistent border-radius */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Consistent shadow */
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px; /* Consistent margin */
-            font-weight: 600; /* Consistent font-weight */
-            color: #2c3e50; /* Consistent label color */
-        }
-        input[type="file"], input[type="number"] {
-            width: 100%;
-            padding: 10px; /* Consistent padding */
-            border: 1px solid #ddd;
-            border-radius: 4px; /* Consistent border-radius */
-            background: #f9f9f9; /* Consistent background */
-            font-size: 16px; /* Consistent font size */
-        }
-        button {
-            background-color: #3498db; /* Consistent button color */
-            color: white;
-            border: none;
-            padding: 10px 20px; /* Consistent padding */
-            border-radius: 4px; /* Consistent border-radius */
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600; /* Consistent font-weight */
-            transition: background-color 0.3s ease; /* Consistent transition */
-        }
-        button:hover {
-            background-color: #2980b9; /* Consistent button hover color */
-        }
-        #result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px; /* Consistent border-radius */
-            background-color: #e8f4ff; /* Consistent info background */
-            display: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
-        }
-        .download-btn {
-            display: inline-block;
-            margin-top: 10px;
-            margin-right: 10px;
-            background-color: #34a853;
-            color: white;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .download-btn:hover {
-            background-color: #2d9248;
-        }
-        .download-option {
-            background-color: #673ab7;
-            margin-top: 15px;
-        }
-        .download-option:hover {
-            background-color: #5e35b1;
-        }
-        .download-options {
-            margin-top: 20px;
-            border-top: 1px solid #eee; /* Consistent border */
-            padding-top: 15px;
-            display: flex; /* Use flex for layout */
-            flex-wrap: wrap; /* Allow wrapping */
-            gap: 10px; /* Gap between buttons */
-            justify-content: center; /* Center buttons */
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-        .progress {
-            height: 20px;
-            border-radius: 4px;
-            background-color: #1a73e8;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        #map-container {
-            margin-top: 20px;
-            height: 500px;
-            border-radius: 8px; /* Consistent border-radius */
-            overflow: hidden;
-            display: none;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Consistent shadow */
-        }
-        #map {
-            height: 100%;
-            width: 100%;
-        }
-        .map-toggle {
-            background-color: #f39c12; /* Consistent map toggle color */
-            margin-top: 10px;
-        }
-        .map-toggle:hover {
-            background-color: #e67e22;
-        }
-        .segment-info {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f1f8e9;
-            border-radius: 4px;
-        }
-        .segment-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .segment-btn {
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-        .highlight-segment {
-            background-color: #ffeb3b;
-        }
-        .tutorial-section {
-            margin-top: 40px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Consistent shadow */
-            border: 1px solid #e0e0e0; /* Consistent border */
-        }
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-            overflow: hidden;
-            margin-top: 20px;
-            border-radius: 8px; /* Consistent border-radius */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Consistent shadow */
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .steps {
-            margin-top: 20px;
-            padding-left: 20px;
-        }
-        .steps li {
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
 </head>
-
-<body>
-    <h1>Google Earth Split Line</h1>
-    <div class="container">
-        <div class="form-group">
-            <label for="kmlFile">Unggah File KML:</label>
-            <input type="file" id="kmlFile" accept=".kml,.xml">
-        </div>
-        <div class="form-group">
-            <label for="segmentLength">Panjang Segmen (meter):</label>
-            <input type="number" id="segmentLength" min="1" value="100">
-        </div>
-        <button id="processBtn">Proses File</button>
-        <div id="map-container">
-            <div id="map"></div>
-        </div>
-        <div id="result">
-            <div id="segmentsList"></div>
-            <div id="downloadOptions" class="download-options" style="display: none;">
-                <h3>Opsi Unduhan:</h3>
-                <button id="downloadSingleFileBtn" class="btn download-option">Unduh Semua Segmen dalam 1 File KML</button>
-                <button id="downloadSeparateBtn" class="btn download-option">Unduh Segmen Terpisah</button>
-                <button id="toggleMapBtn" class="btn map-toggle">Tampilkan Peta</button>
-                <div class="progress-bar">
-                    <div id="progress" class="progress"></div>
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-cut"></i> Segmentasi Path</span>
+                    <h1 class="display-title">Google Earth Split Line</h1>
+                    <p class="hero-description">
+                        Pecah path KML menjadi beberapa segmen yang lebih pendek berdasarkan panjang meter yang Anda tentukan.
+                        Hasilnya bisa diunduh dalam satu file gabungan atau dipisah per segmen.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-route"></i> Input LineString KML</span>
+                        <span class="status-pill"><i class="fas fa-ruler"></i> Panjang segmen fleksibel</span>
+                        <span class="status-pill"><i class="fas fa-download"></i> Download gabung atau terpisah</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Output</strong>
+                        <span>Segmen path siap pakai</span>
+                        <p class="support-text">
+                            Cocok saat Anda perlu memecah jalur panjang menjadi bagian-bagian yang lebih mudah dicek, dibagikan, atau diproses ulang.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Input</strong>
+                            <span>KML / XML</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Preview</strong>
+                            <span>Peta Interaktif</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Ekspor</strong>
+                            <span>1 atau Banyak File</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="tutorial-section">
-        <h2>Video Tutorial</h2>
-        <p>Berikut adalah video tutorial cara menggunakan alat Google Earth Split Line:</p>
-        
-        <div class="video-container">
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/X42p1Q3nA44?si=NE5tukNbws-EEd_4" 
-                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen></iframe>
-        </div>
-        
-        <h2>Panduan Langkah Demi Langkah</h2>
-        <ol class="steps">
-            <li><strong>Unggah File KML:</strong> Klik tombol "Choose File" atau "Unggah File" dan pilih file KML yang berisi path (LineString) dari Google Earth.</li>
-            <li><strong>Atur Panjang Segmen:</strong> Masukkan panjang setiap segmen dalam meter. Misalnya, jika Anda ingin setiap segmen sepanjang 100 meter, masukkan angka 100.</li>
-            <li><strong>Proses File:</strong> Klik tombol "Proses File" untuk memulai pemisahan path menjadi beberapa segmen.</li>
-            <li><strong>Lihat Hasil:</strong> Setelah pemrosesan selesai, Anda akan melihat jumlah segmen yang berhasil dibuat.</li>
-            <li><strong>Unduh Hasil:</strong> Pilih opsi unduhan:
-                <ul>
-                    <li>"Unduh Semua Segmen dalam 1 File KML" untuk mendapatkan semua segmen dalam satu file</li>
-                    <li>"Unduh Segmen Terpisah" untuk mendapatkan setiap segmen dalam file terpisah</li>
-                </ul>
-            </li>
-            <li><strong>Tampilkan Peta (Opsional):</strong> Klik "Tampilkan Peta" untuk melihat visualisasi segmen-segmen pada peta interaktif.</li>
-        </ol>
-        
-        <h2>Catatan Penting</h2>
-        <ul class="steps">
-            <li>Pastikan file KML Anda berisi path (LineString) yang valid.</li>
-            <li>Alat ini bekerja dengan koordinat geografis (lintang/bujur).</li>
-            <li>Untuk hasil terbaik, gunakan path dengan titik-titik yang cukup rapat.</li>
-            <li>Semakin kecil panjang segmen yang Anda tentukan, semakin banyak segmen yang akan dihasilkan.</li>
-        </ul>
-    </div>
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Workspace</span>
+                        <h2 class="card-title">Upload path dan proses segmentasi</h2>
+                        <p class="card-copy">Masukkan file KML berisi LineString, tentukan panjang segmen, lalu proses langsung di browser.</p>
+                    </div>
+
+                    <div class="upload-zone">
+                        <h3>Unggah file KML</h3>
+                        <p class="upload-copy">Gunakan file yang berisi <strong>LineString</strong> valid dari Google Earth agar proses segmentasi berjalan dengan baik.</p>
+                        <div class="helper-row">
+                            <span class="status-pill"><i class="fas fa-file-upload"></i> Klik area ini untuk memilih file</span>
+                        </div>
+                        <input type="file" id="kmlFile" accept=".kml,.xml">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="segmentLength">Panjang segmen (meter)</label>
+                        <input type="number" id="segmentLength" min="1" value="100">
+                    </div>
+
+                    <div class="tool-actions">
+                        <button id="processBtn" type="button"><i class="fas fa-gears"></i> Proses File</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil</span>
+                        <h2 class="card-title">Ringkasan segmen, opsi unduhan, dan peta</h2>
+                        <p class="card-copy">Setelah proses selesai, Anda bisa meninjau hasil, memilih format unduhan, atau membuka preview peta.</p>
+                    </div>
+
+                    <div id="result" style="display: none;">
+                        <div id="segmentsList"></div>
+                        <div id="downloadOptions" class="download-options" style="display: none;">
+                            <h3>Opsi unduhan</h3>
+                            <div class="tool-actions">
+                                <button id="downloadSingleFileBtn" class="download-option" type="button"><i class="fas fa-file-zipper"></i> Unduh Semua Segmen dalam 1 File KML</button>
+                                <button id="downloadSeparateBtn" class="download-option" type="button"><i class="fas fa-layer-group"></i> Unduh Segmen Terpisah</button>
+                                <button id="toggleMapBtn" class="map-toggle" type="button"><i class="fas fa-map"></i> Tampilkan Peta</button>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="progress" class="progress"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="map-container" style="display: none;">
+                        <div id="map"></div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card tutorial-section">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Panduan</span>
+                        <h2 class="card-title">Tutorial dan catatan penting</h2>
+                        <p class="card-copy">Bagian ini merangkum langkah kerja dan tips agar file KML Anda lebih mudah diproses.</p>
+                    </div>
+
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/X42p1Q3nA44?si=NE5tukNbws-EEd_4"
+                            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                    </div>
+
+                    <h3>Langkah penggunaan</h3>
+                    <ol class="steps">
+                        <li>Upload file KML yang berisi path LineString.</li>
+                        <li>Masukkan panjang segmen yang diinginkan dalam meter.</li>
+                        <li>Proses file dan tunggu ringkasan hasil muncul.</li>
+                        <li>Pilih unduhan gabungan atau per segmen sesuai kebutuhan.</li>
+                        <li>Buka peta jika Anda ingin memeriksa visualisasi segmen.</li>
+                    </ol>
+
+                    <h3>Catatan penting</h3>
+                    <ul class="steps">
+                        <li>Pastikan file KML berisi LineString yang valid.</li>
+                        <li>Semakin kecil panjang segmen, semakin banyak file yang akan dihasilkan.</li>
+                        <li>Path dengan titik yang cukup rapat biasanya memberi hasil pembagian yang lebih baik.</li>
+                    </ul>
+                </section>
+            </aside>
+        </section>
+    </main>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
