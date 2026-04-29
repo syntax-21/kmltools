@@ -1,342 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV KML Converter with Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .converter-box {
-            border: 2px dashed #3498db;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .file-format {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 5px;
-        }
-
-        .btn:hover {
-            background: #2980b9;
-        }
-
-        .btn-convert {
-            background: #27ae60;
-        }
-
-        .btn-convert:hover {
-            background: #219653;
-        }
-
-        .btn-example {
-            background: #9b59b6;
-        }
-
-        .btn-example:hover {
-            background: #8e44ad;
-        }
-
-        .file-info {
-            margin: 15px 0;
-            font-style: italic;
-        }
-
-        #loading {
-            display: none;
-            margin: 15px 0;
-        }
-
-        .error {
-            color: #e74c3c;
-            margin: 10px 0;
-        }
-
-        .button-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .action-button {
-            padding: 10px 15px;
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            white-space: nowrap;
-            text-decoration: none;
-            text-align: center;
-        }
-
-        .action-button:hover {
-            background-color: #3367d6;
-        }
-
-        .separator {
-            width: 1px;
-            height: 20px;
-            background-color: #ccc;
-        }
-
-        .example-section {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        #map-container {
-            margin-top: 20px;
-            display: none;
-        }
-
-        #map {
-            height: 400px;
-            width: 100%;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-
-        .map-controls {
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .map-toggle {
-            background: #f39c12;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .map-toggle:hover {
-            background: #e67e22;
-        }
-
-        /* Folder Form Styles */
-        .folder-form {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border: 1px solid #e0e0e0;
-            text-align: left;
-        }
-        
-        .folder-form h4 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        
-        .folder-form-group {
-            margin-bottom: 10px;
-        }
-        
-        .folder-form label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        .folder-form input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        
-        .folder-form input[type="text"]:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-
-        /* Icon Selection Styles */
-        .icon-selection {
-            margin: 15px 0;
-            display: none;
-        }
-        
-        .icon-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: #f9f9f9;
-        }
-        
-        .icon-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 5px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        
-        .icon-option:hover {
-            background-color: #e3f2fd;
-        }
-        
-        .icon-option.selected {
-            background-color: #bbdefb;
-            border: 1px solid #64b5f6;
-        }
-        
-        .icon-option img {
-            width: 32px;
-            height: 32px;
-        }
-        
-        .icon-option span {
-            font-size: 12px;
-            margin-top: 5px;
-            text-align: center;
-        }
-    </style>
+    <title>CSV &lt;-&gt; KML Converter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
 </head>
-<body>
-    <div class="container">
-        <h1>CSV KML Converter with Map</h1>
-
-        <p>Alat ini memungkinkan Anda mengkonversi antara format CSV (Comma-Separated Values) dan KML (Keyhole Markup
-            Language) untuk data geospasial secara langsung di browser tanpa server backend, dan menampilkan hasilnya di peta.</p>
-
-        <div class="example-section">
-            <h3>Contoh File CSV</h3>
-            <button class="btn btn-example" id="downloadExample">Download Contoh CSV</button>
-            <p>Unduh contoh file CSV untuk melihat format yang benar</p>
-        </div>
-
-        <div class="converter-box">
-            <h3>Upload File Anda</h3>
-            <input type="file" id="fileInput" accept=".csv,.kml,.txt">
-            <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
-
-            <!-- Folder Form Section -->
-            <div class="folder-form" id="folderForm" style="display: none;">
-                <h4>Pengaturan Folder KML</h4>
-                <div class="folder-form-group">
-                    <label for="folderName">Nama Folder:</label>
-                    <input type="text" id="folderName" placeholder="Masukkan nama folder untuk KML">
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-exchange-alt"></i> Konversi Data Geospasial</span>
+                    <h1 class="display-title">CSV &lt;-&gt; KML Converter</h1>
+                    <p class="hero-description">
+                        Konversi file CSV menjadi KML atau balik lagi ke CSV langsung di browser. Tool ini tetap
+                        bekerja tanpa backend, sekarang dengan workspace yang lebih rapi untuk upload, pengaturan, hasil, dan preview peta.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-file-csv"></i> CSV ke KML</span>
+                        <span class="status-pill"><i class="fas fa-map-location-dot"></i> Preview peta</span>
+                        <span class="status-pill"><i class="fas fa-icons"></i> Pilihan ikon placemark</span>
+                    </div>
                 </div>
-                <div class="folder-form-group">
-                    <label for="folderDescription">Deskripsi Folder (opsional):</label>
-                    <input type="text" id="folderDescription" placeholder="Masukkan deskripsi folder">
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Alur Kerja</strong>
+                        <span>Upload file, atur output, lalu unduh hasil</span>
+                        <p class="support-text">
+                            Saat file CSV dipilih, Anda bisa mengatur nama folder dan ikon placemark sebelum melakukan ekspor KML.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Mode</strong>
+                            <span>2 Arah</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Backend</strong>
+                            <span>Tanpa Server</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Output</strong>
+                            <span>KML / CSV</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Icon Selection Section -->
-            <div class="icon-selection" id="iconSelection">
-                <h4>Pilih Icon untuk Placemark</h4>
-                <div class="icon-grid" id="iconGrid"></div>
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Mulai Cepat</span>
+                        <h2 class="card-title">Siapkan data dan lakukan konversi</h2>
+                        <p class="card-copy">Pilih file CSV atau KML, lalu gunakan tombol aksi sesuai kebutuhan konversi Anda.</p>
+                    </div>
+
+                    <div class="upload-zone">
+                        <h3>Upload file kerja</h3>
+                        <p class="upload-copy">Mendukung file <strong>.csv</strong>, <strong>.kml</strong>, dan <strong>.txt</strong> untuk alur konversi yang relevan.</p>
+                        <div class="helper-row">
+                            <span class="status-pill"><i class="fas fa-file-arrow-up"></i> Klik area ini untuk memilih file</span>
+                        </div>
+                        <input type="file" id="fileInput" accept=".csv,.kml,.txt">
+                        <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
+                    </div>
+
+                    <div class="folder-form" id="folderForm" style="display: none;">
+                        <h4>Pengaturan Folder KML</h4>
+                        <div class="folder-form-grid">
+                            <div class="folder-form-group">
+                                <label for="folderName">Nama Folder</label>
+                                <input type="text" id="folderName" placeholder="Masukkan nama folder untuk KML">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="folderDescription">Deskripsi Folder</label>
+                                <input type="text" id="folderDescription" placeholder="Masukkan deskripsi folder opsional">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="folder-form icon-selection" id="iconSelection" style="display: none;">
+                        <h4>Pilih ikon placemark</h4>
+                        <p class="card-copy">Ikon ini akan dipakai sebagai default untuk placemark saat Anda mengubah CSV menjadi KML.</p>
+                        <div class="icon-grid" id="iconGrid"></div>
+                    </div>
+
+                    <div id="loading">Memproses...</div>
+                    <div id="error" class="error"></div>
+
+                    <div class="tool-actions">
+                        <button id="convertToKML" type="button"><i class="fas fa-file-export"></i> Convert CSV to KML</button>
+                        <button id="convertToCSV" type="button" class="button-muted"><i class="fas fa-table"></i> Convert KML to CSV</button>
+                    </div>
+
+                    <div id="downloadSection" class="folder-form" style="display:none;">
+                        <h4>Konversi selesai</h4>
+                        <p class="card-copy">Unduh hasil konversi atau tampilkan hasil KML ke peta untuk pengecekan cepat.</p>
+                        <div class="tool-actions">
+                            <button class="btn-convert" id="downloadBtn" type="button"><i class="fas fa-download"></i> Download File Hasil</button>
+                            <button class="map-toggle" id="showMapBtn" type="button"><i class="fas fa-map"></i> Tampilkan di Peta</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" id="map-container" style="display: none;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Preview</span>
+                        <h2 class="card-title">Peta hasil konversi</h2>
+                        <p class="card-copy">Gunakan peta ini untuk mengecek lokasi dan ikon placemark sebelum file dipakai lebih lanjut.</p>
+                    </div>
+                    <div id="map"></div>
+                    <div class="map-controls">
+                        <button class="map-toggle" id="hideMapBtn" type="button"><i class="fas fa-eye-slash"></i> Sembunyikan Peta</button>
+                    </div>
+                </section>
             </div>
 
-            <div id="loading">Memproses...</div>
-            <div id="error" class="error"></div>
+            <aside class="stack">
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Contoh Data</span>
+                        <h2 class="card-title">Mulai dari file contoh</h2>
+                        <p class="card-copy">Unduh template CSV untuk memastikan struktur kolom sudah sesuai sebelum import.</p>
+                    </div>
+                    <button id="downloadExample" type="button" class="button-accent"><i class="fas fa-file-arrow-down"></i> Download Contoh CSV</button>
+                </section>
 
-            <div>
-                <button class="btn" id="convertToKML">Convert CSV to KML</button>
-                <button class="btn" id="convertToCSV">Convert KML to CSV</button>
-            </div>
-
-            <div id="downloadSection" style="display:none;">
-                <h3>Konversi Selesai!</h3>
-                <button class="btn btn-convert" id="downloadBtn">Download File Hasil</button>
-                <button class="map-toggle" id="showMapBtn">Tampilkan di Peta</button>
-            </div>
-        </div>
-
-        <div id="map-container">
-            <h3>Peta Hasil Konversi</h3>
-            <div id="map"></div>
-            <div class="map-controls">
-                <button class="map-toggle" id="hideMapBtn">Sembunyikan Peta</button>
-            </div>
-        </div>
-
-        <div class="file-format">
-            <h3>Format File yang Didukung</h3>
-
-            <h4>Format CSV untuk Konversi ke KML:</h4>
-            <p>File CSV harus memiliki kolom dengan header berikut (minimal):</p>
-            <ul>
-                <li><strong>name</strong>: Nama lokasi/poin</li>
-                <li><strong>latitude</strong>: Koordinat lintang (dalam derajat desimal)</li>
-                <li><strong>longitude</strong>: Koordinat bujur (dalam derajat desimal)</li>
-                <li><strong>description</strong> (opsional): Deskripsi tambahan</li>
-            </ul>
-            <p>Contoh isi file CSV:</p>
-            <pre>name,latitude,longitude,description
+                <section class="support-card glass-card file-format">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Referensi Format</span>
+                        <h2 class="card-title">Format file yang didukung</h2>
+                    </div>
+                    <h4>CSV untuk konversi ke KML</h4>
+                    <p>File CSV minimal memiliki kolom berikut:</p>
+                    <ul>
+                        <li><strong>name</strong>: Nama lokasi atau titik</li>
+                        <li><strong>latitude</strong>: Koordinat lintang desimal</li>
+                        <li><strong>longitude</strong>: Koordinat bujur desimal</li>
+                        <li><strong>description</strong>: Deskripsi tambahan opsional</li>
+                    </ul>
+                    <p>Contoh isi file CSV:</p>
+                    <pre>name,latitude,longitude,description
 Tugu Monas,-6.175392,106.827153,Monumen Nasional
 Bundaran HI,-6.194444,106.822956,Bundaran Hotel Indonesia</pre>
 
-            <h4>Format KML untuk Konversi ke CSV:</h4>
-            <p>File KML harus berisi Placemark dengan koordinat point/polygon. Contoh struktur KML:</p>
-            <pre>&lt;Placemark&gt;
+                    <h4>Struktur KML untuk konversi ke CSV</h4>
+                    <p>File KML sebaiknya berisi placemark dengan koordinat point yang valid.</p>
+                    <pre>&lt;Placemark&gt;
   &lt;name&gt;Tugu Monas&lt;/name&gt;
   &lt;description&gt;Monumen Nasional&lt;/description&gt;
-  &lt;Style&gt;
-    &lt;IconStyle&gt;
-      &lt;Icon&gt;
-        &lt;href&gt;http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png&lt;/href&gt;
-      &lt;/Icon&gt;
-    &lt;/IconStyle&gt;
-  &lt;/Style&gt;
   &lt;Point&gt;
     &lt;coordinates&gt;106.827153,-6.175392,0&lt;/coordinates&gt;
   &lt;/Point&gt;
 &lt;/Placemark&gt;</pre>
-        </div>
-    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -469,8 +294,10 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
                     const coords = coordMatch[1].trim().split(',');
                     if (coords.length < 2) continue;
                     
-                    const lng = parseFloat(coords[0]);
-                    const lat = parseFloat(coords[1]);
+                    const lng = parseFloat(coords[0].replace(/["']/g, ''));
+                    const lat = parseFloat(coords[1].replace(/["']/g, ''));
+                    
+                    if (isNaN(lat) || isNaN(lng)) continue;
                     
                     // Buat marker dengan icon custom dan tambahkan ke peta
                     const customIcon = L.icon({
@@ -551,11 +378,36 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             }
         });
 
+        // Helper untuk parse baris CSV yang mendukung quotes
+        function parseCSVLine(text) {
+            const result = [];
+            let curVal = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"' && text[i+1] === '"' && inQuotes) {
+                    curVal += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(curVal);
+                    curVal = '';
+                } else {
+                    curVal += char;
+                }
+            }
+            result.push(curVal);
+            return result.map(v => v.trim());
+        }
+
         // Fungsi untuk memproses CSV ke KML
         function csvToKml(csvText, folderName = '', folderDescription = '', iconUrl = '') {
             try {
                 const lines = csvText.split('\n');
-                const headers = lines[0].split(',');
+                if (lines.length === 0 || lines[0].trim() === '') throw new Error('File CSV kosong atau tidak valid');
+                
+                const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
 
                 // Cek kolom minimal
                 const requiredColumns = ['name', 'latitude', 'longitude'];
@@ -584,15 +436,18 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
                 for (let i = 1; i < lines.length; i++) {
                     if (lines[i].trim() === '') continue;
 
-                    const values = lines[i].split(',');
+                    const values = parseCSVLine(lines[i]);
                     const data = {};
                     for (let j = 0; j < headers.length; j++) {
-                        data[headers[j].trim()] = values[j] ? values[j].trim() : '';
+                        data[headers[j]] = values[j] !== undefined ? values[j] : '';
                     }
+
+                    // Validasi koordinat untuk mencegah NaN di Leaflet
+                    if (!data.latitude || !data.longitude || isNaN(parseFloat(data.latitude)) || isNaN(parseFloat(data.longitude))) continue;
 
                     kml += `
         <Placemark>
-            <name>${escapeXml(data.name)}</name>
+            <name>${escapeXml(data.name || 'Unnamed')}</name>
             ${data.description ? `<description>${escapeXml(data.description)}</description>` : ''}
             <Style>
                 <IconStyle>
@@ -658,7 +513,9 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
                 // Buat CSV
                 let csv = 'name,latitude,longitude,description\n';
                 for (const pm of placemarks) {
-                    csv += `"${pm.name}","${pm.latitude}","${pm.longitude}","${pm.description}"\n`;
+                    const nameStr = pm.name ? pm.name.replace(/"/g, '""') : '';
+                    const descStr = pm.description ? pm.description.replace(/"/g, '""') : '';
+                    csv += `"${nameStr}","${pm.latitude}","${pm.longitude}","${descStr}"\n`;
                 }
 
                 return csv;
