@@ -3,260 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asesoris Tiang & KML Existing</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        .container {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-        h3 {
-            color: #3498db;
-            margin-top: 0;
-            text-align: center;
-            font-size: 1.4em;
-            margin-bottom: 18px;
-        }
-        .upload-section {
-            border: 2px dashed #3498db;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .upload-section.active {
-            border-color: #2980b9;
-            background-color: #e8f0fe;
-        }
-        .instructions {
-            background-color: #e8f4ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #3498db;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .instructions ol {
-            margin: 0;
-            padding-left: 20px;
-        }
-        .instructions li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-        #fileInfo {
-            margin-top: 10px;
-            font-style: italic;
-            color: #666;
-        }
-        #output {
-            margin-top: 25px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            min-height: 100px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        #map {
-            height: 560px;
-            width: 100%;
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            display: none;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .error {
-            color: #e74c3c;
-            font-weight: bold;
-            background-color: #f8d7da;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .success {
-            color: #155724;
-            font-weight: bold;
-            background-color: #d4edda;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .summary-card {
-            background: #fff;
-            border: 1px solid #dfe6ee;
-            border-radius: 8px;
-            padding: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-        .summary-card strong {
-            display: block;
-            color: #2c3e50;
-            margin-bottom: 6px;
-        }
-        .summary-card span {
-            display: block;
-            font-size: 22px;
-            font-weight: 700;
-            color: #3498db;
-        }
-        .section-note {
-            margin: 0 0 15px;
-            color: #5f6b76;
-            line-height: 1.5;
-        }
-        #coordinateTable {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        #coordinateTable th, #coordinateTable td {
-            border: 1px solid #eee;
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-        #coordinateTable th {
-            background-color: #f2f2f2;
-            color: #2c3e50;
-        }
-        .tutorial-section {
-            margin-top: 40px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            overflow: hidden;
-            margin: 20px 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .tutorial-steps {
-            margin-top: 20px;
-            padding: 0 20px;
-        }
-        .tutorial-steps ol {
-            padding-left: 20px;
-        }
-        .tutorial-steps li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        @media (max-width: 768px) {
-            .tutorial-section {
-                padding: 15px;
-            }
-            .tutorial-steps {
-                padding: 0 10px;
-            }
-        }
-    </style>
+    <title>Asesoris Tiang Existing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
 </head>
-<body>
-    <div class="container">
-        <h1>Hitung Asesoris Tiang Dari KML Existing</h1>
-
-        <div class="instructions">
-            <h3>Petunjuk Penggunaan</h3>
-            <ol>
-                <li>Upload satu file KML/KMZ yang sudah berisi path, tiang, dan objek lain yang ada di lapangan.</li>
-                <li>Tool akan membaca semua path dan titik yang ada di dalam KML tanpa membuat placemark tiang baru.</li>
-                <li>Ikon titik di peta akan mengikuti ikon yang direferensikan oleh style KML asli selama URL ikonnya bisa diakses browser.</li>
-                <li>Asesoris tiang dihitung dari belokan path. Jika ada titik referensi terdekat kurang dari 250 meter, titik itu dihitung sebagai <strong>PU-AS-HL</strong> dan otomatis ditambah <strong>seberangan</strong>.</li>
-                <li><strong>PU-AS-DE-50/70</strong> juga otomatis dihitung beserta <strong>seberangan</strong>.</li>
-                <li><strong>PU-AS-SC</strong> dihitung dari jumlah <strong>TE</strong> sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong>, bukan dari titik tengah.</li>
-            </ol>
-        </div>
-
-        <div class="upload-section" id="dropZone">
-            <h3>Upload KML/KMZ Existing</h3>
-            <input type="file" id="fileInput" accept=".kml,.kmz">
-            <p>File ini harus sudah berisi path dan titik existing seperti pada folder KABEL / TIANG / ODP / lainnya</p>
-            <div id="fileInfo"></div>
-        </div>
-
-        <button id="previewBtn" disabled>Preview Hasil</button>
-        <button id="mapBtn" disabled>Tampilkan di Peta</button>
-        <button id="generateBtn" disabled>Download KML Asesoris</button>
-
-        <div id="output"></div>
-        <div id="map"></div>
-
-        <div class="tutorial-section">
-            <h3>Video Tutorial Penggunaan Aplikasi</h3>
-            <div class="video-container">
-                <iframe width="560" height="315" src="https://www.youtube.com/embed/mwyKtqE4A_I?si=HP7kMiyy6bI06dM2"
-                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen></iframe>
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-sitemap"></i> Analisis KML Existing</span>
+                    <h1 class="display-title">Hitung Asesoris Tiang Dari KML Existing</h1>
+                    <p class="hero-description">
+                        Tool ini membaca path dan titik yang sudah ada di file KML atau KMZ, lalu menghitung kebutuhan
+                        asesoris berdasarkan struktur jalur. Tidak ada placemark tiang baru yang dibuat.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-file-lines"></i> Input KML / KMZ existing</span>
+                        <span class="status-pill"><i class="fas fa-chart-column"></i> Summary + tabel hasil</span>
+                        <span class="status-pill"><i class="fas fa-map"></i> Preview peta style existing</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Output</strong>
+                        <span>Ringkasan asesoris dan KML hasil</span>
+                        <p class="support-text">
+                            Tool ini berguna saat Anda ingin meninjau path existing, memetakan asesoris, dan tetap mempertahankan referensi data lapangan yang ada.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Fokus</strong>
+                            <span>Data Existing</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Asesoris</strong>
+                            <span>Auto Count</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Ekspor</strong>
+                            <span>KML Baru</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="tutorial-steps">
-                <p>Urutan kerja singkat:</p>
-                <ol>
-                    <li>Siapkan satu file KML/KMZ existing dari Google Earth.</li>
-                    <li>Upload file ke tool ini.</li>
-                    <li>Cek preview hasil dan peta untuk memastikan icon existing terbaca.</li>
-                    <li>Download KML hasil yang hanya menambahkan folder asesoris tiang.</li>
-                </ol>
+        </section>
+
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card instructions">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Aturan Baca</span>
+                        <h2 class="card-title">Cara tool membaca file existing</h2>
+                    </div>
+                    <ol>
+                        <li>Upload satu file KML atau KMZ yang sudah berisi path, tiang, dan objek lapangan lain.</li>
+                        <li>Tool akan membaca semua path dan titik tanpa membuat placemark tiang baru.</li>
+                        <li>Ikon titik di peta mengikuti style KML asli selama URL ikonnya bisa diakses browser.</li>
+                        <li>Titik referensi terdekat pada radius 250 meter dapat memicu perhitungan <strong>PU-AS-HL</strong> beserta seberangannya.</li>
+                        <li>Pada line lurus, <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> juga dihitung tiap <strong>250 meter</strong>.</li>
+                        <li><strong>PU-AS-SC</strong> sekarang dihitung dari tiang sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> yang terkait di path.</li>
+                        <li>Kategori tiang yang dikenali untuk aturan sebelum dan sesudah adalah <strong>TE</strong> (existing), <strong>TN</strong> (new), <strong>TB</strong> (baru), dan <strong>TP</strong> (plan).</li>
+                    </ol>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Workspace</span>
+                        <h2 class="card-title">Upload file dan jalankan analisis</h2>
+                        <p class="card-copy">Panel ini menggabungkan input file, tombol analisis, hasil preview, dan area peta agar alur kerja tetap ringkas.</p>
+                    </div>
+
+                    <div class="upload-section" id="dropZone">
+                        <h3>Upload KML/KMZ existing</h3>
+                        <p class="upload-copy">Pastikan file sudah berisi path dan titik existing seperti pada folder KABEL, TIANG, ODP, atau objek terkait lainnya.</p>
+                        <div class="helper-row">
+                            <span class="status-pill"><i class="fas fa-cloud-arrow-up"></i> Klik atau drop file di sini</span>
+                        </div>
+                        <input type="file" id="fileInput" accept=".kml,.kmz">
+                        <div id="fileInfo"></div>
+                    </div>
+
+                    <div class="tool-actions">
+                        <button id="previewBtn" type="button" disabled><i class="fas fa-table-list"></i> Preview Hasil</button>
+                        <button id="mapBtn" type="button" class="button-accent" disabled><i class="fas fa-map-location-dot"></i> Tampilkan di Peta</button>
+                        <button id="generateBtn" type="button" class="button-success" disabled><i class="fas fa-download"></i> Download KML Asesoris</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil</span>
+                        <h2 class="card-title">Preview summary, tabel, dan peta</h2>
+                        <p class="card-copy">Area ini menampung summary card, tabel asesoris, serta visualisasi peta dari file existing Anda.</p>
+                    </div>
+                    <div id="output"></div>
+                    <div id="map" style="display: none;"></div>
+                </section>
             </div>
-        </div>
-    </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card tutorial-section">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Tutorial</span>
+                        <h2 class="card-title">Video penggunaan aplikasi</h2>
+                        <p class="card-copy">Gunakan panduan ini untuk menyiapkan file existing, memeriksa hasil preview, dan mengekspor KML asesoris.</p>
+                    </div>
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/mwyKtqE4A_I?si=HP7kMiyy6bI06dM2"
+                            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                    </div>
+                    <div class="tutorial-steps">
+                        <ol>
+                            <li>Siapkan satu file KML atau KMZ existing dari Google Earth.</li>
+                            <li>Upload file ke tool ini dan jalankan preview hasil.</li>
+                            <li>Periksa tabel dan peta untuk memastikan objek existing terbaca dengan benar.</li>
+                            <li>Unduh KML hasil yang menambahkan folder asesoris tiang.</li>
+                        </ol>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
@@ -264,6 +135,8 @@
     <script>
         const ACCESSORY_REFERENCE_RADIUS = 250;
         const BEND_ANGLE_THRESHOLD = 25;
+        const STRAIGHT_ACCESSORY_INTERVAL = 250;
+        const PRIMARY_ACCESSORY_DISTANCE_TOLERANCE = 1;
         const DEFAULT_POINT_ICON = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png';
 
         let currentKmlText = '';
@@ -696,6 +569,43 @@
             return cumulativeDistances;
         }
 
+        function interpolatePointAlongPath(path, cumulativeDistances, targetDistance) {
+            if (path.length === 0) {
+                return null;
+            }
+
+            if (targetDistance <= 0) {
+                return { ...path[0] };
+            }
+
+            const totalDistance = cumulativeDistances[cumulativeDistances.length - 1];
+            if (targetDistance >= totalDistance) {
+                return { ...path[path.length - 1] };
+            }
+
+            for (let i = 0; i < path.length - 1; i++) {
+                const startDistance = cumulativeDistances[i];
+                const endDistance = cumulativeDistances[i + 1];
+
+                if (targetDistance > endDistance) {
+                    continue;
+                }
+
+                const segmentLength = endDistance - startDistance;
+                const fraction = segmentLength === 0 ? 0 : (targetDistance - startDistance) / segmentLength;
+                const segmentStart = path[i];
+                const segmentEnd = path[i + 1];
+
+                return {
+                    lat: segmentStart.lat + ((segmentEnd.lat - segmentStart.lat) * fraction),
+                    lon: segmentStart.lon + ((segmentEnd.lon - segmentStart.lon) * fraction),
+                    alt: (segmentStart.alt || 0) + (((segmentEnd.alt || 0) - (segmentStart.alt || 0)) * fraction)
+                };
+            }
+
+            return { ...path[path.length - 1] };
+        }
+
         function projectPointToSegment(point, segmentStart, segmentEnd) {
             const refLat = (segmentStart.lat + segmentEnd.lat + point.lat) / 3;
             const metersPerLat = 111320;
@@ -770,20 +680,56 @@
             return bestProjection;
         }
 
-        function buildExistingPoleAssignmentsByPath() {
-            const teFeatures = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'EXIST']));
+        function getPoleCategory(feature) {
+            if (!hasFolderPath(feature, ['TIANG'])) {
+                return '';
+            }
+
+            const searchableParts = [
+                ...(feature.folderPath || []),
+                feature.name || '',
+                feature.description || ''
+            ].map(normalizeLabel);
+            const combined = searchableParts.join(' ');
+
+            if (combined.includes('new')) {
+                return 'TN';
+            }
+
+            if (combined.includes('baru')) {
+                return 'TB';
+            }
+
+            if (hasFolderPath(feature, ['TIANG', 'EXIST']) || combined.includes('exist') || combined.includes('existing')) {
+                return 'TE';
+            }
+
+            if (hasFolderPath(feature, ['TIANG', 'PLAN']) || combined.includes('plan')) {
+                return 'TP';
+            }
+
+            return 'TIANG';
+        }
+
+        function buildPoleAssignmentsByPath() {
+            const poleFeatures = pointFeatures
+                .map(feature => ({
+                    feature,
+                    poleCategory: getPoleCategory(feature)
+                }))
+                .filter(item => item.poleCategory);
             const assignments = new Map();
 
             pathFeatures.forEach((_, pathIndex) => {
                 assignments.set(pathIndex, []);
             });
 
-            teFeatures.forEach(feature => {
+            poleFeatures.forEach(item => {
                 let bestPathIndex = -1;
                 let bestProjection = null;
 
                 pathFeatures.forEach((pathFeature, pathIndex) => {
-                    const projection = projectFeatureOntoPath(feature, pathFeature.coordinates);
+                    const projection = projectFeatureOntoPath(item.feature, pathFeature.coordinates);
                     if (!projection) {
                         return;
                     }
@@ -795,7 +741,10 @@
                 });
 
                 if (bestProjection && bestPathIndex >= 0) {
-                    assignments.get(bestPathIndex).push(bestProjection);
+                    assignments.get(bestPathIndex).push({
+                        ...bestProjection,
+                        poleCategory: item.poleCategory
+                    });
                 }
             });
 
@@ -847,20 +796,121 @@
             });
         }
 
+        function createPrimaryAccessory(pathIndex, pathName, point, distance, referencePoints, noteBase) {
+            const nearestReference = findNearestReferencePoint(point, referencePoints, ACCESSORY_REFERENCE_RADIUS);
+            const useHL = Boolean(nearestReference);
+
+            return {
+                pathIndex,
+                pathName,
+                type: useHL ? 'PU-AS-HL' : 'PU-AS-DE-50/70',
+                quantity: 2,
+                distance,
+                lat: point.lat,
+                lon: point.lon,
+                alt: point.alt || 0,
+                note: useHL
+                    ? `${noteBase}, referensi terdekat ${nearestReference.feature.name} (${nearestReference.distance.toFixed(1)} m), termasuk seberangan`
+                    : `${noteBase}, termasuk seberangan`,
+                nearestReferenceName: useHL ? nearestReference.feature.name : '',
+                nearestReferenceDistance: useHL ? nearestReference.distance : null
+            };
+        }
+
+        function hasNearbyPrimaryAccessory(accessories, pathIndex, distance) {
+            return accessories.some(accessory =>
+                accessory.pathIndex === pathIndex &&
+                Math.abs(accessory.distance - distance) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE
+            );
+        }
+
+        function addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory) {
+            const previousPole = [...polesOnPath].reverse().find(item => item.distanceAlongPath < primaryAccessory.distance);
+            const nextPole = polesOnPath.find(item => item.distanceAlongPath > primaryAccessory.distance);
+
+            if (previousPole) {
+                scAccessories.push({
+                    pathIndex: primaryAccessory.pathIndex,
+                    pathName: primaryAccessory.pathName,
+                    type: 'PU-AS-SC',
+                    quantity: 1,
+                    distance: previousPole.distanceAlongPath,
+                    lat: previousPole.feature.representativePoint.lat,
+                    lon: previousPole.feature.representativePoint.lon,
+                    alt: previousPole.feature.representativePoint.alt || 0,
+                    note: `${previousPole.poleCategory} sebelum ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${previousPole.feature.name}`
+                });
+            }
+
+            if (nextPole) {
+                scAccessories.push({
+                    pathIndex: primaryAccessory.pathIndex,
+                    pathName: primaryAccessory.pathName,
+                    type: 'PU-AS-SC',
+                    quantity: 1,
+                    distance: nextPole.distanceAlongPath,
+                    lat: nextPole.feature.representativePoint.lat,
+                    lon: nextPole.feature.representativePoint.lon,
+                    alt: nextPole.feature.representativePoint.alt || 0,
+                    note: `${nextPole.poleCategory} sesudah ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${nextPole.feature.name}`
+                });
+            }
+        }
+
+        function addStraightRunAccessories(primaryAccessories, scAccessories, pathFeature, pathIndex, path, cumulativeDistances, referencePoints, polesOnPath, startIndex, endIndex, includeEndPoint) {
+            if (endIndex <= startIndex) {
+                return;
+            }
+
+            const startDistance = cumulativeDistances[startIndex];
+            const endDistance = cumulativeDistances[endIndex];
+            const runLength = endDistance - startDistance;
+
+            if (runLength < STRAIGHT_ACCESSORY_INTERVAL) {
+                return;
+            }
+
+            const maxOffset = includeEndPoint ? runLength + 0.001 : runLength - 0.001;
+            for (let offset = STRAIGHT_ACCESSORY_INTERVAL; offset <= maxOffset; offset += STRAIGHT_ACCESSORY_INTERVAL) {
+                const targetDistance = startDistance + offset;
+                if (hasNearbyPrimaryAccessory(primaryAccessories, pathIndex, targetDistance)) {
+                    continue;
+                }
+
+                const point = interpolatePointAlongPath(path, cumulativeDistances, targetDistance);
+                if (!point) {
+                    continue;
+                }
+
+                const primaryAccessory = createPrimaryAccessory(
+                    pathIndex,
+                    pathFeature.name || `Path ${pathIndex + 1}`,
+                    point,
+                    targetDistance,
+                    referencePoints,
+                    `Line lurus interval ${STRAIGHT_ACCESSORY_INTERVAL} m`
+                );
+
+                primaryAccessories.push(primaryAccessory);
+                addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory);
+            }
+        }
+
         function buildAccessoryPlan() {
             const referencePoints = pointFeatures.filter(feature => !feature.isGeneratedAccessory);
-            const poleAssignments = buildExistingPoleAssignmentsByPath();
-            const bendAccessories = [];
+            const poleAssignments = buildPoleAssignmentsByPath();
+            const primaryAccessories = [];
             const scAccessories = [];
 
             pathFeatures.forEach((pathFeature, pathIndex) => {
                 const path = pathFeature.coordinates;
-                if (path.length < 3) {
+                if (path.length < 2) {
                     return;
                 }
 
                 const cumulativeDistances = buildPathDistanceIndex(path);
-                const teOnPath = poleAssignments.get(pathIndex) || [];
+                const polesOnPath = poleAssignments.get(pathIndex) || [];
+                const bendIndices = [];
 
                 for (let i = 1; i < path.length - 1; i++) {
                     const turnAngle = calculateTurnAngle(path[i - 1], path[i], path[i + 1]);
@@ -868,62 +918,56 @@
                         continue;
                     }
 
-                    const nearestReference = findNearestReferencePoint(path[i], referencePoints, ACCESSORY_REFERENCE_RADIUS);
-                    const useHL = Boolean(nearestReference);
+                    bendIndices.push(i);
 
-                    const primaryAccessory = {
+                    const primaryAccessory = createPrimaryAccessory(
                         pathIndex,
-                        pathName: pathFeature.name || `Path ${pathIndex + 1}`,
-                        type: useHL ? 'PU-AS-HL' : 'PU-AS-DE-50/70',
-                        quantity: 2,
-                        distance: cumulativeDistances[i],
-                        lat: path[i].lat,
-                        lon: path[i].lon,
-                        alt: path[i].alt || 0,
-                        note: useHL
-                            ? `Belokan ${turnAngle.toFixed(1)} derajat, referensi terdekat ${nearestReference.feature.name} (${nearestReference.distance.toFixed(1)} m), termasuk seberangan`
-                            : `Belokan ${turnAngle.toFixed(1)} derajat, termasuk seberangan`,
-                        nearestReferenceName: useHL ? nearestReference.feature.name : '',
-                        nearestReferenceDistance: useHL ? nearestReference.distance : null
-                    };
+                        pathFeature.name || `Path ${pathIndex + 1}`,
+                        path[i],
+                        cumulativeDistances[i],
+                        referencePoints,
+                        `Belokan ${turnAngle.toFixed(1)} derajat`
+                    );
 
-                    bendAccessories.push(primaryAccessory);
-
-                    const previousTe = [...teOnPath].reverse().find(item => item.distanceAlongPath < primaryAccessory.distance);
-                    const nextTe = teOnPath.find(item => item.distanceAlongPath > primaryAccessory.distance);
-
-                    if (previousTe) {
-                        scAccessories.push({
-                            pathIndex,
-                            pathName: pathFeature.name || `Path ${pathIndex + 1}`,
-                            type: 'PU-AS-SC',
-                            quantity: 1,
-                            distance: previousTe.distanceAlongPath,
-                            lat: previousTe.feature.representativePoint.lat,
-                            lon: previousTe.feature.representativePoint.lon,
-                            alt: previousTe.feature.representativePoint.alt || 0,
-                            note: `TE sebelum ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${previousTe.feature.name}`
-                        });
-                    }
-
-                    if (nextTe) {
-                        scAccessories.push({
-                            pathIndex,
-                            pathName: pathFeature.name || `Path ${pathIndex + 1}`,
-                            type: 'PU-AS-SC',
-                            quantity: 1,
-                            distance: nextTe.distanceAlongPath,
-                            lat: nextTe.feature.representativePoint.lat,
-                            lon: nextTe.feature.representativePoint.lon,
-                            alt: nextTe.feature.representativePoint.alt || 0,
-                            note: `TE sesudah ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${nextTe.feature.name}`
-                        });
-                    }
+                    primaryAccessories.push(primaryAccessory);
+                    addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory);
                 }
+
+                let runStartIndex = 0;
+                bendIndices.forEach(bendIndex => {
+                    addStraightRunAccessories(
+                        primaryAccessories,
+                        scAccessories,
+                        pathFeature,
+                        pathIndex,
+                        path,
+                        cumulativeDistances,
+                        referencePoints,
+                        polesOnPath,
+                        runStartIndex,
+                        bendIndex,
+                        false
+                    );
+                    runStartIndex = bendIndex;
+                });
+
+                addStraightRunAccessories(
+                    primaryAccessories,
+                    scAccessories,
+                    pathFeature,
+                    pathIndex,
+                    path,
+                    cumulativeDistances,
+                    referencePoints,
+                    polesOnPath,
+                    runStartIndex,
+                    path.length - 1,
+                    true
+                );
             });
 
             const allAccessories = addAccessoryNames(
-                [...bendAccessories, ...scAccessories].sort((a, b) => {
+                [...primaryAccessories, ...scAccessories].sort((a, b) => {
                     if (a.pathIndex !== b.pathIndex) {
                         return a.pathIndex - b.pathIndex;
                     }
@@ -1020,7 +1064,7 @@
                         <span>${accessoryPlan.counts.total}</span>
                     </div>
                 </div>
-                <p class="section-note">Tiang dan objek existing dibaca langsung dari file KML asli. Tool ini tidak membuat placemark tiang baru.</p>`;
+                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan dan juga pada line lurus tiap 250 meter. Untuk PU-AS-SC, tool mencari tiang sebelum dan sesudah yang terkait pada path dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi.</p>`;
         }
 
         function buildAccessoryTableHtml(accessories) {
