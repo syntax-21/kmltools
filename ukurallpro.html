@@ -1,730 +1,245 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <title>Ukur Jarak Allpro Masal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 30px;
-            background: linear-gradient(120deg, #2c3e50, #3498db);
-            color: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header p {
-            font-size: 1.2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            opacity: 0.9;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 30px;
-            margin-bottom: 30px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
-        }
-        
-        .card h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #3498db;
-            font-size: 1.8rem;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 1.1rem;
-        }
-        
-        .file-input-container {
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        
-        .file-input-container input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-        
-        .file-input-label {
-            display: block;
-            width: 100%;
-            padding: 18px 20px;
-            background: #f8f9fa;
-            border: 2px dashed #3498db;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #3498db;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .file-input-label:hover {
-            background: #e3f2fd;
-            border-color: #2980b9;
-        }
-        
-        .file-input-label i {
-            margin-right: 10px;
-            font-size: 1.3rem;
-        }
-        
-        .status {
-            font-size: 1rem;
-            color: #7f8c8d;
-            font-weight: 500;
-            padding: 10px 0;
-        }
-        
-        .error {
-            color: #e74c3c;
-            margin-top: 10px;
-            font-weight: 500;
-            padding: 12px;
-            background: #fde8e8;
-            border-radius: 8px;
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .info-box {
-            background: #e8f4f8;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            border-left: 5px solid #3498db;
-        }
-        
-        .info-box h3 {
-            margin-top: 0;
-            color: #2c3e50;
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-        }
-        
-        .info-box ol {
-            padding-left: 25px;
-            margin-bottom: 15px;
-        }
-        
-        .info-box li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        
-        .info-box p {
-            margin-bottom: 10px;
-        }
-        
-        button {
-            background: linear-gradient(120deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 18px 30px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 15px;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
-            background: linear-gradient(120deg, #2980b9, #3498db);
-        }
-        
-        button:disabled {
-            background: linear-gradient(120deg, #95a5a6, #7f8c8d);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .progress-container {
-            margin-top: 25px;
-            display: none;
-        }
-        
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .progress-bar {
-            height: 28px;
-            background: #ecf0f1;
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 10px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #2ecc71, #27ae60);
-            width: 0%;
-            transition: width 0.5s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.15) 25%,
-                transparent 25%,
-                transparent 50%,
-                rgba(255, 255, 255, 0.15) 50%,
-                rgba(255, 255, 255, 0.15) 75%,
-                transparent 75%,
-                transparent
-            );
-            background-size: 40px 40px;
-            animation: progressAnimation 1s linear infinite;
-        }
-        
-        @keyframes progressAnimation {
-            0% { background-position: 0 0; }
-            100% { background-position: 40px 0; }
-        }
-        
-        .progress-text {
-            font-size: 1.1rem;
-            color: #7f8c8d;
-            font-weight: 500;
-            text-align: center;
-        }
-        
-        .summary {
-            margin-top: 25px;
-            padding: 25px;
-            background: linear-gradient(135deg, #e8f4f8, #d1e7f5);
-            border-radius: 12px;
-            border-left: 5px solid #3498db;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        
-        .summary-item {
-            text-align: center;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-        }
-        
-        .summary-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #3498db;
-            margin: 10px 0;
-        }
-        
-        .summary-label {
-            font-size: 1rem;
-            color: #7f8c8d;
-            font-weight: 500;
-        }
-        
-        .tab-container {
-            display: flex;
-            margin-bottom: 25px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 5px;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .tab.active {
-            background: #3498db;
-            color: white;
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .map-container {
-            height: 500px;
-            margin-top: 20px;
-            border-radius: 15px;
-            overflow: hidden;
-            border: 1px solid #e0e6ed;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        .results-table-container {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid #e0e6ed;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-        
-        .results-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 800px;
-        }
-        
-        .results-table th {
-            background: #3498db;
-            color: white;
-            position: sticky;
-            top: 0;
-            padding: 16px 15px;
-            text-align: left;
-            font-weight: 600;
-            border: none;
-        }
-        
-        .results-table tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-        
-        .results-table tr:hover {
-            background: #e3f2fd;
-        }
-        
-        .results-table td {
-            padding: 14px 15px;
-            border-bottom: 1px solid #e0e6ed;
-            border-right: 1px solid #e0e6ed;
-        }
-        
-        .results-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .distance-cell {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding: 25px;
-            color: #7f8c8d;
-            font-size: 1rem;
-            border-top: 1px solid #e0e6ed;
-        }
-        
-        .osrm-status {
-            padding: 10px;
-            background: #e8f4f8;
-            border-radius: 8px;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        /* Custom marker icons */
-        .location-icon {
-            background: #3498db;
-            border-radius: 50%;
-            border: 2px solid white;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-        }
-
-        .tool-icon {
-            background: #e74c3c;
-            border-radius: 50%;
-            border: 2px solid white;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-        }
-
-        .route-line {
-            stroke: #3498db;
-            stroke-width: 4;
-            stroke-opacity: 0.7;
-            fill: none;
-        }
-        
-        .tutorial-container {
-            margin-top: 30px;
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        }
-        
-        .tutorial-container h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .tutorial-step {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px dashed #e0e6ed;
-        }
-        
-        .tutorial-step h3 {
-            color: #3498db;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .tutorial-step h3 i {
-            margin-right: 10px;
-        }
-        
-        .tutorial-step p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-        
-        .tutorial-video {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-            overflow: hidden;
-            margin-top: 20px;
-            border-radius: 10px;
-            background: #000;
-        }
-        
-        .tutorial-video iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .header {
-                padding: 20px 15px;
-            }
-            
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-            
-            .tab {
-                padding: 12px 10px;
-                font-size: 0.9rem;
-            }
-            
-            .map-container {
-                height: 400px;
-            }
-            
-            button {
-                padding: 16px 20px;
-                font-size: 1rem;
-            }
-        }
-    </style>
 </head>
-
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal</h1>
-            <p>Ukur jarak jalan terdekat dengan rute yang sesuai jaringan jalan sebenarnya</p>
-        </div>
-
-        <div class="info-box">
-            <h3>Kelebihan Aplikasi Ini:</h3>
-            <ol>
-                <li><strong>Rute Jalan Akurat</strong>: Menggunakan OSRM (Open Source Routing Machine) untuk mendapatkan rute jalan yang sebenarnya</li>
-                <li><strong>Jaringan Jalan Nyata</strong>: Rute mengikuti jalan yang ada di OpenStreetMap</li>
-                <li><strong>Perhitungan Jarak Lebih Presisi</strong>: Jarak jalan dihitung berdasarkan rute aktual</li>
-                <li><strong>Peningkatan Performa</strong>: Proses perhitungan yang lebih efisien</li>
-            </ol>
-            <p><strong>Teknologi:</strong> Menggunakan OSRM dengan data OpenStreetMap untuk akurasi maksimal</p>
-        </div>
-
-        <div class="card">
-            <h2>1. Upload Data Titik Anda (Excel/CSV) Lokasi A</h2>
-            <div class="form-group">
-                <label>Pilih file Excel/CSV:</label>
-                <div class="file-input-container">
-                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
-                    <div class="file-input-label">
-                        <i class="fas fa-file-excel"></i> Klik untuk memilih file Excel/CSV
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-ruler-combined"></i> Routing Massal</span>
+                    <h1 class="display-title">Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal</h1>
+                    <p class="hero-description">
+                        Hitung jarak jalan aktual dari banyak titik ke alat produksi terdekat dengan bantuan OSRM dan data jalan OpenStreetMap.
+                        Halaman ini kini dibungkus dalam layout yang lebih rapi tanpa mengubah mesin perhitungannya.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-road"></i> Rute jalan nyata</span>
+                        <span class="status-pill"><i class="fas fa-file-excel"></i> Input Excel / CSV</span>
+                        <span class="status-pill"><i class="fas fa-file-lines"></i> Input database KML</span>
                     </div>
                 </div>
-                <div id="excelStatus" class="status">Belum ada file Excel/CSV yang diupload</div>
-                <div id="excelError" class="error"></div>
-                <div class="form-group">
-                    <label>Format file harus memiliki kolom:</label>
-                    <ul>
-                        <li>Kolom A: Nama Lokasi</li>
-                        <li>Kolom B: Latitude (contoh: -6.175392)</li>
-                        <li>Kolom C: Longitude (contoh: 106.827153)</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>2. Upload Database Alat Produksi (KML) Lokasi B</h2>
-            <div class="form-group">
-                <label>Pilih file KML:</label>
-                <div class="file-input-container">
-                    <input type="file" id="kmlFile" accept=".kml">
-                    <div class="file-input-label">
-                        <i class="fas fa-file-upload"></i> Klik untuk memilih file KML
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Kelebihan</strong>
+                        <span>OSRM + OpenStreetMap</span>
+                        <p class="support-text">
+                            Rute dihitung mengikuti jaringan jalan sebenarnya, sehingga hasilnya lebih representatif dibanding jarak garis lurus semata.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Input A</strong>
+                            <span>Excel / CSV</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Input B</strong>
+                            <span>KML</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Output</strong>
+                            <span>Tabel + Peta</span>
+                        </div>
                     </div>
                 </div>
-                <div id="kmlStatus" class="status">Belum ada file KML yang diupload</div>
-                <div id="kmlError" class="error"></div>
             </div>
-        </div>
+        </section>
 
-        <div class="card">
-            <h2>3. Proses Perhitungan Jarak</h2>
-            <button id="processBtn" disabled>
-                <i class="fas fa-calculator"></i> Proses Perhitungan Jarak Jalan
-            </button>
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-header">
-                    <span>Status Proses:</span>
-                    <span id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">Menunggu proses dimulai...</div>
-                <div id="osrmStatus" class="osrm-status">OSRM: Menunggu perhitungan rute</div>
-            </div>
-        </div>
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card info-box">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Nilai Utama</span>
+                        <h2 class="card-title">Kenapa workflow ini lebih presisi</h2>
+                    </div>
+                    <ol>
+                        <li><strong>Rute jalan akurat</strong> karena memakai OSRM untuk menghitung jalur aktual di jaringan jalan.</li>
+                        <li><strong>Database alat produksi</strong> dibaca dari KML sehingga hasil pencarian titik terdekat tetap konsisten.</li>
+                        <li><strong>Perhitungan massal</strong> membantu menganalisis banyak lokasi sekaligus dalam satu proses.</li>
+                    </ol>
+                    <p><strong>Teknologi:</strong> OpenStreetMap untuk jaringan jalan dan OSRM untuk routing.</p>
+                </section>
 
-        <div class="card" id="resultsCard" style="display: none;">
-            <h2>4. Hasil Perhitungan</h2>
-            <div class="summary" id="summaryContainer">
-                <div class="summary-item">
-                    <div class="summary-label">Total Titik</div>
-                    <div class="summary-value" id="totalPoints">0</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Alat Produksi</div>
-                    <div class="summary-value" id="totalTools">0</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Jarak Terdekat</div>
-                    <div class="summary-value" id="minDistance">0 m</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Jarak Terjauh</div>
-                    <div class="summary-value" id="maxDistance">0 m</div>
-                </div>
-            </div>
-            
-            <div class="tab-container">
-                <div class="tab active" data-tab="table">Tabel Hasil</div>
-                <div class="tab" data-tab="map">Peta Rute</div>
-            </div>
-            
-            <div class="tab-content active" id="tableTab">
-                <div class="results-table-container">
-                    <table class="results-table" id="resultsTable">
-                        <thead>
-                            <tr>
-                                <th>Nama Lokasi</th>
-                                <th>Latitude</th>
-                                <th>Longitude</th>
-                                <th>Jarak Lurus</th>
-                                <th>Alat Produksi Terdekat</th>
-                                <th>Jarak Jalan</th>
-                                <th>Koordinat Alat Produksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsBody"></tbody>
-                    </table>
-                </div>
-                <button class="btn" id="downloadBtn">
-                    <i class="fas fa-file-download"></i> Download Hasil (Excel)
-                </button>
-            </div>
-            
-            <div class="tab-content" id="mapTab">
-                <div class="map-container" id="map"></div>
-                <div id="mapInfo" class="status" style="margin-top: 15px; text-align: center;"></div>
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="routeLimit">Tampilkan rute untuk:</label>
-                    <select id="routeLimit" class="file-input-label" style="padding: 10px; width: 100%;">
-                        <option value="10">10 Titik Pertama</option>
-                        <option value="20">20 Titik Pertama</option>
-                        <option value="50">50 Titik Pertama</option>
-                        <option value="all">Semua Titik</option>
-                    </select>
-                    <button class="btn" id="updateMapBtn" style="margin-top: 10px;">
-                        <i class="fas fa-sync-alt"></i> Perbarui Peta
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Input Data</span>
+                        <h2 class="card-title">Upload lokasi A dan database lokasi B</h2>
+                        <p class="card-copy">Mulai dari dua sumber data: daftar titik yang akan diukur dan KML alat produksi sebagai target pencarian terdekat.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="folder-form">
+                            <label for="excelFile">Data titik Anda (Excel / CSV)</label>
+                            <div class="upload-zone">
+                                <p class="upload-copy">Kolom minimal: nama lokasi, latitude, dan longitude.</p>
+                                <div class="helper-row">
+                                    <span class="status-pill"><i class="fas fa-file-excel"></i> Klik untuk memilih file Excel / CSV</span>
+                                </div>
+                                <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                            </div>
+                            <div id="excelStatus" class="status">Belum ada file Excel/CSV yang diupload</div>
+                            <div id="excelError" class="error"></div>
+                            <ul>
+                                <li>Kolom A: Nama Lokasi</li>
+                                <li>Kolom B: Latitude, contoh <code>-6.175392</code></li>
+                                <li>Kolom C: Longitude, contoh <code>106.827153</code></li>
+                            </ul>
+                        </div>
+
+                        <div class="folder-form">
+                            <label for="kmlFile">Database alat produksi (KML)</label>
+                            <div class="upload-zone">
+                                <p class="upload-copy">Upload file KML yang berisi titik alat produksi untuk lokasi B.</p>
+                                <div class="helper-row">
+                                    <span class="status-pill"><i class="fas fa-file-upload"></i> Klik untuk memilih file KML</span>
+                                </div>
+                                <input type="file" id="kmlFile" accept=".kml">
+                            </div>
+                            <div id="kmlStatus" class="status">Belum ada file KML yang diupload</div>
+                            <div id="kmlError" class="error"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Proses</span>
+                        <h2 class="card-title">Jalankan perhitungan jarak jalan</h2>
+                        <p class="card-copy">Setelah kedua file siap, proses perhitungan akan berjalan dan progress ditampilkan secara bertahap.</p>
+                    </div>
+                    <button id="processBtn" type="button" disabled>
+                        <i class="fas fa-calculator"></i> Proses Perhitungan Jarak Jalan
                     </button>
-                </div>
-            </div>
-        </div>
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-header">
+                            <span>Status Proses</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Menunggu proses dimulai...</div>
+                        <div id="osrmStatus" class="osrm-status">OSRM: Menunggu perhitungan rute</div>
+                    </div>
+                </section>
 
-        <!-- Bagian Tutorial -->
-        <div class="tutorial-container">
-            <h2><i class="fas fa-graduation-cap"></i> Tutorial Penggunaan Aplikasi</h2>
-            
-            <div class="tutorial-step">
-                <h3><i class="fas fa-upload"></i> Langkah 1: Upload Data</h3>
-                <p>1. Klik tombol "Pilih file Excel/CSV" untuk mengunggah file yang berisi daftar lokasi Anda (Lokasi A).</p>
-                <p>2. Klik tombol "Pilih file KML" untuk mengunggah file KML yang berisi database alat produksi (Lokasi B).</p>
-                <p>3. Pastikan format file sesuai dengan petunjuk yang diberikan.</p>
+                <section class="card" id="resultsCard" style="display: none;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil Analisis</span>
+                        <h2 class="card-title">Ringkasan, tabel, dan peta rute</h2>
+                        <p class="card-copy">Setelah proses selesai, Anda bisa meninjau hasil per titik dalam tabel atau memvisualisasikannya di peta.</p>
+                    </div>
+
+                    <div class="summary" id="summaryContainer">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Titik</div>
+                            <div class="summary-value" id="totalPoints">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Alat Produksi</div>
+                            <div class="summary-value" id="totalTools">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Jarak Terdekat</div>
+                            <div class="summary-value" id="minDistance">0 m</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Jarak Terjauh</div>
+                            <div class="summary-value" id="maxDistance">0 m</div>
+                        </div>
+                    </div>
+
+                    <div class="tab-container">
+                        <div class="tab active" data-tab="table">Tabel Hasil</div>
+                        <div class="tab" data-tab="map">Peta Rute</div>
+                    </div>
+
+                    <div class="tab-content active" id="tableTab">
+                        <div class="results-table-container">
+                            <table class="results-table" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Lokasi</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Jarak Lurus</th>
+                                        <th>Alat Produksi Terdekat</th>
+                                        <th>Jarak Jalan</th>
+                                        <th>Koordinat Alat Produksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="tool-actions">
+                            <button id="downloadBtn" type="button"><i class="fas fa-file-download"></i> Download Hasil (Excel)</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="mapTab">
+                        <div class="map-container" id="map"></div>
+                        <div id="mapInfo" class="status"></div>
+                        <div class="form-group">
+                            <label for="routeLimit">Tampilkan rute untuk</label>
+                            <select id="routeLimit">
+                                <option value="10">10 Titik Pertama</option>
+                                <option value="20">20 Titik Pertama</option>
+                                <option value="50">50 Titik Pertama</option>
+                                <option value="all">Semua Titik</option>
+                            </select>
+                            <div class="tool-actions">
+                                <button id="updateMapBtn" type="button" class="button-accent"><i class="fas fa-sync-alt"></i> Perbarui Peta</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            
-            <div class="tutorial-step">
-                <h3><i class="fas fa-calculator"></i> Langkah 2: Proses Perhitungan</h3>
-                <p>1. Setelah kedua file berhasil diunggah, tombol "Proses Perhitungan Jarak Jalan" akan aktif.</p>
-                <p>2. Klik tombol tersebut untuk memulai proses perhitungan jarak jalan.</p>
-                <p>3. Anda bisa melihat progress perhitungan pada progress bar yang muncul.</p>
-            </div>
-            
-            <div class="tutorial-step">
-                <h3><i class="fas fa-table"></i> Langkah 3: Lihat Hasil</h3>
-                <p>1. Setelah proses selesai, hasil akan ditampilkan dalam bentuk tabel.</p>
-                <p>2. Anda bisa melihat jarak lurus dan jarak jalan untuk setiap lokasi.</p>
-                <p>3. Informasi alat produksi terdekat juga akan ditampilkan.</p>
-            </div>
-            
-            <div class="tutorial-step">
-                <h3><i class="fas fa-map-marked-alt"></i> Langkah 4: Visualisasi Peta</h3>
-                <p>1. Pilih tab "Peta Rute" untuk melihat visualisasi rute di peta.</p>
-                <p>2. Gunakan dropdown untuk memilih berapa banyak rute yang ingin ditampilkan.</p>
-                <p>3. Klik tombol "Perbarui Peta" untuk menerapkan perubahan.</p>
-            </div>
-            
-            <div class="tutorial-step">
-                <h3><i class="fas fa-download"></i> Langkah 5: Download Hasil</h3>
-                <p>1. Klik tombol "Download Hasil (Excel)" untuk menyimpan hasil perhitungan.</p>
-                <p>2. File Excel akan diunduh ke perangkat Anda.</p>
-            </div>
-            
-            <div class="tutorial-video">
-                <!-- Ganti URL YouTube dengan video tutorial Anda -->
-                <iframe src="https://www.youtube.com/embed/VIDEO_ID" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen></iframe>
-            </div>
-        <div class="footer">
-            <p>Tool Pengukur Antara Lokasi A dengan Lokasi B Secara Masal &copy; 2025 | Menggunakan OSRM dan OpenStreetMap</p>
-        </div>
-    </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card tutorial-container">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Langkah Kerja</span>
+                        <h2 class="card-title">Panduan penggunaan singkat</h2>
+                        <p class="card-copy">Anda bisa mengikuti alur berikut untuk memastikan input, proses, dan review hasil berjalan mulus.</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-upload"></i> 1. Upload data</h3>
+                        <p>Unggah file Excel atau CSV untuk daftar lokasi A, lalu unggah file KML untuk database alat produksi lokasi B.</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-calculator"></i> 2. Proses perhitungan</h3>
+                        <p>Setelah kedua file valid, jalankan perhitungan dan pantau progress serta status routing OSRM.</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-table"></i> 3. Tinjau hasil</h3>
+                        <p>Periksa ringkasan metrik dan tabel hasil untuk melihat alat produksi terdekat, jarak lurus, dan jarak jalan.</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-map-location-dot"></i> 4. Buka peta rute</h3>
+                        <p>Pilih tab peta, batasi jumlah rute yang ingin ditampilkan, lalu perbarui visualisasi jika perlu.</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-download"></i> 5. Unduh hasil</h3>
+                        <p>Gunakan tombol download Excel untuk menyimpan hasil analisis dalam format yang siap dibagikan atau diolah lanjutan.</p>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
 
     <script>
         // Variabel global
@@ -1293,4 +808,3 @@
     </script>
 </body>
 </html>
-
