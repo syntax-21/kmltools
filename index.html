@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KML Tools Workspace - Enterprise Edition</title>
+  <link rel="shortcut icon" type="image/png" href="kml.png">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles/kmltools-pro.css">
+</head>
+
+<body class="app-shell dark-theme">
+  <main class="page-shell">
+    <section class="hero-shell glass-card">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow"><i class="fas fa-satellite-dish"></i> Sistem KML Terpusat</span>
+          <h1 class="display-title">KML & Geospatial Intelligence Core</h1>
+          <p class="hero-description" style="font-size: 1.1rem; margin-bottom: 2rem;">
+            Rangkaian utilitas pemrosesan data berbasis browser tingkat lanjut. Sistem memproses ribuan koordinat, rute
+            OSRM, dan KML tanpa mengunggah data ke server eksternal.
+          </p>
+          <div class="status-strip">
+            <span class="status-pill"><i class="fas fa-lock" style="color: var(--neon-green)"></i> Secure Sandbox</span>
+            <span class="status-pill"><i class="fas fa-microchip" style="color: var(--neon-blue)"></i> Edge
+              Computing</span>
+            <span class="status-pill"><i class="fas fa-satellite" style="color: var(--neon-purple)"></i> Spatial
+              Ready</span>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="status-panel">
+            <strong
+              style="color: var(--neon-blue); letter-spacing: 0.1em; font-size: 0.8rem; text-transform: uppercase;">Node
+              Status</strong>
+            <span style="font-size: 1.5rem; color: #fff; font-weight: 700; margin: 0.5rem 0;">Local Memory</span>
+            <p class="support-text" style="font-size: 0.85rem; opacity: 0.7;">
+              Enkripsi tidak diperlukan. Semua kalkulasi spasial berjalan langsung di dalam RAM perangkat (Client-Side).
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace-grid">
+      <aside class="nav-shell glass-card">
+        <div class="card-header" style="margin-bottom: 1rem;">
+          <span class="eyebrow"
+            style="background: rgba(178, 75, 243, 0.1); color: var(--neon-purple); border-color: rgba(178, 75, 243, 0.3);">
+            <i class="fas fa-microchip"></i> Direktori Modul
+          </span>
+          <h2 style="font-size: 1.5rem">Pilih Utilitas</h2>
+        </div>
+        <div class="nav-menu" role="tablist" aria-label="Daftar tool KML">
+          <button class="nav-item active" type="button" role="tab" aria-selected="true" data-tab="converter"
+            data-title="Data Matrix: CSV &lt;-&gt; KML"
+            data-description="Mesin konversi dua arah berkecepatan tinggi antara format tabular CSV dan KML spasial."
+            data-badge="Matriks Konversi" data-status="Menunggu injeksi data koordinat..."
+            data-url="converter.html?tool=converter" data-meta="Format I/O Node">
+            <span class="nav-title"><i class="fas fa-exchange-alt"></i> Konverter CSV &lt;-&gt; KML</span>
+            <span class="nav-copy">Transformasi data koordinat ke dalam placemark visual.</span>
+          </button>
+
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="tiangnew"
+            data-title="Generator Node Geospasial"
+            data-description="Algoritma penyebaran otomatis titik (placemark) berdasarkan interval sepanjang vektor rute."
+            data-badge="Sistem Generasi" data-status="Menunggu input lintasan KML..."
+            data-url="tiangnew.html?tool=tiangnew" data-meta="Distribusi Algoritmik">
+            <span class="nav-title"><i class="fas fa-map-pin"></i> Auto Placemark Tiang</span>
+            <span class="nav-copy">Distribusi otomatis titik tiang di sepanjang jalur kabel.</span>
+          </button>
+
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="asesoristiang"
+            data-title="Kalkulator Material Jaringan"
+            data-description="Sistem scanning cerdas untuk menghitung kebutuhan asesoris pada jalur telekomunikasi eksisting."
+            data-badge="Pemindai Topologi" data-status="Menunggu peta jaringan..."
+            data-url="asesoristiang.html?tool=asesoristiang" data-meta="Estimasi Logistik">
+            <span class="nav-title"><i class="fas fa-sitemap"></i> Hitung Asesoris Eksisting</span>
+            <span class="nav-copy">Kalkulasi presisi untuk total kebutuhan material berdasarkan rute.</span>
+          </button>
+
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="split"
+            data-title="Pemotong Vektor (Split Line)"
+            data-description="Sistem pemecahan otomatis jalur KML masif menjadi beberapa blok/segmen parsial."
+            data-badge="Modul Fragmentasi" data-status="Menunggu vektor KML..." data-url="splitline.html?tool=split"
+            data-meta="Segmentasi Garis">
+            <span class="nav-title"><i class="fas fa-cut"></i> Split Line Google Earth</span>
+            <span class="nav-copy">Pecah jalur panjang menjadi beberapa sub-segmen terukur.</span>
+          </button>
+
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="ukurallpro"
+            data-title="Pengukur Jarak Aktual (OSRM Core)"
+            data-description="Mesin routing berbasis OpenStreetMap untuk menghitung jarak nyata jalan raya dari titik origin ke destinasi."
+            data-badge="Telemetri Routing" data-status="Menghubungkan ke server routing OSRM..."
+            data-url="ukurallpro.html?tool=ukurallpro" data-meta="OSRM Navigation">
+            <span class="nav-title"><i class="fas fa-ruler-combined"></i> Ukur Jarak Allpro Masal</span>
+            <span class="nav-copy">Kalkulasi jarak tempuh darat secara masif menggunakan rute jalan nyata.</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="stage-shell glass-card">
+        <div class="stage-header">
+          <div>
+            <span class="eyebrow" id="activeToolTag"
+              style="background: rgba(0, 248, 157, 0.1); color: var(--neon-green); border-color: rgba(0, 248, 157, 0.3);">Matriks
+              Konversi</span>
+            <h2 id="activeToolFrameTitle"
+              style="font-size: 2rem; margin-top: 0.5rem; text-shadow: 0 0 20px rgba(255,255,255,0.2);">Data Matrix: CSV
+              &lt;-&gt; KML</h2>
+            <p id="workspaceStatus" style="font-family: monospace; color: var(--neon-blue);">Menunggu injeksi data
+              koordinat...</p>
+            <div class="status-strip" style="margin-top: 1rem;">
+              <span class="status-pill"><i class="fas fa-terminal"></i> <span id="activeMeta">Format I/O
+                  Node</span></span>
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            <a id="toolLaunchLink" class="btn btn-outline" href="converter.html?tool=converter" target="_blank"
+              rel="noopener noreferrer">
+              <i class="fas fa-external-link-alt"></i> Ekspansi Layar
+            </a>
+          </div>
+        </div>
+
+        <div id="converter" class="tab-content active" data-tool-panel aria-hidden="false">
+          <div class="tool-stage">
+            <iframe src="converter.html?tool=converter" data-src="converter.html?tool=converter"
+              title="CSV ke KML Converter"></iframe>
+          </div>
+        </div>
+        <div id="tiangnew" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="tiangnew.html?tool=tiangnew" title="Auto Placemark Tiang New"></iframe>
+          </div>
+        </div>
+        <div id="asesoristiang" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="asesoristiang.html?tool=asesoristiang" title="Asesoris Tiang Existing"></iframe>
+          </div>
+        </div>
+        <div id="split" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="splitline.html?tool=split" title="Google Earth Split Line"></iframe>
+          </div>
+        </div>
+        <div id="ukurallpro" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="ukurallpro.html?tool=ukurallpro" title="Ukur Jarak Allpro Masal"></iframe>
+          </div>
+        </div>
+
+        <div class="footer-card" style="margin-top: 0.5rem;">
+          <div>
+            <p><strong id="activeToolName" style="color: #fff;">Data Matrix: CSV &lt;-&gt; KML</strong></p>
+            <p id="activeToolDescription" style="font-size: 0.85rem; max-width: 500px;">Mesin konversi dua arah
+              berkecepatan tinggi antara format tabular CSV dan KML spasial.</p>
+          </div>
+          <div style="text-align: right; font-size: 0.85rem;">
+            <p><strong>System Architect:</strong> <a href="https://t.me/amirun_rayan" target="_blank"
+                rel="noopener noreferrer">Amirun Rayan Ariandi S.M</a></p>
+            <p><strong>QA Engineering:</strong> <a href="https://t.me/egantarastr" target="_blank"
+                rel="noopener noreferrer">Egantara Satria Utama S.Kom</a></p>
+            <p><strong>Project Lead:</strong> <a href="https://t.me/Herodin" target="_blank"
+                rel="noopener noreferrer">Herodin Bening Wicaksono S.Kom</a></p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <button class="cache-control btn btn-primary" type="button" onclick="clearCacheAndCookies()"
+    style="box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);">
+    <i class="fas fa-sync-alt fa-spin-hover"></i> Force Reload Core
+  </button>
+
+  <script src="scripts/app-shell.js"></script>
+</body>
+
+</html>

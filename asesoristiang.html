@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesoris Tiang Existing</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
+</head>
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-sitemap"></i> Analisis KML Existing</span>
+                    <h1 class="display-title">Hitung Asesoris Tiang Dari KML Existing</h1>
+                    <p class="hero-description">
+                        Tool ini membaca path dan titik yang sudah ada di file KML atau KMZ, lalu menghitung kebutuhan
+                        asesoris berdasarkan struktur jalur. Tidak ada placemark tiang baru yang dibuat.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-file-lines"></i> Input KML / KMZ existing</span>
+                        <span class="status-pill"><i class="fas fa-chart-column"></i> Summary + tabel hasil</span>
+                        <span class="status-pill"><i class="fas fa-map"></i> Preview peta style existing</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Output</strong>
+                        <span>Ringkasan asesoris dan KML hasil</span>
+                        <p class="support-text">
+                            Tool ini berguna saat Anda ingin meninjau path existing, memetakan asesoris, dan tetap mempertahankan referensi data lapangan yang ada.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Fokus</strong>
+                            <span>Data Existing</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Asesoris</strong>
+                            <span>Auto Count</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Ekspor</strong>
+                            <span>KML Baru</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card instructions">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Aturan Baca</span>
+                        <h2 class="card-title">Cara tool membaca file existing</h2>
+                    </div>
+                    <ol>
+                        <li>Upload satu file KML atau KMZ yang sudah berisi path, tiang, dan objek lapangan lain.</li>
+                        <li>Tool akan membaca semua path dan titik tanpa membuat placemark tiang baru.</li>
+                        <li>Ikon titik di peta mengikuti style KML asli selama URL ikonnya bisa diakses browser.</li>
+                        <li>Titik referensi terdekat dengan jarak 250 meter antar line dapat memicu perhitungan <strong>PU-AS-HL</strong> beserta seberangannya.</li>
+                        <li>Pada line lurus, <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> juga dihitung tiap <strong>250 meter</strong>.</li>
+                        <li>Titik pada folder <strong>CATUAN</strong> dan <strong>ODP PLAN</strong> juga dipakai untuk memicu <strong>PU-AS-HL</strong> atau <strong>PU-AS-DE-50/70</strong> pada path terdekat, selama tidak bertumpuk dengan titik utama yang sudah ada. Jika primary point dekat <strong>ODP PLAN</strong>, titik asesoris akan ditempatkan di <strong>ODP PLAN</strong> saja. Jika titik tersebut berada di ujung jalur, qty-nya menjadi <strong>1</strong>.</li>
+                        <li><strong>PU-AS-SC</strong> sekarang dihitung pada setiap tiang yang berada di sepanjang ruas path terkait, bukan hanya tiang sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong>, namun tetap dilewati bila posisinya bertumpuk atau terlalu dekat dengan titik tersebut.</li>
+                        <li>Kategori tiang yang dikenali untuk aturan sebelum dan sesudah adalah <strong>TE</strong> (existing), <strong>TN</strong> (new), <strong>TB</strong> (baru), dan <strong>TP</strong> (plan).</li>
+                    </ol>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Workspace</span>
+                        <h2 class="card-title">Upload file dan jalankan analisis</h2>
+                        <p class="card-copy">Panel ini menggabungkan input file, tombol analisis, hasil preview, dan area peta agar alur kerja tetap ringkas.</p>
+                    </div>
+
+                    <div class="upload-zone" id="dropZone">
+                        <h3>Upload KML/KMZ existing</h3>
+                        <p class="upload-copy">Pastikan file sudah berisi path dan titik existing seperti pada folder KABEL, TIANG, ODP, atau objek terkait lainnya.</p>
+                        <div class="helper-row">
+                            <span class="status-pill"><i class="fas fa-cloud-arrow-up"></i> Klik atau drop file di sini</span>
+                        </div>
+                        <input type="file" id="fileInput" accept=".kml,.kmz">
+                        <div id="fileInfo"></div>
+                    </div>
+
+                    <div class="tool-actions">
+                        <button id="previewBtn" type="button" disabled><i class="fas fa-table-list"></i> Preview Hasil</button>
+                        <button id="mapBtn" type="button" class="button-accent" disabled><i class="fas fa-map-location-dot"></i> Tampilkan di Peta</button>
+                        <button id="generateBtn" type="button" class="button-success" disabled><i class="fas fa-download"></i> Download KML Asesoris</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil</span>
+                        <h2 class="card-title">Preview summary, tabel, dan peta</h2>
+                        <p class="card-copy">Area ini menampung summary card, tabel asesoris, serta visualisasi peta dari file existing Anda.</p>
+                    </div>
+                    <div id="output"></div>
+                    <div id="map" style="display: none;"></div>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card tutorial-section">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Tutorial</span>
+                        <h2 class="card-title">Panduan penggunaan aplikasi</h2>
+                        <p class="card-copy">Gunakan panduan ini untuk menyiapkan file existing, memeriksa hasil preview, dan mengekspor KML asesoris.</p>
+                    </div>
+                    <div class="tutorial-steps">
+                        <ol>
+                            <li>Siapkan satu file KML atau KMZ existing dari Google Earth.</li>
+                            <li>Upload file ke tool ini dan jalankan preview hasil.</li>
+                            <li>Periksa tabel dan peta untuk memastikan objek existing terbaca dengan benar.</li>
+                            <li>Unduh KML hasil yang menambahkan folder asesoris tiang.</li>
+                        </ol>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+    <script>
+        const ACCESSORY_REFERENCE_RADIUS = 250;
+        const BEND_ANGLE_THRESHOLD = 25;
+        const STRAIGHT_ACCESSORY_INTERVAL = 250;
+        const PRIMARY_ACCESSORY_DISTANCE_TOLERANCE = 1;
+        const SC_PRIMARY_OVERLAP_RADIUS = 15;
+        const ENDPOINT_PRIMARY_ACCESSORY_RADIUS = 25;
+        const ODP_PLAN_SNAP_RADIUS = 50;
+        const DEFAULT_POINT_ICON = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png';
+
+        let currentKmlText = '';
+        let fileName = '';
+        let documentName = 'Nama LOP';
+        let allFeatures = [];
+        let pathFeatures = [];
+        let pointFeatures = [];
+        let map;
+        let featureLayers = [];
+        let accessoryLayers = [];
+
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const previewBtn = document.getElementById('previewBtn');
+        const mapBtn = document.getElementById('mapBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const outputDiv = document.getElementById('output');
+        const fileInfoDiv = document.getElementById('fileInfo');
+        const mapDiv = document.getElementById('map');
+
+        fileInput.addEventListener('change', handleFileSelect);
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+        dropZone.addEventListener('drop', handleDrop);
+        previewBtn.addEventListener('click', previewResults);
+        mapBtn.addEventListener('click', displayOnMap);
+        generateBtn.addEventListener('click', generateKML);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('active');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('active');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('active');
+
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: fileInput });
+            }
+        }
+
+        function resetUI() {
+            outputDiv.innerHTML = '';
+            fileInfoDiv.textContent = '';
+            currentKmlText = '';
+            fileName = '';
+            documentName = 'Nama LOP';
+            allFeatures = [];
+            pathFeatures = [];
+            pointFeatures = [];
+            previewBtn.disabled = true;
+            mapBtn.disabled = true;
+            generateBtn.disabled = true;
+            clearMapLayers();
+            mapDiv.style.display = 'none';
+        }
+
+        function clearMapLayers() {
+            if (!map) {
+                featureLayers = [];
+                accessoryLayers = [];
+                return;
+            }
+
+            [...featureLayers, ...accessoryLayers].forEach(layer => {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            featureLayers = [];
+            accessoryLayers = [];
+        }
+
+        function handleFileSelect(event) {
+            resetUI();
+
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            fileName = file.name.replace(/\.[^/.]+$/, '');
+            fileInfoDiv.textContent = `File terpilih: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+
+            loadKmlOrKmzFile(file, parseKmlContent, function(message) {
+                showError(message);
+            });
+        }
+
+        function loadKmlOrKmzFile(file, onSuccess, onError) {
+            const lowerName = file.name.toLowerCase();
+            const reader = new FileReader();
+
+            if (lowerName.endsWith('.kmz')) {
+                reader.onload = function(e) {
+                    JSZip.loadAsync(e.target.result).then(function(zip) {
+                        const kmlFile = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+                        if (!kmlFile) {
+                            onError('File KMZ tidak mengandung file KML');
+                            return;
+                        }
+
+                        zip.file(kmlFile).async('string').then(onSuccess).catch(function(error) {
+                            onError('Gagal membaca isi KML dari KMZ: ' + error.message);
+                        });
+                    }).catch(function(error) {
+                        onError('Gagal membaca file KMZ: ' + error.message);
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+                return;
+            }
+
+            if (lowerName.endsWith('.kml')) {
+                reader.onload = function(e) {
+                    onSuccess(e.target.result);
+                };
+                reader.readAsText(file);
+                return;
+            }
+
+            onError('Format file tidak didukung. Harap upload file KML atau KMZ.');
+        }
+
+        function parseKmlContent(kmlText) {
+            try {
+                const parser = new DOMParser();
+                const kmlDoc = parser.parseFromString(kmlText, 'text/xml');
+                const errors = kmlDoc.getElementsByTagName('parsererror');
+                if (errors.length > 0) {
+                    throw new Error(errors[0].textContent || 'Format KML tidak valid');
+                }
+
+                const documentElement = kmlDoc.getElementsByTagName('Document')[0];
+                documentName = documentElement ? getImmediateChildText(documentElement, 'name') || fileName : fileName;
+
+                const styleContext = buildStyleContext(kmlDoc);
+                const parsedFeatures = extractFeatures(kmlDoc, styleContext);
+
+                pathFeatures = parsedFeatures.filter(feature =>
+                    feature.geometryType === 'LineString' && !feature.isGeneratedAccessory
+                );
+                pointFeatures = parsedFeatures.filter(feature =>
+                    feature.geometryType === 'Point' && !feature.isGeneratedAccessory
+                );
+                allFeatures = parsedFeatures.filter(feature => !feature.isGeneratedAccessory);
+
+                if (pathFeatures.length === 0) {
+                    throw new Error('Tidak ditemukan path (LineString) dalam file KML');
+                }
+
+                currentKmlText = kmlText;
+                previewBtn.disabled = false;
+                mapBtn.disabled = false;
+                generateBtn.disabled = false;
+
+                showSuccess(
+                    `Berhasil memuat ${pathFeatures.length} path, ${pointFeatures.length} titik, dan ${allFeatures.length} fitur dari KML existing`
+                );
+            } catch (error) {
+                showError('Gagal memproses KML: ' + error.message);
+            }
+        }
+
+        function buildStyleContext(kmlDoc) {
+            const styles = new Map();
+            const styleMaps = new Map();
+
+            Array.from(kmlDoc.getElementsByTagName('Style')).forEach(styleElement => {
+                const id = styleElement.getAttribute('id');
+                if (!id) {
+                    return;
+                }
+                if (styleElement.parentNode && styleElement.parentNode.localName === 'Placemark') {
+                    return;
+                }
+                styles.set(`#${id}`, parseStyleElement(styleElement));
+            });
+
+            Array.from(kmlDoc.getElementsByTagName('StyleMap')).forEach(styleMapElement => {
+                const id = styleMapElement.getAttribute('id');
+                if (!id) {
+                    return;
+                }
+
+                const pairs = Array.from(styleMapElement.getElementsByTagName('Pair'));
+                const normalPair = pairs.find(pair => getImmediateChildText(pair, 'key') === 'normal') || pairs[0];
+                if (!normalPair) {
+                    return;
+                }
+
+                const styleUrl = getImmediateChildText(normalPair, 'styleUrl');
+                if (styleUrl) {
+                    styleMaps.set(`#${id}`, styleUrl.trim());
+                }
+            });
+
+            return { styles, styleMaps };
+        }
+
+        function parseStyleElement(styleElement) {
+            const iconStyle = styleElement.getElementsByTagName('IconStyle')[0];
+            const lineStyle = styleElement.getElementsByTagName('LineStyle')[0];
+            const polyStyle = styleElement.getElementsByTagName('PolyStyle')[0];
+
+            const iconHref = iconStyle
+                ? getTextFromFirstElement(iconStyle, 'href')
+                : '';
+            const iconScale = iconStyle
+                ? parseFloat(getTextFromFirstElement(iconStyle, 'scale') || '1')
+                : 1;
+
+            return {
+                iconHref: iconHref || '',
+                iconScale: Number.isFinite(iconScale) && iconScale > 0 ? iconScale : 1,
+                lineColor: lineStyle ? getTextFromFirstElement(lineStyle, 'color') : '',
+                lineWidth: lineStyle ? parseFloat(getTextFromFirstElement(lineStyle, 'width') || '3') : 3,
+                polyColor: polyStyle ? getTextFromFirstElement(polyStyle, 'color') : ''
+            };
+        }
+
+        function resolveFeatureStyle(placemark, styleContext) {
+            const resolvedStyle = {
+                iconHref: '',
+                iconScale: 1,
+                lineColor: '',
+                lineWidth: 3,
+                polyColor: ''
+            };
+
+            const styleUrl = getImmediateChildText(placemark, 'styleUrl');
+            if (styleUrl) {
+                let lookupKey = styleUrl.trim();
+                const visited = new Set();
+                while (styleContext.styleMaps.has(lookupKey) && !visited.has(lookupKey)) {
+                    visited.add(lookupKey);
+                    lookupKey = styleContext.styleMaps.get(lookupKey);
+                }
+
+                if (styleContext.styles.has(lookupKey)) {
+                    Object.assign(resolvedStyle, styleContext.styles.get(lookupKey));
+                }
+            }
+
+            const inlineStyle = Array.from(placemark.childNodes).find(node =>
+                node.nodeType === 1 && node.localName === 'Style'
+            );
+            if (inlineStyle) {
+                Object.assign(resolvedStyle, parseStyleElement(inlineStyle));
+            }
+
+            return resolvedStyle;
+        }
+
+        function extractFeatures(kmlDoc, styleContext) {
+            return Array.from(kmlDoc.getElementsByTagName('Placemark')).map((placemark, index) => {
+                const name = getImmediateChildText(placemark, 'name') || `Placemark ${index + 1}`;
+                const description = getImmediateChildText(placemark, 'description');
+                const folderPath = getPlacemarkFolderPath(placemark);
+                const style = resolveFeatureStyle(placemark, styleContext);
+
+                let geometryType = '';
+                let coordinates = [];
+
+                const pointElement = placemark.getElementsByTagName('Point')[0];
+                const lineStringElement = placemark.getElementsByTagName('LineString')[0];
+                const polygonElement = placemark.getElementsByTagName('Polygon')[0];
+
+                if (pointElement) {
+                    geometryType = 'Point';
+                    coordinates = parseCoordinatesFromElement(pointElement);
+                } else if (lineStringElement) {
+                    geometryType = 'LineString';
+                    coordinates = parseCoordinatesFromElement(lineStringElement);
+                } else if (polygonElement) {
+                    geometryType = 'Polygon';
+                    coordinates = parseCoordinatesFromElement(polygonElement);
+                }
+
+                if (coordinates.length === 0) {
+                    return null;
+                }
+
+                return {
+                    id: index + 1,
+                    name,
+                    description,
+                    folderPath,
+                    geometryType,
+                    coordinates,
+                    representativePoint: getRepresentativePoint(coordinates),
+                    style,
+                    isGeneratedAccessory: folderPath.some(part => normalizeLabel(part) === 'asesoris tiang')
+                };
+            }).filter(Boolean);
+        }
+
+        function parseCoordinatesFromElement(element) {
+            const coordinatesElement = element.getElementsByTagName('coordinates')[0];
+            if (!coordinatesElement) {
+                return [];
+            }
+
+            return coordinatesElement.textContent
+                .trim()
+                .split(/\s+/)
+                .map(coord => {
+                    const [lon, lat, alt] = coord.split(',').map(Number);
+                    if (Number.isNaN(lat) || Number.isNaN(lon)) {
+                        return null;
+                    }
+
+                    return {
+                        lat,
+                        lon,
+                        alt: Number.isNaN(alt) ? 0 : alt
+                    };
+                })
+                .filter(Boolean);
+        }
+
+        function getImmediateChildText(parent, tagName) {
+            if (!parent) {
+                return '';
+            }
+
+            const child = Array.from(parent.childNodes).find(node =>
+                node.nodeType === 1 && node.localName === tagName
+            );
+            return child ? child.textContent.trim() : '';
+        }
+
+        function getTextFromFirstElement(parent, tagName) {
+            const child = parent.getElementsByTagName(tagName)[0];
+            return child ? child.textContent.trim() : '';
+        }
+
+        function getPlacemarkFolderPath(placemark) {
+            const folderNames = [];
+            let current = placemark.parentNode;
+
+            while (current) {
+                if (current.nodeType === 1 && current.localName === 'Folder') {
+                    const folderName = getImmediateChildText(current, 'name');
+                    if (folderName) {
+                        folderNames.unshift(folderName);
+                    }
+                }
+                current = current.parentNode;
+            }
+
+            return folderNames;
+        }
+
+        function getRepresentativePoint(coordinates) {
+            const totals = coordinates.reduce((acc, coord) => {
+                acc.lat += coord.lat;
+                acc.lon += coord.lon;
+                acc.alt += coord.alt || 0;
+                return acc;
+            }, { lat: 0, lon: 0, alt: 0 });
+
+            return {
+                lat: totals.lat / coordinates.length,
+                lon: totals.lon / coordinates.length,
+                alt: totals.alt / coordinates.length
+            };
+        }
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const earthRadius = 6371000;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            const deltaLat = (lat2 - lat1) * Math.PI / 180;
+            const deltaLon = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return earthRadius * c;
+        }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            const deltaLon = (lon2 - lon1) * Math.PI / 180;
+
+            const y = Math.sin(deltaLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+                Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLon);
+
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
+
+        function calculateTurnAngle(previousPoint, currentPoint, nextPoint) {
+            const incomingBearing = calculateBearing(previousPoint.lat, previousPoint.lon, currentPoint.lat, currentPoint.lon);
+            const outgoingBearing = calculateBearing(currentPoint.lat, currentPoint.lon, nextPoint.lat, nextPoint.lon);
+
+            let difference = Math.abs(outgoingBearing - incomingBearing);
+            if (difference > 180) {
+                difference = 360 - difference;
+            }
+
+            return difference;
+        }
+
+        function buildPathDistanceIndex(path) {
+            const cumulativeDistances = [0];
+            for (let i = 1; i < path.length; i++) {
+                const previous = path[i - 1];
+                const current = path[i];
+                cumulativeDistances.push(
+                    cumulativeDistances[i - 1] + haversineDistance(previous.lat, previous.lon, current.lat, current.lon)
+                );
+            }
+            return cumulativeDistances;
+        }
+
+        function interpolatePointAlongPath(path, cumulativeDistances, targetDistance) {
+            if (path.length === 0) {
+                return null;
+            }
+
+            if (targetDistance <= 0) {
+                return { ...path[0] };
+            }
+
+            const totalDistance = cumulativeDistances[cumulativeDistances.length - 1];
+            if (targetDistance >= totalDistance) {
+                return { ...path[path.length - 1] };
+            }
+
+            for (let i = 0; i < path.length - 1; i++) {
+                const startDistance = cumulativeDistances[i];
+                const endDistance = cumulativeDistances[i + 1];
+
+                if (targetDistance > endDistance) {
+                    continue;
+                }
+
+                const segmentLength = endDistance - startDistance;
+                const fraction = segmentLength === 0 ? 0 : (targetDistance - startDistance) / segmentLength;
+                const segmentStart = path[i];
+                const segmentEnd = path[i + 1];
+
+                return {
+                    lat: segmentStart.lat + ((segmentEnd.lat - segmentStart.lat) * fraction),
+                    lon: segmentStart.lon + ((segmentEnd.lon - segmentStart.lon) * fraction),
+                    alt: (segmentStart.alt || 0) + (((segmentEnd.alt || 0) - (segmentStart.alt || 0)) * fraction)
+                };
+            }
+
+            return { ...path[path.length - 1] };
+        }
+
+        function projectPointToSegment(point, segmentStart, segmentEnd) {
+            const refLat = (segmentStart.lat + segmentEnd.lat + point.lat) / 3;
+            const metersPerLat = 111320;
+            const metersPerLon = 111320 * Math.cos(refLat * Math.PI / 180);
+
+            const start = {
+                x: segmentStart.lon * metersPerLon,
+                y: segmentStart.lat * metersPerLat
+            };
+            const end = {
+                x: segmentEnd.lon * metersPerLon,
+                y: segmentEnd.lat * metersPerLat
+            };
+            const target = {
+                x: point.lon * metersPerLon,
+                y: point.lat * metersPerLat
+            };
+
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const segmentLengthSquared = dx * dx + dy * dy;
+
+            if (segmentLengthSquared === 0) {
+                return {
+                    fraction: 0,
+                    distanceMeters: Math.hypot(target.x - start.x, target.y - start.y),
+                    projectedPoint: { ...segmentStart }
+                };
+            }
+
+            const rawFraction = ((target.x - start.x) * dx + (target.y - start.y) * dy) / segmentLengthSquared;
+            const fraction = Math.max(0, Math.min(1, rawFraction));
+            const projectedX = start.x + dx * fraction;
+            const projectedY = start.y + dy * fraction;
+
+            return {
+                fraction,
+                distanceMeters: Math.hypot(target.x - projectedX, target.y - projectedY),
+                projectedPoint: {
+                    lat: projectedY / metersPerLat,
+                    lon: projectedX / metersPerLon,
+                    alt: segmentStart.alt + ((segmentEnd.alt || 0) - (segmentStart.alt || 0)) * fraction
+                }
+            };
+        }
+
+        function projectFeatureOntoPath(feature, pathCoordinates) {
+            if (!feature.representativePoint || pathCoordinates.length < 2) {
+                return null;
+            }
+
+            const cumulativeDistances = buildPathDistanceIndex(pathCoordinates);
+            let bestProjection = null;
+
+            for (let i = 0; i < pathCoordinates.length - 1; i++) {
+                const segmentStart = pathCoordinates[i];
+                const segmentEnd = pathCoordinates[i + 1];
+                const segmentLength = cumulativeDistances[i + 1] - cumulativeDistances[i];
+                const projection = projectPointToSegment(feature.representativePoint, segmentStart, segmentEnd);
+                const distanceAlongPath = cumulativeDistances[i] + (segmentLength * projection.fraction);
+
+                if (!bestProjection || projection.distanceMeters < bestProjection.lateralDistance) {
+                    bestProjection = {
+                        feature,
+                        lateralDistance: projection.distanceMeters,
+                        distanceAlongPath,
+                        projectedPoint: projection.projectedPoint
+                    };
+                }
+            }
+
+            return bestProjection;
+        }
+
+        function getPoleCategory(feature) {
+            if (!hasFolderPath(feature, ['TIANG'])) {
+                return '';
+            }
+
+            const searchableParts = [
+                ...(feature.folderPath || []),
+                feature.name || '',
+                feature.description || ''
+            ].map(normalizeLabel);
+            const combined = searchableParts.join(' ');
+
+            if (combined.includes('new')) {
+                return 'TN';
+            }
+
+            if (combined.includes('baru')) {
+                return 'TB';
+            }
+
+            if (hasFolderPath(feature, ['TIANG', 'EXIST']) || combined.includes('exist') || combined.includes('existing')) {
+                return 'TE';
+            }
+
+            if (hasFolderPath(feature, ['TIANG', 'PLAN']) || combined.includes('plan')) {
+                return 'TP';
+            }
+
+            return 'TIANG';
+        }
+
+        function buildPoleAssignmentsByPath() {
+            const poleFeatures = pointFeatures
+                .map(feature => ({
+                    feature,
+                    poleCategory: getPoleCategory(feature)
+                }))
+                .filter(item => item.poleCategory);
+            const assignments = new Map();
+
+            pathFeatures.forEach((_, pathIndex) => {
+                assignments.set(pathIndex, []);
+            });
+
+            poleFeatures.forEach(item => {
+                let bestPathIndex = -1;
+                let bestProjection = null;
+
+                pathFeatures.forEach((pathFeature, pathIndex) => {
+                    const projection = projectFeatureOntoPath(item.feature, pathFeature.coordinates);
+                    if (!projection) {
+                        return;
+                    }
+
+                    if (!bestProjection || projection.lateralDistance < bestProjection.lateralDistance) {
+                        bestProjection = projection;
+                        bestPathIndex = pathIndex;
+                    }
+                });
+
+                if (bestProjection && bestPathIndex >= 0) {
+                    assignments.get(bestPathIndex).push({
+                        ...bestProjection,
+                        poleCategory: item.poleCategory
+                    });
+                }
+            });
+
+            assignments.forEach((items, pathIndex) => {
+                items.sort((a, b) => a.distanceAlongPath - b.distanceAlongPath);
+                assignments.set(pathIndex, items);
+            });
+
+            return assignments;
+        }
+
+        function getPrimaryTriggerLabel(feature) {
+            const normalizedPath = (feature.folderPath || []).map(normalizeLabel);
+            const combined = [
+                ...(feature.folderPath || []),
+                feature.name || '',
+                feature.description || ''
+            ].map(normalizeLabel).join(' ');
+
+            if (normalizedPath.includes('catuan') || combined.includes('catuan')) {
+                return 'CATUAN';
+            }
+
+            if (normalizedPath.includes('odp plan') ||
+                (normalizedPath.includes('odp') && normalizedPath.includes('plan')) ||
+                combined.includes('odp plan')) {
+                return 'ODP PLAN';
+            }
+
+            return '';
+        }
+
+        function buildPrimaryTriggerAssignmentsByPath() {
+            const triggerFeatures = pointFeatures
+                .filter(feature => !feature.isGeneratedAccessory)
+                .map(feature => ({
+                    feature,
+                    triggerLabel: getPrimaryTriggerLabel(feature)
+                }))
+                .filter(item => item.triggerLabel);
+            const assignments = new Map();
+
+            pathFeatures.forEach((_, pathIndex) => {
+                assignments.set(pathIndex, []);
+            });
+
+            triggerFeatures.forEach(item => {
+                let bestPathIndex = -1;
+                let bestProjection = null;
+
+                pathFeatures.forEach((pathFeature, pathIndex) => {
+                    const projection = projectFeatureOntoPath(item.feature, pathFeature.coordinates);
+                    if (!projection) {
+                        return;
+                    }
+
+                    if (!bestProjection || projection.lateralDistance < bestProjection.lateralDistance) {
+                        bestProjection = projection;
+                        bestPathIndex = pathIndex;
+                    }
+                });
+
+                if (bestProjection &&
+                    bestProjection.lateralDistance <= ACCESSORY_REFERENCE_RADIUS &&
+                    bestPathIndex >= 0) {
+                    assignments.get(bestPathIndex).push({
+                        ...bestProjection,
+                        triggerLabel: item.triggerLabel
+                    });
+                }
+            });
+
+            assignments.forEach((items, pathIndex) => {
+                items.sort((a, b) => a.distanceAlongPath - b.distanceAlongPath);
+                assignments.set(pathIndex, items);
+            });
+
+            return assignments;
+        }
+
+        function findNearestReferencePoint(point, features, maxDistance) {
+            let nearestFeature = null;
+            let nearestDistance = Infinity;
+
+            features.forEach(feature => {
+                const referencePoint = feature.representativePoint || feature.coordinates[0];
+                if (!referencePoint) {
+                    return;
+                }
+
+                const distance = haversineDistance(point.lat, point.lon, referencePoint.lat, referencePoint.lon);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestFeature = feature;
+                }
+            });
+
+            if (!nearestFeature || nearestDistance >= maxDistance) {
+                return null;
+            }
+
+            return {
+                feature: nearestFeature,
+                distance: nearestDistance
+            };
+        }
+
+        function getAccessoryDisplayType(accessory) {
+            if (accessory.type === 'PU-AS-HL' || accessory.type === 'PU-AS-DE-50/70') {
+                return 'PU-AS-HL/PU-AS-DE-50/70';
+            }
+
+            return accessory.type;
+        }
+
+        function addAccessoryNames(accessories) {
+            const counters = {};
+            return accessories.map(accessory => {
+                const displayType = getAccessoryDisplayType(accessory);
+                counters[displayType] = (counters[displayType] || 0) + 1;
+                const number = String(counters[displayType]).padStart(3, '0');
+                const quantitySuffix = accessory.quantity > 1 ? ` (x${accessory.quantity})` : '';
+                return {
+                    ...accessory,
+                    displayType,
+                    name: `${displayType} ${number}${quantitySuffix}`
+                };
+            });
+        }
+
+        function createPrimaryAccessory(pathIndex, pathName, point, distance, referencePoints, noteBase, options = {}) {
+            const nearestReference = findNearestReferencePoint(point, referencePoints, ACCESSORY_REFERENCE_RADIUS);
+            const useHL = Boolean(nearestReference);
+            const quantity = options.quantity ?? 2;
+            const includeOpposite = options.includeOpposite ?? quantity > 1;
+            const noteSuffix = includeOpposite ? ', termasuk seberangan' : ', tanpa seberangan';
+
+            return {
+                pathIndex,
+                pathName,
+                type: useHL ? 'PU-AS-HL' : 'PU-AS-DE-50/70',
+                quantity,
+                distance,
+                lat: point.lat,
+                lon: point.lon,
+                alt: point.alt || 0,
+                note: useHL
+                    ? `${noteBase}, referensi terdekat ${nearestReference.feature.name} (${nearestReference.distance.toFixed(1)} m)${noteSuffix}`
+                    : `${noteBase}${noteSuffix}`,
+                nearestReferenceName: useHL ? nearestReference.feature.name : '',
+                nearestReferenceDistance: useHL ? nearestReference.distance : null
+            };
+        }
+
+        function hasNearbyPrimaryAccessory(accessories, pathIndex, distance, point) {
+            return accessories.some(accessory =>
+                accessory.pathIndex === pathIndex && (
+                    Math.abs(accessory.distance - distance) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE ||
+                    (
+                        point &&
+                        haversineDistance(point.lat, point.lon, accessory.lat, accessory.lon) <= SC_PRIMARY_OVERLAP_RADIUS
+                    )
+                )
+            );
+        }
+
+        function findNearbyOdpPlanTrigger(point, distance, triggerAssignmentsOnPath) {
+            let bestTrigger = null;
+
+            triggerAssignmentsOnPath
+                .filter(item => item.triggerLabel === 'ODP PLAN')
+                .forEach(triggerAssignment => {
+                    const triggerPoint = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+                    const coordinateDistance = haversineDistance(
+                        point.lat,
+                        point.lon,
+                        triggerPoint.lat,
+                        triggerPoint.lon
+                    );
+                    const pathDistance = Math.abs(distance - triggerAssignment.distanceAlongPath);
+
+                    if (coordinateDistance > ODP_PLAN_SNAP_RADIUS && pathDistance > ODP_PLAN_SNAP_RADIUS) {
+                        return;
+                    }
+
+                    if (!bestTrigger || coordinateDistance < bestTrigger.coordinateDistance) {
+                        bestTrigger = {
+                            ...triggerAssignment,
+                            coordinateDistance
+                        };
+                    }
+                });
+
+            return bestTrigger;
+        }
+
+        function isPoleAlignedWithPrimaryAccessory(pole, primaryAccessories) {
+            const polePoint = pole.feature.representativePoint;
+
+            return primaryAccessories.some(primaryAccessory => {
+                const isSamePathDistance =
+                    Math.abs(primaryAccessory.distance - pole.distanceAlongPath) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE;
+                const isSameCoordinate =
+                    haversineDistance(
+                        polePoint.lat,
+                        polePoint.lon,
+                        primaryAccessory.lat,
+                        primaryAccessory.lon
+                    ) <= SC_PRIMARY_OVERLAP_RADIUS;
+
+                return isSamePathDistance || isSameCoordinate;
+            });
+        }
+
+        function addScAccessoriesForPath(scAccessories, polesOnPath, primaryAccessoriesOnPath, pathFeature, pathIndex, totalPathDistance) {
+            polesOnPath.forEach(pole => {
+                if (isPoleAlignedWithPrimaryAccessory(pole, primaryAccessoriesOnPath)) {
+                    return;
+                }
+
+                const previousPrimary = [...primaryAccessoriesOnPath]
+                    .reverse()
+                    .find(item => item.distance < pole.distanceAlongPath - PRIMARY_ACCESSORY_DISTANCE_TOLERANCE);
+                const nextPrimary = primaryAccessoriesOnPath
+                    .find(item => item.distance > pole.distanceAlongPath + PRIMARY_ACCESSORY_DISTANCE_TOLERANCE);
+
+                const segmentStart = previousPrimary ? previousPrimary.distance : 0;
+                const segmentEnd = nextPrimary ? nextPrimary.distance : totalPathDistance;
+                const relationNotes = [];
+
+                if (previousPrimary) {
+                    relationNotes.push(`sesudah ${previousPrimary.type} ${previousPrimary.distance.toFixed(2)} m`);
+                }
+
+                if (nextPrimary) {
+                    relationNotes.push(`sebelum ${nextPrimary.type} ${nextPrimary.distance.toFixed(2)} m`);
+                }
+
+                const relationText = relationNotes.length > 0
+                    ? ` (${relationNotes.join(', ')})`
+                    : '';
+
+                scAccessories.push({
+                    pathIndex,
+                    pathName: pathFeature.name || `Path ${pathIndex + 1}`,
+                    type: 'PU-AS-SC',
+                    quantity: 1,
+                    distance: pole.distanceAlongPath,
+                    lat: pole.feature.representativePoint.lat,
+                    lon: pole.feature.representativePoint.lon,
+                    alt: pole.feature.representativePoint.alt || 0,
+                    note: `${pole.poleCategory} pada ruas ${segmentStart.toFixed(2)}-${segmentEnd.toFixed(2)} m: ${pole.feature.name}${relationText}`
+                });
+            });
+        }
+
+        function createPrimaryAccessoryFromTrigger(pathIndex, pathFeature, triggerAssignment, referencePoints, totalPathDistance) {
+            const point = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+            const isEndpointTrigger =
+                triggerAssignment.distanceAlongPath <= ENDPOINT_PRIMARY_ACCESSORY_RADIUS ||
+                (totalPathDistance - triggerAssignment.distanceAlongPath) <= ENDPOINT_PRIMARY_ACCESSORY_RADIUS;
+
+            return createPrimaryAccessory(
+                pathIndex,
+                pathFeature.name || `Path ${pathIndex + 1}`,
+                point,
+                triggerAssignment.distanceAlongPath,
+                referencePoints,
+                isEndpointTrigger
+                    ? `Titik ${triggerAssignment.triggerLabel} ujung jalur`
+                    : `Titik ${triggerAssignment.triggerLabel}`,
+                {
+                    quantity: isEndpointTrigger ? 1 : 2,
+                    includeOpposite: !isEndpointTrigger
+                }
+            );
+        }
+
+        function addStraightRunAccessories(primaryAccessories, pathFeature, pathIndex, path, cumulativeDistances, referencePoints, primaryTriggersOnPath, totalPathDistance, startIndex, endIndex, includeEndPoint) {
+            if (endIndex <= startIndex) {
+                return;
+            }
+
+            const startDistance = cumulativeDistances[startIndex];
+            const endDistance = cumulativeDistances[endIndex];
+            const runLength = endDistance - startDistance;
+
+            if (runLength < STRAIGHT_ACCESSORY_INTERVAL) {
+                return;
+            }
+
+            const maxOffset = includeEndPoint ? runLength + 0.001 : runLength - 0.001;
+            for (let offset = STRAIGHT_ACCESSORY_INTERVAL; offset <= maxOffset; offset += STRAIGHT_ACCESSORY_INTERVAL) {
+                const targetDistance = startDistance + offset;
+                const point = interpolatePointAlongPath(path, cumulativeDistances, targetDistance);
+                if (!point) {
+                    continue;
+                }
+
+                const nearbyOdpPlanTrigger = findNearbyOdpPlanTrigger(point, targetDistance, primaryTriggersOnPath);
+                const primaryAccessory = nearbyOdpPlanTrigger
+                    ? createPrimaryAccessoryFromTrigger(
+                        pathIndex,
+                        pathFeature,
+                        nearbyOdpPlanTrigger,
+                        referencePoints,
+                        totalPathDistance
+                    )
+                    : createPrimaryAccessory(
+                        pathIndex,
+                        pathFeature.name || `Path ${pathIndex + 1}`,
+                        point,
+                        targetDistance,
+                        referencePoints,
+                        `Line lurus interval ${STRAIGHT_ACCESSORY_INTERVAL} m`
+                    );
+
+                if (hasNearbyPrimaryAccessory(
+                    primaryAccessories,
+                    pathIndex,
+                    primaryAccessory.distance,
+                    { lat: primaryAccessory.lat, lon: primaryAccessory.lon }
+                )) {
+                    continue;
+                }
+
+                primaryAccessories.push(primaryAccessory);
+            }
+        }
+
+        function buildAccessoryPlan() {
+            const referencePoints = pointFeatures.filter(feature => !feature.isGeneratedAccessory);
+            const poleAssignments = buildPoleAssignmentsByPath();
+            const primaryTriggerAssignments = buildPrimaryTriggerAssignmentsByPath();
+            const primaryAccessories = [];
+            const scAccessories = [];
+
+            pathFeatures.forEach((pathFeature, pathIndex) => {
+                const path = pathFeature.coordinates;
+                if (path.length < 2) {
+                    return;
+                }
+
+                const cumulativeDistances = buildPathDistanceIndex(path);
+                const totalPathDistance = cumulativeDistances[cumulativeDistances.length - 1];
+                const polesOnPath = poleAssignments.get(pathIndex) || [];
+                const primaryTriggersOnPath = primaryTriggerAssignments.get(pathIndex) || [];
+                const bendIndices = [];
+
+                for (let i = 1; i < path.length - 1; i++) {
+                    const turnAngle = calculateTurnAngle(path[i - 1], path[i], path[i + 1]);
+                    if (turnAngle < BEND_ANGLE_THRESHOLD) {
+                        continue;
+                    }
+
+                    bendIndices.push(i);
+                    const nearbyOdpPlanTrigger = findNearbyOdpPlanTrigger(path[i], cumulativeDistances[i], primaryTriggersOnPath);
+                    const primaryAccessory = nearbyOdpPlanTrigger
+                        ? createPrimaryAccessoryFromTrigger(
+                            pathIndex,
+                            pathFeature,
+                            nearbyOdpPlanTrigger,
+                            referencePoints,
+                            totalPathDistance
+                        )
+                        : createPrimaryAccessory(
+                            pathIndex,
+                            pathFeature.name || `Path ${pathIndex + 1}`,
+                            path[i],
+                            cumulativeDistances[i],
+                            referencePoints,
+                            `Belokan ${turnAngle.toFixed(1)} derajat`
+                        );
+
+                    if (hasNearbyPrimaryAccessory(
+                        primaryAccessories,
+                        pathIndex,
+                        primaryAccessory.distance,
+                        { lat: primaryAccessory.lat, lon: primaryAccessory.lon }
+                    )) {
+                        continue;
+                    }
+
+                    primaryAccessories.push(primaryAccessory);
+                }
+
+                primaryTriggersOnPath.forEach(triggerAssignment => {
+                    const triggerPoint = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+                    if (hasNearbyPrimaryAccessory(
+                        primaryAccessories,
+                        pathIndex,
+                        triggerAssignment.distanceAlongPath,
+                        triggerPoint
+                    )) {
+                        return;
+                    }
+
+                    primaryAccessories.push(
+                        createPrimaryAccessoryFromTrigger(
+                            pathIndex,
+                            pathFeature,
+                            triggerAssignment,
+                            referencePoints,
+                            totalPathDistance
+                        )
+                    );
+                });
+
+                let runStartIndex = 0;
+                bendIndices.forEach(bendIndex => {
+                    addStraightRunAccessories(
+                        primaryAccessories,
+                        pathFeature,
+                        pathIndex,
+                        path,
+                        cumulativeDistances,
+                        referencePoints,
+                        primaryTriggersOnPath,
+                        totalPathDistance,
+                        runStartIndex,
+                        bendIndex,
+                        false
+                    );
+                    runStartIndex = bendIndex;
+                });
+
+                addStraightRunAccessories(
+                    primaryAccessories,
+                    pathFeature,
+                    pathIndex,
+                    path,
+                    cumulativeDistances,
+                    referencePoints,
+                    primaryTriggersOnPath,
+                    totalPathDistance,
+                    runStartIndex,
+                    path.length - 1,
+                    true
+                );
+
+                const primaryAccessoriesOnPath = primaryAccessories
+                    .filter(accessory => accessory.pathIndex === pathIndex)
+                    .sort((a, b) => a.distance - b.distance);
+
+                addScAccessoriesForPath(
+                    scAccessories,
+                    polesOnPath,
+                    primaryAccessoriesOnPath,
+                    pathFeature,
+                    pathIndex,
+                    totalPathDistance
+                );
+            });
+
+            const allAccessories = addAccessoryNames(
+                [...primaryAccessories, ...scAccessories].sort((a, b) => {
+                    if (a.pathIndex !== b.pathIndex) {
+                        return a.pathIndex - b.pathIndex;
+                    }
+                    return a.distance - b.distance;
+                })
+            );
+
+            const counts = {
+                'PU-AS-DE-50/70': 0,
+                'PU-AS-HL': 0,
+                'PU-AS-SC': 0
+            };
+
+            allAccessories.forEach(accessory => {
+                counts[accessory.type] += accessory.quantity;
+            });
+
+            counts.total = counts['PU-AS-DE-50/70'] + counts['PU-AS-HL'] + counts['PU-AS-SC'];
+            counts.totalPoints = allAccessories.length;
+
+            return {
+                allAccessories,
+                counts
+            };
+        }
+
+        function buildKmlPointStats() {
+            const tiangExist = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'EXIST'])).length;
+            const tiangPlan = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'PLAN'])).length;
+            const planPuS70400Nm = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'PLAN', 'PU-S7.0-400NM'])).length;
+            const planPuS70140 = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'PLAN', 'PU-S7.0-140'])).length;
+            const planPuS90140 = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'PLAN', 'PU-S9.0-140'])).length;
+            const planPuG6035Kg = pointFeatures.filter(feature => hasFolderPath(feature, ['TIANG', 'PLAN', 'PU-G6.0-35kg'])).length;
+            return {
+                totalPaths: pathFeatures.length,
+                totalPoints: pointFeatures.length,
+                tiangExist,
+                tiangPlan,
+                planPuS70400Nm,
+                planPuS70140,
+                planPuS90140,
+                planPuG6035Kg,
+                totalFeatures: allFeatures.length
+            };
+        }
+
+        function buildSummaryHtml(accessoryPlan) {
+            const kmlStats = buildKmlPointStats();
+            const combinedPrimaryAccessory = accessoryPlan.counts['PU-AS-DE-50/70'] + accessoryPlan.counts['PU-AS-HL'];
+            return `
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <strong>Path KML</strong>
+                        <span>${kmlStats.totalPaths}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>Titik KML</strong>
+                        <span>${kmlStats.totalPoints}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>Tiang EXIST</strong>
+                        <span>${kmlStats.tiangExist}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>Tiang PLAN</strong>
+                        <span>${kmlStats.tiangPlan}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PLAN PU-S7.0-400NM</strong>
+                        <span>${kmlStats.planPuS70400Nm}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PLAN PU-S7.0-140</strong>
+                        <span>${kmlStats.planPuS70140}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PLAN PU-S9.0-140</strong>
+                        <span>${kmlStats.planPuS90140}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PLAN PU-G6.0-35kg</strong>
+                        <span>${kmlStats.planPuG6035Kg}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PU-AS-DE-50/70 / HL + Seberangan</strong>
+                        <span>${combinedPrimaryAccessory}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>PU-AS-SC</strong>
+                        <span>${accessoryPlan.counts['PU-AS-SC']}</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>Total Asesoris</strong>
+                        <span>${accessoryPlan.counts.total}</span>
+                    </div>
+                </div>
+                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
+        }
+
+        function buildAccessoryTableHtml(accessories) {
+            if (accessories.length === 0) {
+                return '<p class="section-note">Belum ada asesoris yang terdeteksi dari belokan path pada file ini.</p>';
+            }
+
+            let tableHtml = `<h3>Preview Asesoris Tiang (${accessories.length} titik)</h3>
+                            <table id="coordinateTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>Tipe</th>
+                                        <th>Qty</th>
+                                        <th>Path</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Jarak Path (m)</th>
+                                        <th>Catatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            accessories.forEach((accessory, index) => {
+                tableHtml += `<tr>
+                                <td>${index + 1}</td>
+                                <td>${accessory.name}</td>
+                                <td>${accessory.displayType || accessory.type}</td>
+                                <td>${accessory.quantity}</td>
+                                <td>${accessory.pathName}</td>
+                                <td>${accessory.lat.toFixed(6)}</td>
+                                <td>${accessory.lon.toFixed(6)}</td>
+                                <td>${accessory.distance.toFixed(2)}</td>
+                                <td>${accessory.note}</td>
+                            </tr>`;
+            });
+
+            tableHtml += `</tbody></table>`;
+            return tableHtml;
+        }
+
+        function previewResults() {
+            if (!currentKmlText) {
+                showError('Silakan upload KML terlebih dahulu.');
+                return;
+            }
+
+            const accessoryPlan = buildAccessoryPlan();
+            outputDiv.innerHTML = `${buildSummaryHtml(accessoryPlan)}${buildAccessoryTableHtml(accessoryPlan.allAccessories)}`;
+        }
+
+        function createFeaturePopup(feature) {
+            const folderText = feature.folderPath.length > 0 ? feature.folderPath.join(' / ') : '-';
+            const descText = feature.description ? `<br>Deskripsi: ${escapeHtml(feature.description)}` : '';
+            return `
+                <b>${escapeHtml(feature.name)}</b><br>
+                Folder: ${escapeHtml(folderText)}<br>
+                Tipe: ${escapeHtml(feature.geometryType)}${descText}
+            `;
+        }
+
+        function createPointIcon(style) {
+            const iconUrl = style.iconHref || DEFAULT_POINT_ICON;
+            const size = Math.max(20, Math.round(24 * (style.iconScale || 1)));
+            return L.icon({
+                iconUrl: iconUrl,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size],
+                popupAnchor: [0, -size + 4]
+            });
+        }
+
+        function kmlColorToLeaflet(colorValue, fallbackColor, fallbackOpacity) {
+            const sanitized = (colorValue || '').trim();
+            if (!/^[0-9a-fA-F]{8}$/.test(sanitized)) {
+                return {
+                    color: fallbackColor,
+                    opacity: fallbackOpacity
+                };
+            }
+
+            const alpha = parseInt(sanitized.slice(0, 2), 16) / 255;
+            const blue = sanitized.slice(2, 4);
+            const green = sanitized.slice(4, 6);
+            const red = sanitized.slice(6, 8);
+
+            return {
+                color: `#${red}${green}${blue}`,
+                opacity: alpha
+            };
+        }
+
+        function getLineStyle(style) {
+            const converted = kmlColorToLeaflet(style.lineColor, '#d35400', 0.9);
+            return {
+                color: converted.color,
+                opacity: converted.opacity,
+                weight: Number.isFinite(style.lineWidth) && style.lineWidth > 0 ? style.lineWidth : 3
+            };
+        }
+
+        function getPolygonStyle(style) {
+            const line = kmlColorToLeaflet(style.lineColor, '#2980b9', 0.8);
+            const fill = kmlColorToLeaflet(style.polyColor, '#5dade2', 0.25);
+            return {
+                color: line.color,
+                opacity: line.opacity,
+                weight: Number.isFinite(style.lineWidth) && style.lineWidth > 0 ? style.lineWidth : 2,
+                fillColor: fill.color,
+                fillOpacity: fill.opacity
+            };
+        }
+
+        function buildAccessoryMapStyle(type) {
+            const mapStyles = {
+                'PU-AS-DE-50/70': {
+                    iconUrl: 'http://maps.google.com/mapfiles/kml/paddle/red-circle.png',
+                    color: '#e74c3c'
+                },
+                'PU-AS-HL': {
+                    iconUrl: 'http://maps.google.com/mapfiles/kml/paddle/orange-circle.png',
+                    color: '#f39c12'
+                },
+                'PU-AS-SC': {
+                    iconUrl: 'http://maps.google.com/mapfiles/kml/paddle/grn-circle.png',
+                    color: '#27ae60'
+                }
+            };
+
+            return mapStyles[type] || mapStyles['PU-AS-DE-50/70'];
+        }
+
+        function displayOnMap() {
+            if (!currentKmlText) {
+                showError('Silakan upload KML terlebih dahulu.');
+                return;
+            }
+
+            const accessoryPlan = buildAccessoryPlan();
+            clearMapLayers();
+
+            if (!map) {
+                map = L.map('map').setView([-2.5489, 118.0149], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+
+            mapDiv.style.display = 'block';
+            map.invalidateSize();
+
+            allFeatures.forEach(feature => {
+                if (feature.geometryType === 'Point') {
+                    const point = feature.coordinates[0];
+                    const marker = L.marker([point.lat, point.lon], {
+                        icon: createPointIcon(feature.style)
+                    }).addTo(map);
+
+                    marker.bindPopup(createFeaturePopup(feature));
+                    featureLayers.push(marker);
+                    return;
+                }
+
+                if (feature.geometryType === 'LineString') {
+                    const polyline = L.polyline(
+                        feature.coordinates.map(coord => [coord.lat, coord.lon]),
+                        getLineStyle(feature.style)
+                    ).addTo(map);
+
+                    polyline.bindPopup(createFeaturePopup(feature));
+                    featureLayers.push(polyline);
+                    return;
+                }
+
+                if (feature.geometryType === 'Polygon') {
+                    const polygon = L.polygon(
+                        feature.coordinates.map(coord => [coord.lat, coord.lon]),
+                        getPolygonStyle(feature.style)
+                    ).addTo(map);
+
+                    polygon.bindPopup(createFeaturePopup(feature));
+                    featureLayers.push(polygon);
+                }
+            });
+
+            accessoryPlan.allAccessories.forEach(accessory => {
+                const mapStyle = buildAccessoryMapStyle(accessory.type);
+                const marker = L.marker([accessory.lat, accessory.lon], {
+                    icon: L.icon({
+                        iconUrl: mapStyle.iconUrl,
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 28],
+                        popupAnchor: [0, -24]
+                    })
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <b>${accessory.name}</b><br>
+                    Tipe: ${accessory.displayType || accessory.type}<br>
+                    Qty: ${accessory.quantity}<br>
+                    Path: ${accessory.pathName}<br>
+                    Jarak path: ${accessory.distance.toFixed(2)} m<br>
+                    Catatan: ${accessory.note}
+                `);
+
+                accessoryLayers.push(marker);
+            });
+
+            const allCoords = [
+                ...allFeatures.flatMap(feature => feature.coordinates.map(coord => [coord.lat, coord.lon])),
+                ...accessoryPlan.allAccessories.map(accessory => [accessory.lat, accessory.lon])
+            ];
+
+            if (allCoords.length > 0) {
+                map.fitBounds(L.latLngBounds(allCoords).pad(0.1));
+            }
+        }
+
+        function generateKML() {
+            if (!currentKmlText) {
+                showError('Silakan upload KML terlebih dahulu.');
+                return;
+            }
+
+            const accessoryPlan = buildAccessoryPlan();
+            const parser = new DOMParser();
+            const kmlDoc = parser.parseFromString(currentKmlText, 'text/xml');
+            const serializer = new XMLSerializer();
+            const namespace = kmlDoc.documentElement.namespaceURI || 'http://www.opengis.net/kml/2.2';
+
+            const documentElement = kmlDoc.getElementsByTagName('Document')[0];
+            if (!documentElement) {
+                showError('Struktur KML tidak memiliki elemen Document.');
+                return;
+            }
+
+            const rootFolder = getFirstTopLevelFolder(documentElement) || documentElement;
+            removeExistingAccessoryFolders(rootFolder);
+            rootFolder.appendChild(createAccessoryFolderXml(kmlDoc, namespace, accessoryPlan.allAccessories));
+
+            let xmlOutput = serializer.serializeToString(kmlDoc);
+            if (!xmlOutput.startsWith('<?xml')) {
+                xmlOutput = `<?xml version="1.0" encoding="UTF-8"?>\n${xmlOutput}`;
+            }
+
+            const blob = new Blob([xmlOutput], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}_asesoris_tiang.kml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showSuccess(`Berhasil membuat KML asesoris. File existing tetap dipertahankan, tool hanya menambahkan folder ASESORIS TIANG dengan ${accessoryPlan.counts.total} material.`);
+        }
+
+        function getFirstTopLevelFolder(documentElement) {
+            return Array.from(documentElement.childNodes).find(node =>
+                node.nodeType === 1 && node.localName === 'Folder'
+            ) || null;
+        }
+
+        function removeExistingAccessoryFolders(parent) {
+            Array.from(parent.childNodes)
+                .filter(node => node.nodeType === 1 && node.localName === 'Folder')
+                .forEach(folder => {
+                    const folderName = getImmediateChildText(folder, 'name');
+                    if (normalizeLabel(folderName) === 'asesoris tiang') {
+                        folder.parentNode.removeChild(folder);
+                    }
+                });
+        }
+
+        function createAccessoryFolderXml(kmlDoc, namespace, accessories) {
+            const rootFolder = kmlDoc.createElementNS(namespace, 'Folder');
+            appendTextElement(kmlDoc, namespace, rootFolder, 'name', 'ASESORIS TIANG');
+
+            ['PU-AS-DE-50/70', 'PU-AS-HL', 'PU-AS-SC'].forEach(type => {
+                const typeFolder = kmlDoc.createElementNS(namespace, 'Folder');
+                appendTextElement(kmlDoc, namespace, typeFolder, 'name', type);
+
+                accessories
+                    .filter(accessory => accessory.type === type)
+                    .forEach(accessory => {
+                        typeFolder.appendChild(createAccessoryPlacemarkXml(kmlDoc, namespace, accessory));
+                    });
+
+                rootFolder.appendChild(typeFolder);
+            });
+
+            return rootFolder;
+        }
+
+        function createAccessoryPlacemarkXml(kmlDoc, namespace, accessory) {
+            const placemark = kmlDoc.createElementNS(namespace, 'Placemark');
+            appendTextElement(kmlDoc, namespace, placemark, 'name', accessory.name);
+
+            const description = [
+                `Tipe: ${accessory.displayType || accessory.type}`,
+                `Qty material: ${accessory.quantity}`,
+                `Path: ${accessory.pathName}`,
+                `Jarak dari awal path: ${accessory.distance.toFixed(2)} m`,
+                accessory.note
+            ].join('\n');
+            appendTextElement(kmlDoc, namespace, placemark, 'description', description);
+
+            const style = kmlDoc.createElementNS(namespace, 'Style');
+            const iconStyle = kmlDoc.createElementNS(namespace, 'IconStyle');
+            const icon = kmlDoc.createElementNS(namespace, 'Icon');
+            const href = kmlDoc.createElementNS(namespace, 'href');
+
+            href.textContent = buildAccessoryMapStyle(accessory.type).iconUrl;
+            icon.appendChild(href);
+            iconStyle.appendChild(icon);
+            style.appendChild(iconStyle);
+            placemark.appendChild(style);
+
+            const point = kmlDoc.createElementNS(namespace, 'Point');
+            const coordinates = kmlDoc.createElementNS(namespace, 'coordinates');
+            coordinates.textContent = `${accessory.lon},${accessory.lat},${accessory.alt || 0}`;
+            point.appendChild(coordinates);
+            placemark.appendChild(point);
+
+            return placemark;
+        }
+
+        function appendTextElement(kmlDoc, namespace, parent, tagName, value) {
+            const element = kmlDoc.createElementNS(namespace, tagName);
+            element.textContent = value;
+            parent.appendChild(element);
+        }
+
+        function hasFolderPath(feature, requiredParts) {
+            const normalizedPath = feature.folderPath.map(normalizeLabel);
+            return requiredParts.every(part => normalizedPath.includes(normalizeLabel(part)));
+        }
+
+        function normalizeLabel(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showError(message) {
+            outputDiv.innerHTML = `<p class="error">${escapeHtml(message)}</p>`;
+        }
+
+        function showSuccess(message) {
+            outputDiv.innerHTML = `<p class="success">${escapeHtml(message)}</p>`;
+        }
+    </script>
+<script>
+  fetch('track_visitors.php?tool=Asesoris Tiang');
+</script>
+<script>
+function deleteCookies() {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    }
+}
+
+async function clearCache() {
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        } catch (error) {
+            console.error('Gagal menghapus cache:', error);
+        }
+    }
+}
+
+function clearStorage() {
+    localStorage.clear();
+    sessionStorage.clear();
+}
+
+window.addEventListener('load', async function() {
+    deleteCookies();
+    await clearCache();
+    clearStorage();
+    console.log('Pembersihan cookies, cache, dan storage selesai');
+});
+
+window.addEventListener('beforeunload', function() {
+    deleteCookies();
+    clearStorage();
+});
+</script>
+</body>
+</html>
