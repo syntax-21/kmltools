@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hitung Asesoris Tiang</title>
+    <title>Asesoris Tiang Existing</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
     <link rel="stylesheet" href="styles/kmltools-pro.css">
@@ -13,16 +16,16 @@
         <section class="tool-hero glass-card">
             <div class="hero-grid">
                 <div>
-                    <span class="eyebrow"><i class="fas fa-sitemap"></i> Analisis KML Existing</span>
+                    <span class="eyebrow"><i class="fas fa-sitemap"></i> Analisis KML</span>
                     <h1 class="display-title">Hitung Asesoris Tiang Dari KML</h1>
                     <p class="hero-description">
                         Tool ini membaca path dan titik yang sudah ada di file KML atau KMZ, lalu menghitung kebutuhan
                         asesoris berdasarkan struktur jalur. Tidak ada placemark tiang baru yang dibuat.
                     </p>
                     <div class="status-strip">
-                        <span class="status-pill"><i class="fas fa-file-lines"></i> Input KML / KMZ existing</span>
+                        <span class="status-pill"><i class="fas fa-file-lines"></i> Input KML / KMZ</span>
                         <span class="status-pill"><i class="fas fa-chart-column"></i> Summary + tabel hasil</span>
-                        <span class="status-pill"><i class="fas fa-map"></i> Preview peta style existing</span>
+                        <span class="status-pill"><i class="fas fa-map"></i> Preview peta style</span>
                     </div>
                 </div>
                 <div class="hero-side">
@@ -56,15 +59,16 @@
                 <section class="card instructions">
                     <div class="card-header">
                         <span class="eyebrow card-kicker">Aturan Baca</span>
-                        <h2 class="card-title">Cara tool membaca file KML</h2>
+                        <h2 class="card-title">Cara tool membaca file</h2>
                     </div>
                     <ol>
                         <li>Upload satu file KML atau KMZ yang sudah berisi path, tiang, dan objek lapangan lain.</li>
                         <li>Tool akan membaca semua path dan titik tanpa membuat placemark tiang baru.</li>
                         <li>Ikon titik di peta mengikuti style KML asli selama URL ikonnya bisa diakses browser.</li>
-                        <li>Titik referensi terdekat pada radius 250 meter dapat memicu perhitungan <strong>PU-AS-HL</strong> beserta seberangannya.</li>
+                        <li>Titik referensi terdekat dengan jarak 250 meter antar line dapat memicu perhitungan <strong>PU-AS-HL</strong> beserta seberangannya.</li>
                         <li>Pada line lurus, <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> juga dihitung tiap <strong>250 meter</strong>.</li>
-                        <li><strong>PU-AS-SC</strong> sekarang dihitung dari tiang sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> yang terkait di path.</li>
+                        <li>Titik pada folder <strong>CATUAN</strong> dan <strong>ODP PLAN</strong> juga dipakai untuk memicu <strong>PU-AS-HL</strong> atau <strong>PU-AS-DE-50/70</strong> pada path terdekat, selama tidak bertumpuk dengan titik utama yang sudah ada. Jika primary point dekat <strong>ODP PLAN</strong>, titik asesoris akan ditempatkan di <strong>ODP PLAN</strong> saja. Jika titik tersebut berada di ujung jalur, qty-nya menjadi <strong>1</strong>.</li>
+                        <li><strong>PU-AS-SC</strong> sekarang dihitung pada setiap tiang yang berada di sepanjang ruas path terkait, bukan hanya tiang sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong>, namun tetap dilewati bila posisinya bertumpuk atau terlalu dekat dengan titik tersebut.</li>
                         <li>Kategori tiang yang dikenali untuk aturan sebelum dan sesudah adalah <strong>TE</strong> (existing), <strong>TN</strong> (new), <strong>TB</strong> (baru), dan <strong>TP</strong> (plan).</li>
                     </ol>
                 </section>
@@ -113,7 +117,7 @@
                     </div>
                     <div class="tutorial-steps">
                         <ol>
-                            <li>Siapkan satu file KML atau KMZ dari Google Earth.</li>
+                            <li>Siapkan satu file KML atau KMZ existing dari Google Earth.</li>
                             <li>Upload file ke tool ini dan jalankan preview hasil.</li>
                             <li>Periksa tabel dan peta untuk memastikan objek existing terbaca dengan benar.</li>
                             <li>Unduh KML hasil yang menambahkan folder asesoris tiang.</li>
@@ -132,6 +136,9 @@
         const BEND_ANGLE_THRESHOLD = 25;
         const STRAIGHT_ACCESSORY_INTERVAL = 250;
         const PRIMARY_ACCESSORY_DISTANCE_TOLERANCE = 1;
+        const SC_PRIMARY_OVERLAP_RADIUS = 15;
+        const ENDPOINT_PRIMARY_ACCESSORY_RADIUS = 25;
+        const ODP_PLAN_SNAP_RADIUS = 50;
         const DEFAULT_POINT_ICON = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png';
 
         let currentKmlText = '';
@@ -751,6 +758,75 @@
             return assignments;
         }
 
+        function getPrimaryTriggerLabel(feature) {
+            const normalizedPath = (feature.folderPath || []).map(normalizeLabel);
+            const combined = [
+                ...(feature.folderPath || []),
+                feature.name || '',
+                feature.description || ''
+            ].map(normalizeLabel).join(' ');
+
+            if (normalizedPath.includes('catuan') || combined.includes('catuan')) {
+                return 'CATUAN';
+            }
+
+            if (normalizedPath.includes('odp plan') ||
+                (normalizedPath.includes('odp') && normalizedPath.includes('plan')) ||
+                combined.includes('odp plan')) {
+                return 'ODP PLAN';
+            }
+
+            return '';
+        }
+
+        function buildPrimaryTriggerAssignmentsByPath() {
+            const triggerFeatures = pointFeatures
+                .filter(feature => !feature.isGeneratedAccessory)
+                .map(feature => ({
+                    feature,
+                    triggerLabel: getPrimaryTriggerLabel(feature)
+                }))
+                .filter(item => item.triggerLabel);
+            const assignments = new Map();
+
+            pathFeatures.forEach((_, pathIndex) => {
+                assignments.set(pathIndex, []);
+            });
+
+            triggerFeatures.forEach(item => {
+                let bestPathIndex = -1;
+                let bestProjection = null;
+
+                pathFeatures.forEach((pathFeature, pathIndex) => {
+                    const projection = projectFeatureOntoPath(item.feature, pathFeature.coordinates);
+                    if (!projection) {
+                        return;
+                    }
+
+                    if (!bestProjection || projection.lateralDistance < bestProjection.lateralDistance) {
+                        bestProjection = projection;
+                        bestPathIndex = pathIndex;
+                    }
+                });
+
+                if (bestProjection &&
+                    bestProjection.lateralDistance <= ACCESSORY_REFERENCE_RADIUS &&
+                    bestPathIndex >= 0) {
+                    assignments.get(bestPathIndex).push({
+                        ...bestProjection,
+                        triggerLabel: item.triggerLabel
+                    });
+                }
+            });
+
+            assignments.forEach((items, pathIndex) => {
+                items.sort((a, b) => a.distanceAlongPath - b.distanceAlongPath);
+                assignments.set(pathIndex, items);
+            });
+
+            return assignments;
+        }
+
         function findNearestReferencePoint(point, features, maxDistance) {
             let nearestFeature = null;
             let nearestDistance = Infinity;
@@ -778,81 +854,178 @@
             };
         }
 
+        function getAccessoryDisplayType(accessory) {
+            if (accessory.type === 'PU-AS-HL' || accessory.type === 'PU-AS-DE-50/70') {
+                return 'PU-AS-HL/PU-AS-DE-50/70';
+            }
+
+            return accessory.type;
+        }
+
         function addAccessoryNames(accessories) {
             const counters = {};
             return accessories.map(accessory => {
-                counters[accessory.type] = (counters[accessory.type] || 0) + 1;
-                const number = String(counters[accessory.type]).padStart(3, '0');
+                const displayType = getAccessoryDisplayType(accessory);
+                counters[displayType] = (counters[displayType] || 0) + 1;
+                const number = String(counters[displayType]).padStart(3, '0');
                 const quantitySuffix = accessory.quantity > 1 ? ` (x${accessory.quantity})` : '';
                 return {
                     ...accessory,
-                    name: `${accessory.type} ${number}${quantitySuffix}`
+                    displayType,
+                    name: `${displayType} ${number}${quantitySuffix}`
                 };
             });
         }
 
-        function createPrimaryAccessory(pathIndex, pathName, point, distance, referencePoints, noteBase) {
+        function createPrimaryAccessory(pathIndex, pathName, point, distance, referencePoints, noteBase, options = {}) {
             const nearestReference = findNearestReferencePoint(point, referencePoints, ACCESSORY_REFERENCE_RADIUS);
             const useHL = Boolean(nearestReference);
+            const quantity = options.quantity ?? 2;
+            const includeOpposite = options.includeOpposite ?? quantity > 1;
+            const noteSuffix = includeOpposite ? ', termasuk seberangan' : ', tanpa seberangan';
 
             return {
                 pathIndex,
                 pathName,
                 type: useHL ? 'PU-AS-HL' : 'PU-AS-DE-50/70',
-                quantity: 2,
+                quantity,
                 distance,
                 lat: point.lat,
                 lon: point.lon,
                 alt: point.alt || 0,
                 note: useHL
-                    ? `${noteBase}, referensi terdekat ${nearestReference.feature.name} (${nearestReference.distance.toFixed(1)} m), termasuk seberangan`
-                    : `${noteBase}, termasuk seberangan`,
+                    ? `${noteBase}, referensi terdekat ${nearestReference.feature.name} (${nearestReference.distance.toFixed(1)} m)${noteSuffix}`
+                    : `${noteBase}${noteSuffix}`,
                 nearestReferenceName: useHL ? nearestReference.feature.name : '',
                 nearestReferenceDistance: useHL ? nearestReference.distance : null
             };
         }
 
-        function hasNearbyPrimaryAccessory(accessories, pathIndex, distance) {
+        function hasNearbyPrimaryAccessory(accessories, pathIndex, distance, point) {
             return accessories.some(accessory =>
-                accessory.pathIndex === pathIndex &&
-                Math.abs(accessory.distance - distance) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE
+                accessory.pathIndex === pathIndex && (
+                    Math.abs(accessory.distance - distance) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE ||
+                    (
+                        point &&
+                        haversineDistance(point.lat, point.lon, accessory.lat, accessory.lon) <= SC_PRIMARY_OVERLAP_RADIUS
+                    )
+                )
             );
         }
 
-        function addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory) {
-            const previousPole = [...polesOnPath].reverse().find(item => item.distanceAlongPath < primaryAccessory.distance);
-            const nextPole = polesOnPath.find(item => item.distanceAlongPath > primaryAccessory.distance);
+        function findNearbyOdpPlanTrigger(point, distance, triggerAssignmentsOnPath) {
+            let bestTrigger = null;
 
-            if (previousPole) {
-                scAccessories.push({
-                    pathIndex: primaryAccessory.pathIndex,
-                    pathName: primaryAccessory.pathName,
-                    type: 'PU-AS-SC',
-                    quantity: 1,
-                    distance: previousPole.distanceAlongPath,
-                    lat: previousPole.feature.representativePoint.lat,
-                    lon: previousPole.feature.representativePoint.lon,
-                    alt: previousPole.feature.representativePoint.alt || 0,
-                    note: `${previousPole.poleCategory} sebelum ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${previousPole.feature.name}`
-                });
-            }
+            triggerAssignmentsOnPath
+                .filter(item => item.triggerLabel === 'ODP PLAN')
+                .forEach(triggerAssignment => {
+                    const triggerPoint = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+                    const coordinateDistance = haversineDistance(
+                        point.lat,
+                        point.lon,
+                        triggerPoint.lat,
+                        triggerPoint.lon
+                    );
+                    const pathDistance = Math.abs(distance - triggerAssignment.distanceAlongPath);
 
-            if (nextPole) {
-                scAccessories.push({
-                    pathIndex: primaryAccessory.pathIndex,
-                    pathName: primaryAccessory.pathName,
-                    type: 'PU-AS-SC',
-                    quantity: 1,
-                    distance: nextPole.distanceAlongPath,
-                    lat: nextPole.feature.representativePoint.lat,
-                    lon: nextPole.feature.representativePoint.lon,
-                    alt: nextPole.feature.representativePoint.alt || 0,
-                    note: `${nextPole.poleCategory} sesudah ${primaryAccessory.type} (${primaryAccessory.distance.toFixed(2)} m): ${nextPole.feature.name}`
+                    if (coordinateDistance > ODP_PLAN_SNAP_RADIUS && pathDistance > ODP_PLAN_SNAP_RADIUS) {
+                        return;
+                    }
+
+                    if (!bestTrigger || coordinateDistance < bestTrigger.coordinateDistance) {
+                        bestTrigger = {
+                            ...triggerAssignment,
+                            coordinateDistance
+                        };
+                    }
                 });
-            }
+
+            return bestTrigger;
         }
 
-        function addStraightRunAccessories(primaryAccessories, scAccessories, pathFeature, pathIndex, path, cumulativeDistances, referencePoints, polesOnPath, startIndex, endIndex, includeEndPoint) {
+        function isPoleAlignedWithPrimaryAccessory(pole, primaryAccessories) {
+            const polePoint = pole.feature.representativePoint;
+
+            return primaryAccessories.some(primaryAccessory => {
+                const isSamePathDistance =
+                    Math.abs(primaryAccessory.distance - pole.distanceAlongPath) <= PRIMARY_ACCESSORY_DISTANCE_TOLERANCE;
+                const isSameCoordinate =
+                    haversineDistance(
+                        polePoint.lat,
+                        polePoint.lon,
+                        primaryAccessory.lat,
+                        primaryAccessory.lon
+                    ) <= SC_PRIMARY_OVERLAP_RADIUS;
+
+                return isSamePathDistance || isSameCoordinate;
+            });
+        }
+
+        function addScAccessoriesForPath(scAccessories, polesOnPath, primaryAccessoriesOnPath, pathFeature, pathIndex, totalPathDistance) {
+            polesOnPath.forEach(pole => {
+                if (isPoleAlignedWithPrimaryAccessory(pole, primaryAccessoriesOnPath)) {
+                    return;
+                }
+
+                const previousPrimary = [...primaryAccessoriesOnPath]
+                    .reverse()
+                    .find(item => item.distance < pole.distanceAlongPath - PRIMARY_ACCESSORY_DISTANCE_TOLERANCE);
+                const nextPrimary = primaryAccessoriesOnPath
+                    .find(item => item.distance > pole.distanceAlongPath + PRIMARY_ACCESSORY_DISTANCE_TOLERANCE);
+
+                const segmentStart = previousPrimary ? previousPrimary.distance : 0;
+                const segmentEnd = nextPrimary ? nextPrimary.distance : totalPathDistance;
+                const relationNotes = [];
+
+                if (previousPrimary) {
+                    relationNotes.push(`sesudah ${previousPrimary.type} ${previousPrimary.distance.toFixed(2)} m`);
+                }
+
+                if (nextPrimary) {
+                    relationNotes.push(`sebelum ${nextPrimary.type} ${nextPrimary.distance.toFixed(2)} m`);
+                }
+
+                const relationText = relationNotes.length > 0
+                    ? ` (${relationNotes.join(', ')})`
+                    : '';
+
+                scAccessories.push({
+                    pathIndex,
+                    pathName: pathFeature.name || `Path ${pathIndex + 1}`,
+                    type: 'PU-AS-SC',
+                    quantity: 1,
+                    distance: pole.distanceAlongPath,
+                    lat: pole.feature.representativePoint.lat,
+                    lon: pole.feature.representativePoint.lon,
+                    alt: pole.feature.representativePoint.alt || 0,
+                    note: `${pole.poleCategory} pada ruas ${segmentStart.toFixed(2)}-${segmentEnd.toFixed(2)} m: ${pole.feature.name}${relationText}`
+                });
+            });
+        }
+
+        function createPrimaryAccessoryFromTrigger(pathIndex, pathFeature, triggerAssignment, referencePoints, totalPathDistance) {
+            const point = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+            const isEndpointTrigger =
+                triggerAssignment.distanceAlongPath <= ENDPOINT_PRIMARY_ACCESSORY_RADIUS ||
+                (totalPathDistance - triggerAssignment.distanceAlongPath) <= ENDPOINT_PRIMARY_ACCESSORY_RADIUS;
+
+            return createPrimaryAccessory(
+                pathIndex,
+                pathFeature.name || `Path ${pathIndex + 1}`,
+                point,
+                triggerAssignment.distanceAlongPath,
+                referencePoints,
+                isEndpointTrigger
+                    ? `Titik ${triggerAssignment.triggerLabel} ujung jalur`
+                    : `Titik ${triggerAssignment.triggerLabel}`,
+                {
+                    quantity: isEndpointTrigger ? 1 : 2,
+                    includeOpposite: !isEndpointTrigger
+                }
+            );
+        }
+
+        function addStraightRunAccessories(primaryAccessories, pathFeature, pathIndex, path, cumulativeDistances, referencePoints, primaryTriggersOnPath, totalPathDistance, startIndex, endIndex, includeEndPoint) {
             if (endIndex <= startIndex) {
                 return;
             }
@@ -868,32 +1041,46 @@
             const maxOffset = includeEndPoint ? runLength + 0.001 : runLength - 0.001;
             for (let offset = STRAIGHT_ACCESSORY_INTERVAL; offset <= maxOffset; offset += STRAIGHT_ACCESSORY_INTERVAL) {
                 const targetDistance = startDistance + offset;
-                if (hasNearbyPrimaryAccessory(primaryAccessories, pathIndex, targetDistance)) {
-                    continue;
-                }
-
                 const point = interpolatePointAlongPath(path, cumulativeDistances, targetDistance);
                 if (!point) {
                     continue;
                 }
 
-                const primaryAccessory = createPrimaryAccessory(
+                const nearbyOdpPlanTrigger = findNearbyOdpPlanTrigger(point, targetDistance, primaryTriggersOnPath);
+                const primaryAccessory = nearbyOdpPlanTrigger
+                    ? createPrimaryAccessoryFromTrigger(
+                        pathIndex,
+                        pathFeature,
+                        nearbyOdpPlanTrigger,
+                        referencePoints,
+                        totalPathDistance
+                    )
+                    : createPrimaryAccessory(
+                        pathIndex,
+                        pathFeature.name || `Path ${pathIndex + 1}`,
+                        point,
+                        targetDistance,
+                        referencePoints,
+                        `Line lurus interval ${STRAIGHT_ACCESSORY_INTERVAL} m`
+                    );
+
+                if (hasNearbyPrimaryAccessory(
+                    primaryAccessories,
                     pathIndex,
-                    pathFeature.name || `Path ${pathIndex + 1}`,
-                    point,
-                    targetDistance,
-                    referencePoints,
-                    `Line lurus interval ${STRAIGHT_ACCESSORY_INTERVAL} m`
-                );
+                    primaryAccessory.distance,
+                    { lat: primaryAccessory.lat, lon: primaryAccessory.lon }
+                )) {
+                    continue;
+                }
 
                 primaryAccessories.push(primaryAccessory);
-                addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory);
             }
         }
 
         function buildAccessoryPlan() {
             const referencePoints = pointFeatures.filter(feature => !feature.isGeneratedAccessory);
             const poleAssignments = buildPoleAssignmentsByPath();
+            const primaryTriggerAssignments = buildPrimaryTriggerAssignmentsByPath();
             const primaryAccessories = [];
             const scAccessories = [];
 
@@ -904,7 +1091,9 @@
                 }
 
                 const cumulativeDistances = buildPathDistanceIndex(path);
+                const totalPathDistance = cumulativeDistances[cumulativeDistances.length - 1];
                 const polesOnPath = poleAssignments.get(pathIndex) || [];
+                const primaryTriggersOnPath = primaryTriggerAssignments.get(pathIndex) || [];
                 const bendIndices = [];
 
                 for (let i = 1; i < path.length - 1; i++) {
@@ -914,31 +1103,69 @@
                     }
 
                     bendIndices.push(i);
+                    const nearbyOdpPlanTrigger = findNearbyOdpPlanTrigger(path[i], cumulativeDistances[i], primaryTriggersOnPath);
+                    const primaryAccessory = nearbyOdpPlanTrigger
+                        ? createPrimaryAccessoryFromTrigger(
+                            pathIndex,
+                            pathFeature,
+                            nearbyOdpPlanTrigger,
+                            referencePoints,
+                            totalPathDistance
+                        )
+                        : createPrimaryAccessory(
+                            pathIndex,
+                            pathFeature.name || `Path ${pathIndex + 1}`,
+                            path[i],
+                            cumulativeDistances[i],
+                            referencePoints,
+                            `Belokan ${turnAngle.toFixed(1)} derajat`
+                        );
 
-                    const primaryAccessory = createPrimaryAccessory(
+                    if (hasNearbyPrimaryAccessory(
+                        primaryAccessories,
                         pathIndex,
-                        pathFeature.name || `Path ${pathIndex + 1}`,
-                        path[i],
-                        cumulativeDistances[i],
-                        referencePoints,
-                        `Belokan ${turnAngle.toFixed(1)} derajat`
-                    );
+                        primaryAccessory.distance,
+                        { lat: primaryAccessory.lat, lon: primaryAccessory.lon }
+                    )) {
+                        continue;
+                    }
 
                     primaryAccessories.push(primaryAccessory);
-                    addScAccessoriesForPrimary(scAccessories, polesOnPath, primaryAccessory);
                 }
+
+                primaryTriggersOnPath.forEach(triggerAssignment => {
+                    const triggerPoint = triggerAssignment.feature.representativePoint || triggerAssignment.projectedPoint;
+                    if (hasNearbyPrimaryAccessory(
+                        primaryAccessories,
+                        pathIndex,
+                        triggerAssignment.distanceAlongPath,
+                        triggerPoint
+                    )) {
+                        return;
+                    }
+
+                    primaryAccessories.push(
+                        createPrimaryAccessoryFromTrigger(
+                            pathIndex,
+                            pathFeature,
+                            triggerAssignment,
+                            referencePoints,
+                            totalPathDistance
+                        )
+                    );
+                });
 
                 let runStartIndex = 0;
                 bendIndices.forEach(bendIndex => {
                     addStraightRunAccessories(
                         primaryAccessories,
-                        scAccessories,
                         pathFeature,
                         pathIndex,
                         path,
                         cumulativeDistances,
                         referencePoints,
-                        polesOnPath,
+                        primaryTriggersOnPath,
+                        totalPathDistance,
                         runStartIndex,
                         bendIndex,
                         false
@@ -948,16 +1175,29 @@
 
                 addStraightRunAccessories(
                     primaryAccessories,
-                    scAccessories,
                     pathFeature,
                     pathIndex,
                     path,
                     cumulativeDistances,
                     referencePoints,
-                    polesOnPath,
+                    primaryTriggersOnPath,
+                    totalPathDistance,
                     runStartIndex,
                     path.length - 1,
                     true
+                );
+
+                const primaryAccessoriesOnPath = primaryAccessories
+                    .filter(accessory => accessory.pathIndex === pathIndex)
+                    .sort((a, b) => a.distance - b.distance);
+
+                addScAccessoriesForPath(
+                    scAccessories,
+                    polesOnPath,
+                    primaryAccessoriesOnPath,
+                    pathFeature,
+                    pathIndex,
+                    totalPathDistance
                 );
             });
 
@@ -1059,7 +1299,7 @@
                         <span>${accessoryPlan.counts.total}</span>
                     </div>
                 </div>
-                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan dan juga pada line lurus tiap 250 meter. Untuk PU-AS-SC, tool mencari tiang sebelum dan sesudah yang terkait pada path dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi.</p>`;
+                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
         }
 
         function buildAccessoryTableHtml(accessories) {
@@ -1088,7 +1328,7 @@
                 tableHtml += `<tr>
                                 <td>${index + 1}</td>
                                 <td>${accessory.name}</td>
-                                <td>${accessory.type}</td>
+                                <td>${accessory.displayType || accessory.type}</td>
                                 <td>${accessory.quantity}</td>
                                 <td>${accessory.pathName}</td>
                                 <td>${accessory.lat.toFixed(6)}</td>
@@ -1259,7 +1499,7 @@
 
                 marker.bindPopup(`
                     <b>${accessory.name}</b><br>
-                    Tipe: ${accessory.type}<br>
+                    Tipe: ${accessory.displayType || accessory.type}<br>
                     Qty: ${accessory.quantity}<br>
                     Path: ${accessory.pathName}<br>
                     Jarak path: ${accessory.distance.toFixed(2)} m<br>
@@ -1361,7 +1601,7 @@
             appendTextElement(kmlDoc, namespace, placemark, 'name', accessory.name);
 
             const description = [
-                `Jenis: ${accessory.type}`,
+                `Tipe: ${accessory.displayType || accessory.type}`,
                 `Qty material: ${accessory.quantity}`,
                 `Path: ${accessory.pathName}`,
                 `Jarak dari awal path: ${accessory.distance.toFixed(2)} m`,
