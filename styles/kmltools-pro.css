@@ -195,6 +195,8 @@ body.tool-page .page-shell {
 
 html.embedded-tool body.tool-page {
     background: linear-gradient(180deg, #04101c 0%, #071321 100%);
+    min-height: 0;
+    background-attachment: scroll;
 }
 
 html.embedded-tool body.tool-page::before,
