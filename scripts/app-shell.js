@@ -1,6 +1,7 @@
 (function () {
     const toolButtons = Array.from(document.querySelectorAll('.nav-item[data-tab]'));
     const toolPanels = Array.from(document.querySelectorAll('.tab-content[data-tool-panel]'));
+    const toolFrames = Array.from(document.querySelectorAll('.tool-stage iframe'));
     const activeToolTag = document.getElementById('activeToolTag');
     const activeToolName = document.getElementById('activeToolName');
     const activeToolDescription = document.getElementById('activeToolDescription');
@@ -34,6 +35,97 @@
         const frame = panel.querySelector('iframe[data-src]');
         if (frame && !frame.getAttribute('src')) {
             frame.setAttribute('src', frame.dataset.src);
+        }
+    }
+
+    function calculateFrameHeight(frame) {
+        const doc = frame.contentDocument;
+        if (!doc || !doc.documentElement || !doc.body) {
+            return null;
+        }
+
+        const body = doc.body;
+        const html = doc.documentElement;
+        return Math.max(
+            720,
+            body.scrollHeight,
+            body.offsetHeight,
+            html.scrollHeight,
+            html.offsetHeight
+        );
+    }
+
+    function resizeFrame(frame) {
+        try {
+            const nextHeight = calculateFrameHeight(frame);
+            if (!nextHeight) {
+                return;
+            }
+
+            frame.style.height = `${nextHeight + 8}px`;
+        } catch (error) {
+            console.warn('Unable to resize tool frame:', error);
+        }
+    }
+
+    function attachFrameAutoResize(frame) {
+        if (!frame || frame.dataset.autosizeBound === 'true') {
+            return;
+        }
+
+        frame.dataset.autosizeBound = 'true';
+
+        const initializeObservers = function () {
+            try {
+                const doc = frame.contentDocument;
+                const body = doc && doc.body;
+                const html = doc && doc.documentElement;
+                if (!doc || !body || !html) {
+                    return;
+                }
+
+                resizeFrame(frame);
+
+                if (frame.__resizeObserver) {
+                    frame.__resizeObserver.disconnect();
+                }
+
+                if (frame.__mutationObserver) {
+                    frame.__mutationObserver.disconnect();
+                }
+
+                const scheduleResize = function () {
+                    window.requestAnimationFrame(function () {
+                        resizeFrame(frame);
+                    });
+                };
+
+                if ('ResizeObserver' in window) {
+                    frame.__resizeObserver = new ResizeObserver(scheduleResize);
+                    frame.__resizeObserver.observe(body);
+                    frame.__resizeObserver.observe(html);
+                }
+
+                frame.__mutationObserver = new MutationObserver(scheduleResize);
+                frame.__mutationObserver.observe(body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    characterData: true
+                });
+
+                window.setTimeout(scheduleResize, 80);
+                window.setTimeout(scheduleResize, 260);
+                window.setTimeout(scheduleResize, 900);
+            } catch (error) {
+                console.warn('Unable to attach frame observers:', error);
+            }
+        };
+
+        frame.addEventListener('load', initializeObservers);
+
+        if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+            initializeObservers();
         }
     }
 
@@ -102,6 +194,16 @@
 
         ensureFrameLoaded(tabId);
         syncToolMetadata(targetButton);
+
+        const activeFrame = targetPanel.querySelector('iframe');
+        if (activeFrame) {
+            window.requestAnimationFrame(function () {
+                resizeFrame(activeFrame);
+            });
+            window.setTimeout(function () {
+                resizeFrame(activeFrame);
+            }, 180);
+        }
 
         if (updateLocation) {
             window.location.hash = tabId;
@@ -193,6 +295,7 @@
     });
 
     applyTelegramMode();
+    toolFrames.forEach(attachFrameAutoResize);
     const initialTool = getInitialTool();
     if (initialTool) {
         setActiveTool(initialTool, false);
