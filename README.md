@@ -37,7 +37,7 @@ Telemetri routing yang terhubung dengan *OpenStreetMap* untuk menghitung jarak n
 Aplikasi ini tidak memerlukan instalasi backend (Node.js/PHP/Python). Anda cukup membukanya menggunakan browser modern apa saja:
 
 1. Ekstrak folder proyek ke direktori komputer Anda.
-2. Buka folder `V2`.
+2. Buka folder .
 3. Klik ganda (buka) file `index.html` menggunakan browser standar (Chrome, Firefox, Edge, atau Safari).
 4. *Workspace* akan langsung terbuka secara luring (*offline*), kecuali fitur Peta (Leaflet) dan OSRM Routing yang membutuhkan koneksi internet.
 
