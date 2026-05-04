@@ -246,13 +246,6 @@ Walaupun sebagian besar logika aplikasi berjalan secara lokal di peramban, beber
 
 Tanpa internet, fungsi yang sepenuhnya lokal masih dapat berjalan terbatas, tetapi fitur peta, ikon eksternal, serta routing tidak akan berfungsi secara penuh.
 
-## Catatan Implementasi Penting
-
-- Repositori ini tidak menyertakan backend aplikasi khusus untuk proses utama.
-- Beberapa halaman masih memanggil endpoint opsional `track_visitors.php`, tetapi berkas tersebut tidak disertakan dalam repositori ini.
-- Jika endpoint tersebut tidak tersedia, fungsi utama aplikasi tetap dapat digunakan, walaupun peramban dapat menampilkan kegagalan permintaan di konsol.
-- Beberapa modul memiliki perilaku pembersihan cache atau penyimpanan peramban untuk menjaga sesi kerja tetap bersih. Perilaku ini perlu diperhatikan sebelum dipublikasikan ke lingkungan produksi yang lebih luas.
-
 ## Tim
 
 - System Architect: Amirun Rayan Ariandi S.M
