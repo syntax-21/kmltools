@@ -50,6 +50,11 @@
 
 html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+}
+
+html.embedded-tool {
+    background: transparent;
 }
 
 body {
@@ -194,9 +199,10 @@ body.tool-page .page-shell {
 }
 
 html.embedded-tool body.tool-page {
-    background: linear-gradient(180deg, #04101c 0%, #071321 100%);
+    background: transparent;
     min-height: 0;
     background-attachment: scroll;
+    overflow: hidden;
 }
 
 html.embedded-tool body.tool-page::before,
@@ -207,6 +213,10 @@ html.embedded-tool body.tool-page::after {
 html.embedded-tool body.tool-page .page-shell {
     max-width: none;
     padding: 0;
+}
+
+html.embedded-tool body.tool-page main.page-shell {
+    margin: 0;
 }
 
 .glass-card,
@@ -297,7 +307,7 @@ html.embedded-tool body.tool-page .download-options,
 html.embedded-tool body.tool-page .progress-container,
 html.embedded-tool body.tool-page .results-table-container,
 html.embedded-tool body.tool-page .tutorial-step {
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    box-shadow: none;
 }
 
 button,
@@ -503,6 +513,10 @@ input[type="file"] {
     align-items: start;
 }
 
+.panel-grid.panel-grid-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .workspace-grid {
     display: flex;
     flex-direction: column;
@@ -649,21 +663,21 @@ input[type="file"] {
 }
 
 .tool-stage {
-    overflow: hidden;
+    overflow: visible;
     padding: 0;
-    border: 1px solid rgba(110, 168, 255, 0.16);
-    border-radius: 26px;
-    background: linear-gradient(180deg, rgba(2, 8, 17, 0.94), rgba(5, 11, 22, 0.9));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 20px 40px rgba(0, 0, 0, 0.22);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .tool-stage iframe {
     display: block;
     width: 100%;
-    min-height: 720px;
-    height: calc(100vh - 290px);
+    min-height: 640px;
+    height: 640px;
     border: none;
-    background: #040914;
+    background: transparent;
 }
 
 table,
