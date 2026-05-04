@@ -62,7 +62,13 @@
                 return;
             }
 
-            frame.style.height = `${nextHeight + 8}px`;
+            const currentHeight = parseFloat(frame.style.height) || 0;
+            const desiredHeight = nextHeight + 8;
+            if (Math.abs(currentHeight - desiredHeight) < 4) {
+                return;
+            }
+
+            frame.style.height = `${desiredHeight}px`;
         } catch (error) {
             console.warn('Unable to resize tool frame:', error);
         }
@@ -75,7 +81,7 @@
 
         frame.dataset.autosizeBound = 'true';
 
-        const initializeObservers = function () {
+        const syncFrameHeight = function () {
             try {
                 const doc = frame.contentDocument;
                 const body = doc && doc.body;
@@ -85,48 +91,70 @@
                 }
 
                 resizeFrame(frame);
-
-                if (frame.__resizeObserver) {
-                    frame.__resizeObserver.disconnect();
-                }
-
-                if (frame.__mutationObserver) {
-                    frame.__mutationObserver.disconnect();
-                }
-
-                const scheduleResize = function () {
-                    window.requestAnimationFrame(function () {
-                        resizeFrame(frame);
-                    });
-                };
-
-                if ('ResizeObserver' in window) {
-                    frame.__resizeObserver = new ResizeObserver(scheduleResize);
-                    frame.__resizeObserver.observe(body);
-                    frame.__resizeObserver.observe(html);
-                }
-
-                frame.__mutationObserver = new MutationObserver(scheduleResize);
-                frame.__mutationObserver.observe(body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    characterData: true
-                });
-
-                window.setTimeout(scheduleResize, 80);
-                window.setTimeout(scheduleResize, 260);
-                window.setTimeout(scheduleResize, 900);
             } catch (error) {
                 console.warn('Unable to attach frame observers:', error);
             }
         };
 
-        frame.addEventListener('load', initializeObservers);
+        const scheduleResize = function () {
+            window.requestAnimationFrame(function () {
+                syncFrameHeight();
+            });
+        };
+
+        frame.addEventListener('load', function () {
+            scheduleResize();
+            window.setTimeout(scheduleResize, 80);
+            window.setTimeout(scheduleResize, 260);
+            window.setTimeout(scheduleResize, 900);
+        });
 
         if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
-            initializeObservers();
+            scheduleResize();
         }
+    }
+
+    function handleEmbeddedFrameMessage(event) {
+        if (!event.data || event.data.type !== 'kmltools:frame-size') {
+            return;
+        }
+
+        const targetFrame = toolFrames.find(function (frame) {
+            return frame.contentWindow === event.source;
+        });
+
+        if (!targetFrame || typeof event.data.height !== 'number' || !Number.isFinite(event.data.height)) {
+            return;
+        }
+
+        const desiredHeight = Math.max(640, Math.ceil(event.data.height));
+        const currentHeight = parseFloat(targetFrame.style.height) || 0;
+        if (Math.abs(currentHeight - desiredHeight) < 4) {
+            return;
+        }
+
+        targetFrame.style.height = `${desiredHeight}px`;
+    }
+
+    function getRequestedToolFromLocation() {
+        const params = new URLSearchParams(window.location.search);
+        const requestedFromQuery = params.get('tool');
+        if (requestedFromQuery && document.getElementById(requestedFromQuery)) {
+            return requestedFromQuery;
+        }
+
+        const rawHash = window.location.hash.replace('#', '');
+        const requestedFromHash = rawHash.startsWith('tool-') ? rawHash.slice(5) : rawHash;
+        if (requestedFromHash && document.getElementById(requestedFromHash)) {
+            return requestedFromHash;
+        }
+
+        return '';
+    }
+
+    function updateToolHash(tabId) {
+        const nextUrl = `${window.location.pathname}${window.location.search}#tool-${tabId}`;
+        window.history.replaceState(null, '', nextUrl);
     }
 
     function syncToolMetadata(button) {
@@ -206,13 +234,12 @@
         }
 
         if (updateLocation) {
-            window.location.hash = tabId;
+            updateToolHash(tabId);
         }
     }
 
     function getInitialTool() {
-        const params = new URLSearchParams(window.location.search);
-        const requested = params.get('tool') || window.location.hash.replace('#', '');
+        const requested = getRequestedToolFromLocation();
         if (requested && document.getElementById(requested)) {
             return requested;
         }
@@ -288,13 +315,14 @@
     });
 
     window.addEventListener('hashchange', function () {
-        const hash = window.location.hash.replace('#', '');
-        if (hash && document.getElementById(hash)) {
-            setActiveTool(hash, false);
+        const requested = getRequestedToolFromLocation();
+        if (requested && document.getElementById(requested)) {
+            setActiveTool(requested, false);
         }
     });
 
     applyTelegramMode();
+    window.addEventListener('message', handleEmbeddedFrameMessage);
     toolFrames.forEach(attachFrameAutoResize);
     const initialTool = getInitialTool();
     if (initialTool) {
