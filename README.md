@@ -246,11 +246,9 @@ Walaupun sebagian besar logika aplikasi berjalan secara lokal di peramban, beber
 
 Tanpa internet, fungsi yang sepenuhnya lokal masih dapat berjalan terbatas, tetapi fitur peta, ikon eksternal, serta routing tidak akan berfungsi secara penuh.
 
-## Tim
+## Pengembang
 
-- System Architect: Amirun Rayan Ariandi S.M
-- QA Engineering: Egantara Satria Utama S.Kom
-- Project Lead: Herodin Bening Wicaksono S.Kom
+Developed by Amirun Rayan Ariandi
 
 ---
 
