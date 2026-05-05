@@ -259,7 +259,7 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             });
         }
 
-        // Menampilkan KML di peta dengan parser sederhana
+        // Menampilkan KML di peta
         function displayKmlOnMap(kmlContent) {
             initMap();
             
@@ -268,55 +268,24 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             markers = [];
             
             try {
-                // Parser sederhana untuk Placemark point
-                const placemarkRegex = /<Placemark>([\s\S]*?)<\/Placemark>/g;
-                let match;
+                const placemarks = parseKmlPlacemarks(kmlContent);
                 const bounds = [];
 
-                while ((match = placemarkRegex.exec(kmlContent)) !== null) {
-                    const placemarkContent = match[1];
-                    
-                    // Ekstrak name
-                    const nameMatch = placemarkContent.match(/<name>([\s\S]*?)<\/name>/);
-                    const name = nameMatch ? nameMatch[1].trim() : 'Unnamed Location';
-                    
-                    // Ekstrak description
-                    const descMatch = placemarkContent.match(/<description>([\s\S]*?)<\/description>/);
-                    const description = descMatch ? descMatch[1].trim() : '';
-                    
-                    // Ekstrak icon
-                    let iconUrl = 'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'; // default
-                    const iconMatch = placemarkContent.match(/<href>([\s\S]*?)<\/href>/);
-                    if (iconMatch) {
-                        iconUrl = iconMatch[1].trim();
-                    }
-                    
-                    // Ekstrak coordinates
-                    const coordMatch = placemarkContent.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
-                    if (!coordMatch) continue;
-                    
-                    const coords = coordMatch[1].trim().split(',');
-                    if (coords.length < 2) continue;
-                    
-                    const lng = parseFloat(coords[0].replace(/["']/g, ''));
-                    const lat = parseFloat(coords[1].replace(/["']/g, ''));
-                    
-                    if (isNaN(lat) || isNaN(lng)) continue;
-                    
+                placemarks.forEach(placemark => {
                     // Buat marker dengan icon custom dan tambahkan ke peta
                     const customIcon = L.icon({
-                        iconUrl: iconUrl,
+                        iconUrl: placemark.iconUrl,
                         iconSize: [32, 32],
                         iconAnchor: [16, 32],
                         popupAnchor: [0, -32]
                     });
                     
-                    const marker = L.marker([lat, lng], {icon: customIcon}).addTo(map)
-                        .bindPopup(`<b>${name}</b><br>${description}`);
+                    const marker = L.marker([placemark.latitude, placemark.longitude], {icon: customIcon}).addTo(map)
+                        .bindPopup(`<b>${placemark.name}</b><br>${placemark.description}`);
                     
                     markers.push(marker);
-                    bounds.push([lat, lng]);
-                }
+                    bounds.push([placemark.latitude, placemark.longitude]);
+                });
                 
                 if (markers.length > 0) {
                     // Zoom ke semua marker
@@ -405,6 +374,118 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             return result.map(v => v.trim());
         }
 
+        function findDescendantsByLocalName(root, localName) {
+            if (!root) return [];
+            return Array.from(root.getElementsByTagName('*')).filter(node => node.localName === localName);
+        }
+
+        function findFirstDescendantByLocalName(root, localName) {
+            return findDescendantsByLocalName(root, localName)[0] || null;
+        }
+
+        function getNodeText(node) {
+            return node && node.textContent ? node.textContent.trim() : '';
+        }
+
+        function parseCoordinatePair(coordinateText) {
+            if (!coordinateText) return null;
+
+            const firstCoordinateSet = coordinateText.trim().split(/\s+/).find(Boolean);
+            if (!firstCoordinateSet) return null;
+
+            const [lngRaw, latRaw] = firstCoordinateSet.split(',');
+            const lng = parseFloat((lngRaw || '').replace(/["']/g, ''));
+            const lat = parseFloat((latRaw || '').replace(/["']/g, ''));
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return null;
+            }
+
+            return { lat, lng };
+        }
+
+        function buildKmlStyleIndex(xmlDoc) {
+            const styleIcons = new Map();
+            const styleMaps = new Map();
+
+            findDescendantsByLocalName(xmlDoc, 'Style').forEach(styleNode => {
+                const styleId = styleNode.getAttribute('id');
+                const href = getNodeText(findFirstDescendantByLocalName(styleNode, 'href'));
+                if (styleId && href) {
+                    styleIcons.set(`#${styleId}`, href);
+                }
+            });
+
+            findDescendantsByLocalName(xmlDoc, 'StyleMap').forEach(styleMapNode => {
+                const styleMapId = styleMapNode.getAttribute('id');
+                if (!styleMapId) return;
+
+                const pairs = Array.from(styleMapNode.children || []).filter(node => node.localName === 'Pair');
+                let selectedStyleUrl = '';
+
+                for (const pair of pairs) {
+                    const key = getNodeText(findFirstDescendantByLocalName(pair, 'key'));
+                    const styleUrl = getNodeText(findFirstDescendantByLocalName(pair, 'styleUrl'));
+                    if (styleUrl && (!selectedStyleUrl || key === 'normal')) {
+                        selectedStyleUrl = styleUrl;
+                    }
+                }
+
+                if (selectedStyleUrl) {
+                    styleMaps.set(`#${styleMapId}`, selectedStyleUrl);
+                }
+            });
+
+            return {
+                resolveIcon(styleUrl) {
+                    if (!styleUrl) return '';
+                    if (styleIcons.has(styleUrl)) return styleIcons.get(styleUrl);
+                    const mappedStyleUrl = styleMaps.get(styleUrl);
+                    return mappedStyleUrl ? (styleIcons.get(mappedStyleUrl) || '') : '';
+                }
+            };
+        }
+
+        function parseKmlPlacemarks(kmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(kmlText, 'application/xml');
+            const parserError = xmlDoc.querySelector('parsererror');
+
+            if (parserError) {
+                throw new Error('Format XML/KML tidak valid');
+            }
+
+            const placemarkNodes = findDescendantsByLocalName(xmlDoc, 'Placemark');
+            const styleIndex = buildKmlStyleIndex(xmlDoc);
+            const placemarks = [];
+
+            placemarkNodes.forEach(placemarkNode => {
+                const pointNode = findFirstDescendantByLocalName(placemarkNode, 'Point');
+                const coordinateNode = pointNode
+                    ? findFirstDescendantByLocalName(pointNode, 'coordinates')
+                    : findFirstDescendantByLocalName(placemarkNode, 'coordinates');
+                const coordinatePair = parseCoordinatePair(getNodeText(coordinateNode));
+
+                if (!coordinatePair) return;
+
+                const placemarkStyleUrl = getNodeText(findFirstDescendantByLocalName(placemarkNode, 'styleUrl'));
+                const iconHref =
+                    getNodeText(findFirstDescendantByLocalName(placemarkNode, 'href')) ||
+                    styleIndex.resolveIcon(placemarkStyleUrl) ||
+                    'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png';
+
+                placemarks.push({
+                    name: getNodeText(findFirstDescendantByLocalName(placemarkNode, 'name')) || 'Unnamed Location',
+                    description: getNodeText(findFirstDescendantByLocalName(placemarkNode, 'description')),
+                    latitude: coordinatePair.lat,
+                    longitude: coordinatePair.lng,
+                    iconUrl: iconHref
+                });
+            });
+
+            return placemarks;
+        }
+
         // Fungsi untuk memproses CSV ke KML
         function csvToKml(csvText, folderName = '', folderDescription = '', iconUrl = '') {
             try {
@@ -485,30 +566,7 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
         // Fungsi untuk memproses KML ke CSV
         function kmlToCsv(kmlText) {
             try {
-                // Parser KML sederhana (tidak menggunakan DOMParser untuk kompatibilitas)
-                const placemarks = [];
-                const placemarkRegex = /<Placemark>([\s\S]*?)<\/Placemark>/g;
-                let match;
-
-                while ((match = placemarkRegex.exec(kmlText)) !== null) {
-                    const placemarkContent = match[1];
-
-                    const nameMatch = placemarkContent.match(/<name>([\s\S]*?)<\/name>/);
-                    const descMatch = placemarkContent.match(/<description>([\s\S]*?)<\/description>/);
-                    const coordMatch = placemarkContent.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
-
-                    if (!coordMatch) continue;
-
-                    const coords = coordMatch[1].trim().split(',');
-                    if (coords.length < 2) continue;
-
-                    placemarks.push({
-                        name: nameMatch ? nameMatch[1].trim() : '',
-                        longitude: coords[0],
-                        latitude: coords[1],
-                        description: descMatch ? descMatch[1].trim() : ''
-                    });
-                }
+                const placemarks = parseKmlPlacemarks(kmlText);
 
                 if (placemarks.length === 0) {
                     throw new Error('Tidak ditemukan Placemark dengan koordinat yang valid dalam file KML');
