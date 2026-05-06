@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Rename Nama</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
+    <script src="scripts/tool-embed.js" defer></script>
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-tile {
+            padding: 1rem 1.1rem;
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            background: rgba(7, 14, 27, 0.84);
+        }
+
+        .stat-tile strong {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .stat-tile span {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .preset-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+
+        .preset-grid button {
+            min-width: 0;
+        }
+
+        .token-note {
+            margin-top: 0.85rem;
+            font-size: 0.9rem;
+        }
+
+        .token-note code {
+            padding: 0.15rem 0.35rem;
+            border-radius: 8px;
+            background: rgba(57, 208, 255, 0.08);
+        }
+
+        .preview-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .preview-status.changed {
+            color: #07131d;
+            background: rgba(53, 241, 208, 0.88);
+        }
+
+        .preview-status.same {
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .muted-inline {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-signature"></i> Bulk Rename Workspace</span>
+                    <h1 class="display-title">Rename Nama Secara Massal</h1>
+                    <p class="hero-description">
+                        Tool ini dibuat khusus untuk mengganti nama secara massal tanpa backend. Cocok untuk
+                        <strong>KML</strong>, <strong>CSV</strong>, dan <strong>TXT</strong> dengan kombinasi
+                        prefix, suffix, find/replace, template nama, serta nomor urut otomatis.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-file-code"></i> KML / CSV / TXT</span>
+                        <span class="status-pill"><i class="fas fa-pen-ruler"></i> Rename Bertahap</span>
+                        <span class="status-pill"><i class="fas fa-list-ol"></i> Sequence Otomatis</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Mode Rename</strong>
+                        <span>Nama diproses secara lokal di browser</span>
+                        <p class="support-text">
+                            Untuk file KML, tool ini akan mengganti elemen <code>&lt;name&gt;</code> di setiap
+                            <code>Placemark</code>. Untuk CSV, kolom <code>name</code> akan diperbarui.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Input</strong>
+                            <span>KML</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Input</strong>
+                            <span>CSV</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Input</strong>
+                            <span>TXT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Input File</span>
+                        <h2 class="card-title">Upload data nama yang ingin diubah</h2>
+                        <p class="card-copy">Pilih file kerja, lalu atur pola rename yang ingin diterapkan ke seluruh item.</p>
+                    </div>
+
+                    <div class="upload-zone">
+                        <h3>Upload file kerja</h3>
+                        <p class="upload-copy">Mendukung file <strong>.kml</strong>, <strong>.csv</strong>, dan <strong>.txt</strong>.</p>
+                        <div class="helper-row">
+                            <span class="status-pill"><i class="fas fa-file-arrow-up"></i> Klik area ini untuk memilih file</span>
+                        </div>
+                        <input type="file" id="fileInput" accept=".kml,.csv,.txt">
+                        <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
+                    </div>
+
+                    <div id="loading">Memproses...</div>
+                    <div id="error" class="error"></div>
+
+                    <div class="folder-form">
+                        <h4>Aturan rename</h4>
+                        <div class="folder-form-grid">
+                            <div class="folder-form-group">
+                                <label for="findText">Cari teks</label>
+                                <input type="text" id="findText" placeholder="Contoh: ODP_">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="replaceText">Ganti dengan</label>
+                                <input type="text" id="replaceText" placeholder="Contoh: HH_">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="prefixText">Prefix</label>
+                                <input type="text" id="prefixText" placeholder="Contoh: AREA-A_">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="suffixText">Suffix</label>
+                                <input type="text" id="suffixText" placeholder="Contoh: _REV">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="caseMode">Mode huruf</label>
+                                <select id="caseMode">
+                                    <option value="keep">Pertahankan asli</option>
+                                    <option value="upper">UPPERCASE</option>
+                                    <option value="lower">lowercase</option>
+                                    <option value="title">Title Case</option>
+                                </select>
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="nameTemplate">Template akhir</label>
+                                <input type="text" id="nameTemplate" placeholder="Contoh: ODP-{n} | {name}">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="startNumber">Nomor mulai</label>
+                                <input type="number" id="startNumber" min="0" step="1" value="1">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="padLength">Digit padding</label>
+                                <input type="number" id="padLength" min="0" step="1" value="3">
+                            </div>
+                        </div>
+                        <p class="token-note">
+                            Gunakan <code>{name}</code> untuk nama hasil sementara, dan <code>{n}</code> untuk nomor urut.
+                            Jika template kosong, hasil rename akan memakai kombinasi cari/ganti, mode huruf, prefix, dan suffix saja.
+                        </p>
+                        <div class="preset-grid">
+                            <button type="button" class="button-muted preset-template" data-template="ODP-{n}">ODP-{n}</button>
+                            <button type="button" class="button-muted preset-template" data-template="HH-{n}">HH-{n}</button>
+                            <button type="button" class="button-muted preset-template" data-template="{name}-{n}">{name}-{n}</button>
+                            <button type="button" class="button-muted preset-template" data-template="AREA-A | {name}">AREA-A | {name}</button>
+                        </div>
+                    </div>
+
+                    <div class="tool-actions">
+                        <button id="processBtn" type="button"><i class="fas fa-wand-magic-sparkles"></i> Proses Rename</button>
+                        <button id="resetBtn" type="button" class="button-muted"><i class="fas fa-rotate-left"></i> Reset Opsi</button>
+                    </div>
+
+                    <div id="downloadSection" class="folder-form" style="display:none;">
+                        <h4>Hasil siap diunduh</h4>
+                        <p class="card-copy" id="downloadSummary">File hasil rename siap diunduh dengan format yang sama seperti file input.</p>
+                        <div class="tool-actions">
+                            <button id="downloadBtn" type="button"><i class="fas fa-download"></i> Download File Hasil</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="support-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Ringkasan</span>
+                        <h2 class="card-title">Status rename</h2>
+                        <p class="card-copy">Cek jumlah item yang terbaca dan berapa nama yang benar-benar berubah.</p>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="stat-tile">
+                            <strong>Format aktif</strong>
+                            <span id="summaryFormat">Belum ada</span>
+                        </div>
+                        <div class="stat-tile">
+                            <strong>Total item</strong>
+                            <span id="summaryTotal">0</span>
+                        </div>
+                        <div class="stat-tile">
+                            <strong>Nama berubah</strong>
+                            <span id="summaryChanged">0</span>
+                        </div>
+                        <div class="stat-tile">
+                            <strong>Tetap sama</strong>
+                            <span id="summaryUnchanged">0</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Preview</span>
+                        <h2 class="card-title">Perbandingan nama sebelum dan sesudah</h2>
+                        <p class="card-copy" id="previewCaption">Upload file terlebih dahulu untuk melihat nama yang akan diproses.</p>
+                    </div>
+                    <div class="results-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">No</th>
+                                    <th>Nama Asli</th>
+                                    <th>Nama Baru</th>
+                                    <th style="width: 140px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody">
+                                <tr>
+                                    <td colspan="4">Belum ada data untuk ditampilkan.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Cara Pakai</span>
+                        <h2 class="card-title">Alur yang paling aman</h2>
+                    </div>
+                    <div class="tutorial-steps">
+                        <div class="tutorial-step">
+                            <h3>1. Upload file sumber</h3>
+                            <p>Pilih file KML, CSV, atau TXT yang memuat nama-nama yang ingin diubah secara massal.</p>
+                        </div>
+                        <div class="tutorial-step">
+                            <h3>2. Atur pola rename</h3>
+                            <p>Pakai kombinasi cari/ganti, prefix, suffix, mode huruf, atau template akhir sesuai kebutuhan.</p>
+                        </div>
+                        <div class="tutorial-step">
+                            <h3>3. Cek preview</h3>
+                            <p>Periksa hasil di tabel preview sebelum Anda mengunduh file akhir.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="support-card glass-card file-format">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Perilaku Format</span>
+                        <h2 class="card-title">Apa yang akan diubah tool ini</h2>
+                    </div>
+                    <h4>KML</h4>
+                    <p>Semua elemen <code>Placemark &gt; name</code> akan di-rename sesuai urutan kemunculan di file.</p>
+
+                    <h4>CSV</h4>
+                    <p>Kolom <code>name</code> wajib ada. Kolom lain akan tetap dipertahankan seperti semula.</p>
+
+                    <h4>TXT</h4>
+                    <p>Setiap baris non-kosong dianggap sebagai satu nama yang bisa diubah secara massal.</p>
+
+                    <h4>Contoh template</h4>
+                    <pre>ODP-{n}
+{name}-REV
+AREA-A | {name}
+NODE-{n} | {name}</pre>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script>
+        const MAX_PREVIEW_ROWS = 200;
+        const DEFAULT_DOWNLOAD_NAME = 'hasil_rename_massal';
+
+        let loadedFile = null;
+        let processedResult = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const processBtn = document.getElementById('processBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadSummary = document.getElementById('downloadSummary');
+        const previewBody = document.getElementById('previewBody');
+        const previewCaption = document.getElementById('previewCaption');
+        const summaryFormat = document.getElementById('summaryFormat');
+        const summaryTotal = document.getElementById('summaryTotal');
+        const summaryChanged = document.getElementById('summaryChanged');
+        const summaryUnchanged = document.getElementById('summaryUnchanged');
+        const findTextInput = document.getElementById('findText');
+        const replaceTextInput = document.getElementById('replaceText');
+        const prefixTextInput = document.getElementById('prefixText');
+        const suffixTextInput = document.getElementById('suffixText');
+        const caseModeSelect = document.getElementById('caseMode');
+        const nameTemplateInput = document.getElementById('nameTemplate');
+        const startNumberInput = document.getElementById('startNumber');
+        const padLengthInput = document.getElementById('padLength');
+
+        function detectFormat(fileName) {
+            const lowerName = fileName.toLowerCase();
+            if (lowerName.endsWith('.kml')) return 'kml';
+            if (lowerName.endsWith('.csv')) return 'csv';
+            if (lowerName.endsWith('.txt')) return 'txt';
+            return '';
+        }
+
+        function escapeHtml(value) {
+            return (value || '').toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parseCSVLine(text) {
+            const result = [];
+            let currentValue = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"' && text[i + 1] === '"' && inQuotes) {
+                    currentValue += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(currentValue);
+                    currentValue = '';
+                } else {
+                    currentValue += char;
+                }
+            }
+
+            result.push(currentValue);
+            return result.map(value => value.trim());
+        }
+
+        function toCSVLine(values) {
+            return values.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',');
+        }
+
+        function findDescendantsByLocalName(root, localName) {
+            if (!root) return [];
+            return Array.from(root.getElementsByTagName('*')).filter(node => node.localName === localName);
+        }
+
+        function findFirstDescendantByLocalName(root, localName) {
+            return findDescendantsByLocalName(root, localName)[0] || null;
+        }
+
+        function findDirectChildByLocalName(root, localName) {
+            if (!root) return null;
+            return Array.from(root.children || []).find(node => node.localName === localName) || null;
+        }
+
+        function getNodeText(node) {
+            return node && node.textContent ? node.textContent.trim() : '';
+        }
+
+        function toTitleCase(value) {
+            return value.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        function applyCaseMode(value, mode) {
+            if (mode === 'upper') return value.toUpperCase();
+            if (mode === 'lower') return value.toLowerCase();
+            if (mode === 'title') return toTitleCase(value);
+            return value;
+        }
+
+        function getLineBreak(text) {
+            return text.includes('\r\n') ? '\r\n' : '\n';
+        }
+
+        function parseKmlInput(fileName, text) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, 'application/xml');
+            const parserError = xmlDoc.querySelector('parsererror');
+
+            if (parserError) {
+                throw new Error('Format XML/KML tidak valid');
+            }
+
+            const placemarkNodes = findDescendantsByLocalName(xmlDoc, 'Placemark');
+            if (placemarkNodes.length === 0) {
+                throw new Error('Tidak ditemukan Placemark di dalam file KML');
+            }
+
+            const entries = placemarkNodes.map((placemarkNode, index) => {
+                const directNameNode = findDirectChildByLocalName(placemarkNode, 'name');
+                const fallbackNameNode = directNameNode || findFirstDescendantByLocalName(placemarkNode, 'name');
+                return {
+                    index,
+                    originalName: getNodeText(fallbackNameNode)
+                };
+            });
+
+            return {
+                fileName,
+                format: 'kml',
+                formatLabel: 'KML Placemark',
+                text,
+                entries
+            };
+        }
+
+        function parseCsvInput(fileName, text) {
+            const cleanText = text.replace(/^\ufeff/, '');
+            const lines = cleanText.split(/\r?\n/);
+            if (!lines.length || !lines[0].trim()) {
+                throw new Error('File CSV kosong atau header tidak ditemukan');
+            }
+
+            const headers = parseCSVLine(lines[0]);
+            const nameIndex = headers.findIndex(header => header.toLowerCase() === 'name');
+
+            if (nameIndex === -1) {
+                throw new Error("Kolom 'name' tidak ditemukan dalam file CSV");
+            }
+
+            const records = [];
+            const entries = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.trim() === '') {
+                    records.push({ type: 'blank' });
+                    continue;
+                }
+
+                const cells = parseCSVLine(line);
+                records.push({ type: 'data', cells });
+                entries.push({
+                    index: entries.length,
+                    recordIndex: records.length - 1,
+                    originalName: cells[nameIndex] || ''
+                });
+            }
+
+            if (entries.length === 0) {
+                throw new Error('Tidak ditemukan baris data yang bisa diproses pada file CSV');
+            }
+
+            return {
+                fileName,
+                format: 'csv',
+                formatLabel: 'CSV Name Column',
+                text: cleanText,
+                headers,
+                nameIndex,
+                records,
+                lineBreak: getLineBreak(cleanText),
+                entries
+            };
+        }
+
+        function parseTxtInput(fileName, text) {
+            const lines = text.split(/\r?\n/);
+            const entries = [];
+            const records = lines.map(line => {
+                if (line.trim() === '') {
+                    return { type: 'blank', value: line };
+                }
+
+                const entry = {
+                    index: entries.length,
+                    originalName: line
+                };
+                entries.push(entry);
+                return { type: 'data', value: line };
+            });
+
+            if (entries.length === 0) {
+                throw new Error('Tidak ditemukan baris nama yang bisa diproses pada file TXT');
+            }
+
+            return {
+                fileName,
+                format: 'txt',
+                formatLabel: 'TXT Line List',
+                text,
+                records,
+                lineBreak: getLineBreak(text),
+                entries
+            };
+        }
+
+        function parseInputFile(fileName, text) {
+            const format = detectFormat(fileName);
+
+            if (format === 'kml') return parseKmlInput(fileName, text);
+            if (format === 'csv') return parseCsvInput(fileName, text);
+            if (format === 'txt') return parseTxtInput(fileName, text);
+
+            throw new Error('Format file belum didukung. Gunakan KML, CSV, atau TXT.');
+        }
+
+        function getRenameOptions() {
+            return {
+                findText: findTextInput.value,
+                replaceText: replaceTextInput.value,
+                prefixText: prefixTextInput.value,
+                suffixText: suffixTextInput.value,
+                caseMode: caseModeSelect.value,
+                nameTemplate: nameTemplateInput.value.trim(),
+                startNumber: Math.max(0, parseInt(startNumberInput.value, 10) || 0),
+                padLength: Math.max(0, parseInt(padLengthInput.value, 10) || 0)
+            };
+        }
+
+        function renameSingleName(originalName, index, options) {
+            let nextName = originalName || '';
+
+            if (options.findText) {
+                nextName = nextName.split(options.findText).join(options.replaceText);
+            }
+
+            nextName = applyCaseMode(nextName, options.caseMode);
+            nextName = `${options.prefixText}${nextName}${options.suffixText}`;
+
+            const sequenceValue = options.startNumber + index;
+            const sequenceText = options.padLength > 0
+                ? String(sequenceValue).padStart(options.padLength, '0')
+                : String(sequenceValue);
+
+            if (options.nameTemplate) {
+                nextName = options.nameTemplate
+                    .split('{name}').join(nextName)
+                    .split('{n}').join(sequenceText);
+            }
+
+            return nextName.trim();
+        }
+
+        function buildRenamedEntries(entries, options) {
+            return entries.map((entry, index) => {
+                const renamedName = renameSingleName(entry.originalName, index, options);
+                return {
+                    ...entry,
+                    renamedName,
+                    changed: renamedName !== entry.originalName
+                };
+            });
+        }
+
+        function buildKmlOutput(sourceText, renamedEntries) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(sourceText, 'application/xml');
+            const parserError = xmlDoc.querySelector('parsererror');
+
+            if (parserError) {
+                throw new Error('Gagal menulis ulang file KML karena XML tidak valid');
+            }
+
+            const placemarkNodes = findDescendantsByLocalName(xmlDoc, 'Placemark');
+            placemarkNodes.forEach((placemarkNode, index) => {
+                const renamedEntry = renamedEntries[index];
+                if (!renamedEntry) return;
+
+                let nameNode = findDirectChildByLocalName(placemarkNode, 'name');
+                if (!nameNode) {
+                    const namespaceUri = placemarkNode.namespaceURI || xmlDoc.documentElement.namespaceURI || 'http://www.opengis.net/kml/2.2';
+                    nameNode = xmlDoc.createElementNS(namespaceUri, 'name');
+                    const firstElementChild = Array.from(placemarkNode.childNodes).find(node => node.nodeType === 1);
+                    if (firstElementChild) {
+                        placemarkNode.insertBefore(nameNode, firstElementChild);
+                    } else {
+                        placemarkNode.appendChild(nameNode);
+                    }
+                }
+
+                nameNode.textContent = renamedEntry.renamedName;
+            });
+
+            let serialized = new XMLSerializer().serializeToString(xmlDoc);
+            if (!serialized.startsWith('<?xml')) {
+                serialized = `<?xml version="1.0" encoding="UTF-8"?>\n${serialized}`;
+            }
+
+            return serialized;
+        }
+
+        function buildCsvOutput(sourceFile, renamedEntries) {
+            const lines = [toCSVLine(sourceFile.headers)];
+            let entryCursor = 0;
+
+            sourceFile.records.forEach(record => {
+                if (record.type === 'blank') {
+                    lines.push('');
+                    return;
+                }
+
+                const cells = record.cells.slice();
+                const renamedEntry = renamedEntries[entryCursor++];
+                if (renamedEntry) {
+                    cells[sourceFile.nameIndex] = renamedEntry.renamedName;
+                }
+                lines.push(toCSVLine(cells));
+            });
+
+            return lines.join(sourceFile.lineBreak);
+        }
+
+        function buildTxtOutput(sourceFile, renamedEntries) {
+            const renamedLines = [];
+            let entryCursor = 0;
+
+            sourceFile.records.forEach(record => {
+                if (record.type === 'blank') {
+                    renamedLines.push(record.value || '');
+                    return;
+                }
+
+                const renamedEntry = renamedEntries[entryCursor++];
+                renamedLines.push(renamedEntry ? renamedEntry.renamedName : record.value);
+            });
+
+            return renamedLines.join(sourceFile.lineBreak);
+        }
+
+        function buildOutputFile(sourceFile, renamedEntries) {
+            if (sourceFile.format === 'kml') {
+                return {
+                    content: buildKmlOutput(sourceFile.text, renamedEntries),
+                    mimeType: 'application/vnd.google-earth.kml+xml'
+                };
+            }
+
+            if (sourceFile.format === 'csv') {
+                return {
+                    content: buildCsvOutput(sourceFile, renamedEntries),
+                    mimeType: 'text/csv'
+                };
+            }
+
+            return {
+                content: buildTxtOutput(sourceFile, renamedEntries),
+                mimeType: 'text/plain'
+            };
+        }
+
+        function buildOutputFileName(fileName) {
+            const dotIndex = fileName.lastIndexOf('.');
+            if (dotIndex === -1) {
+                return `${fileName || DEFAULT_DOWNLOAD_NAME}_bulk-renamed`;
+            }
+
+            const nameOnly = fileName.slice(0, dotIndex);
+            const extension = fileName.slice(dotIndex);
+            return `${nameOnly}_bulk-renamed${extension}`;
+        }
+
+        function updateSummary(formatLabel, renamedEntries) {
+            const changedCount = renamedEntries.filter(entry => entry.changed).length;
+            summaryFormat.textContent = formatLabel || 'Belum ada';
+            summaryTotal.textContent = String(renamedEntries.length);
+            summaryChanged.textContent = String(changedCount);
+            summaryUnchanged.textContent = String(renamedEntries.length - changedCount);
+        }
+
+        function renderPreview(formatLabel, renamedEntries) {
+            previewBody.innerHTML = '';
+
+            if (!renamedEntries.length) {
+                previewBody.innerHTML = '<tr><td colspan="4">Tidak ada data yang bisa dipreview.</td></tr>';
+                previewCaption.textContent = 'Tidak ada nama yang ditemukan pada file aktif.';
+                updateSummary(formatLabel, []);
+                return;
+            }
+
+            const rowsToRender = renamedEntries.slice(0, MAX_PREVIEW_ROWS);
+            rowsToRender.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                const originalName = entry.originalName || '<tanpa nama>';
+                const renamedName = entry.renamedName || '<kosong>';
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.originalName ? escapeHtml(originalName) : '<span class="muted-inline">&lt;tanpa nama&gt;</span>'}</td>
+                    <td>${entry.renamedName ? escapeHtml(renamedName) : '<span class="muted-inline">&lt;kosong&gt;</span>'}</td>
+                    <td><span class="preview-status ${entry.changed ? 'changed' : 'same'}">${entry.changed ? 'Berubah' : 'Tetap'}</span></td>
+                `;
+                previewBody.appendChild(row);
+            });
+
+            previewCaption.textContent = renamedEntries.length > MAX_PREVIEW_ROWS
+                ? `Menampilkan ${MAX_PREVIEW_ROWS} baris pertama dari total ${renamedEntries.length} item ${formatLabel}.`
+                : `Menampilkan ${renamedEntries.length} item ${formatLabel} yang akan diproses.`;
+
+            updateSummary(formatLabel, renamedEntries);
+        }
+
+        function resetDownloadState() {
+            processedResult = null;
+            downloadSection.style.display = 'none';
+        }
+
+        function resetRenameOptions() {
+            findTextInput.value = '';
+            replaceTextInput.value = '';
+            prefixTextInput.value = '';
+            suffixTextInput.value = '';
+            caseModeSelect.value = 'keep';
+            nameTemplateInput.value = '';
+            startNumberInput.value = '1';
+            padLengthInput.value = '3';
+            errorDiv.textContent = '';
+            resetDownloadState();
+
+            if (loadedFile) {
+                const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
+                renderPreview(loadedFile.formatLabel, initialPreview);
+            }
+        }
+
+        function setLoadingState(isLoading) {
+            loading.style.display = isLoading ? 'block' : 'none';
+            processBtn.disabled = isLoading;
+            downloadBtn.disabled = isLoading;
+        }
+
+        function loadSelectedFile(file) {
+            if (!file) return;
+
+            fileInfo.textContent = `File dipilih: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+            errorDiv.textContent = '';
+            resetDownloadState();
+            setLoadingState(true);
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                try {
+                    loadedFile = parseInputFile(file.name, event.target.result);
+                    const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
+                    renderPreview(loadedFile.formatLabel, initialPreview);
+                } catch (error) {
+                    loadedFile = null;
+                    previewBody.innerHTML = '<tr><td colspan="4">Gagal membaca isi file untuk preview.</td></tr>';
+                    previewCaption.textContent = 'Upload file yang valid untuk melanjutkan.';
+                    updateSummary('', []);
+                    errorDiv.textContent = `Error: ${error.message}`;
+                } finally {
+                    setLoadingState(false);
+                }
+            };
+
+            reader.onerror = function () {
+                loadedFile = null;
+                setLoadingState(false);
+                errorDiv.textContent = 'Gagal membaca file yang dipilih.';
+            };
+
+            reader.readAsText(file);
+        }
+
+        function processRename() {
+            if (!loadedFile) {
+                errorDiv.textContent = 'Silakan pilih file terlebih dahulu.';
+                return;
+            }
+
+            try {
+                setLoadingState(true);
+                errorDiv.textContent = '';
+
+                const renamedEntries = buildRenamedEntries(loadedFile.entries, getRenameOptions());
+                const outputFile = buildOutputFile(loadedFile, renamedEntries);
+                const outputFileName = buildOutputFileName(loadedFile.fileName);
+                const changedCount = renamedEntries.filter(entry => entry.changed).length;
+
+                processedResult = {
+                    renamedEntries,
+                    outputContent: outputFile.content,
+                    outputMimeType: outputFile.mimeType,
+                    outputFileName
+                };
+
+                renderPreview(loadedFile.formatLabel, renamedEntries);
+                downloadSummary.textContent = `${changedCount} nama berubah dari total ${renamedEntries.length} item. File hasil akan diunduh sebagai ${outputFileName}.`;
+                downloadSection.style.display = 'block';
+            } catch (error) {
+                processedResult = null;
+                downloadSection.style.display = 'none';
+                errorDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        function downloadProcessedFile() {
+            if (!processedResult) {
+                errorDiv.textContent = 'Belum ada hasil rename yang siap diunduh.';
+                return;
+            }
+
+            const blob = new Blob([processedResult.outputContent], { type: processedResult.outputMimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = processedResult.outputFileName;
+            document.body.appendChild(link);
+            link.click();
+
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            loadSelectedFile(file);
+        });
+
+        processBtn.addEventListener('click', processRename);
+        resetBtn.addEventListener('click', resetRenameOptions);
+        downloadBtn.addEventListener('click', downloadProcessedFile);
+
+        document.querySelectorAll('.preset-template').forEach(button => {
+            button.addEventListener('click', function () {
+                nameTemplateInput.value = this.dataset.template || '';
+            });
+        });
+    </script>
+</body>
+
+</html>
