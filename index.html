@@ -64,6 +64,15 @@
             <span class="nav-copy">Transformasi data koordinat ke dalam placemark visual.</span>
           </button>
 
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="bulkrename"
+            data-title="Bulk Rename Nama"
+            data-description="Workspace rename massal untuk mengubah nama placemark atau kolom name secara cepat dengan pola template, prefix, suffix, dan nomor urut."
+            data-badge="Automasi Nama" data-status="Menunggu file KML, CSV, atau TXT..."
+            data-url="bulkrename.html?tool=bulkrename" data-meta="Rename Engine">
+            <span class="nav-title"><i class="fas fa-signature"></i> Bulk Rename Nama</span>
+            <span class="nav-copy">Ganti nama secara massal untuk KML, CSV, dan TXT tanpa backend.</span>
+          </button>
+
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="tiangnew"
             data-title="Generator Node Geospasial"
             data-description="Algoritma penyebaran otomatis titik (placemark) berdasarkan interval sepanjang vektor rute."
@@ -130,6 +139,11 @@
           <div class="tool-stage">
             <iframe src="converter.html?tool=converter" data-src="converter.html?tool=converter"
               title="CSV ke KML Converter" scrolling="no"></iframe>
+          </div>
+        </div>
+        <div id="bulkrename" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="bulkrename.html?tool=bulkrename" title="Bulk Rename Nama" scrolling="no"></iframe>
           </div>
         </div>
         <div id="tiangnew" class="tab-content" data-tool-panel aria-hidden="true">
