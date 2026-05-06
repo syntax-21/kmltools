@@ -1,188 +1,206 @@
 # KML Tools Workspace
 
-KML Tools Workspace adalah kumpulan aplikasi geospasial berbasis peramban untuk membantu pengolahan data KML, KMZ, CSV, dan Excel dalam satu ruang kerja terpusat. Seluruh proses inti dijalankan di sisi klien, sehingga data utama diproses langsung di peramban tanpa memerlukan backend khusus untuk fungsi utamanya.
+KML Tools Workspace adalah kumpulan utilitas geospasial berbasis browser untuk mengolah `KML`, `KMZ`, `CSV`, `TXT`, dan `Excel` dalam satu workspace statis. Sebagian besar proses utama berjalan langsung di sisi klien, sehingga file kerja tidak perlu dikirim ke backend untuk fungsi inti seperti konversi, rename, segmentasi, analisis, dan visualisasi peta.
 
-Repositori ini dibangun sebagai situs statis. Aplikasi dapat dijalankan secara lokal melalui peramban, melalui server HTTP sederhana, maupun dipublikasikan dengan GitHub Pages.
+Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman dapat dibuka langsung di browser, dijalankan lewat HTTP server lokal, atau dipublikasikan ke GitHub Pages.
 
-## Gambaran Umum
+## Sorotan
 
-Ruang kerja ini terdiri atas satu halaman utama dan enam modul operasional:
+- Tidak memakai bundler, framework, atau backend wajib.
+- Setiap tool bisa dibuka langsung sebagai halaman mandiri.
+- `index.html` berfungsi sebagai shell utama yang memuat tool melalui `iframe`.
+- Tinggi `iframe` disinkronkan otomatis lewat `postMessage` agar tampilan tetap rapi saat embedded.
+- Mayoritas data diproses secara lokal di browser pengguna.
+- Peta interaktif memakai Leaflet dan tile OpenStreetMap.
 
-1. `index.html` sebagai ruang kerja utama yang memuat seluruh modul.
-2. `converter.html` untuk konversi dua arah antara CSV dan KML.
-3. `bulkrename.html` untuk rename nama secara massal pada data KML, CSV, dan TXT.
-4. `tiangnew.html` untuk pembuatan placemark tiang baru secara otomatis di sepanjang jalur.
-5. `asesoristiang.html` untuk analisis kebutuhan asesoris berdasarkan data KML/KMZ eksisting.
-6. `splitline.html` untuk memecah path KML menjadi beberapa segmen.
-7. `ukurallpro.html` untuk menghitung jarak jalan aktual secara massal menggunakan OSRM dan OpenStreetMap.
+## Daftar Modul
 
-Karakteristik utama proyek ini adalah sebagai berikut:
-
-- Tidak memerlukan tahap kompilasi atau bundel aset.
-- Memanfaatkan halaman HTML mandiri yang dapat diakses langsung.
-- Menggunakan iframe pada `index.html` untuk menyatukan seluruh modul dalam satu antarmuka.
-- Mendukung pratinjau peta interaktif melalui Leaflet dan OpenStreetMap.
-- Memanfaatkan pustaka CDN untuk beberapa fungsi tambahan seperti pembacaan KMZ, CSV, dan Excel.
-
-## Ringkasan Modul
-
-| Modul | Fungsi Utama | Input Utama | Output Utama |
+| File | Fungsi | Input utama | Output utama |
 | --- | --- | --- | --- |
-| `index.html` | Ruang kerja utama dan navigasi antarmodul | Tidak ada input data khusus | Akses terpadu ke seluruh modul |
-| `converter.html` | Konversi CSV ke KML dan KML ke CSV | `.csv`, `.kml`, `.txt` | File `.kml` atau `.csv` |
-| `bulkrename.html` | Rename nama secara massal dengan pola template atau numbering | `.kml`, `.csv`, `.txt` | File dengan format yang sama |
-| `tiangnew.html` | Pembuatan placemark tiang otomatis berdasarkan interval | `.kml`, `.kmz` | File KML baru berisi placemark |
-| `asesoristiang.html` | Analisis dan penambahan folder asesoris pada KML eksisting | `.kml`, `.kmz` | File KML asesoris, ringkasan, tabel, peta |
-| `splitline.html` | Pemecahan jalur KML menjadi segmen-segmen lebih pendek | `.kml`, `.xml` | KML gabungan atau beberapa file KML segmen |
-| `ukurallpro.html` | Perhitungan jarak jalan aktual dari banyak titik ke titik target terdekat | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
+| `index.html` | Workspace utama dan navigasi semua tool | - | Akses terpadu ke seluruh modul |
+| `converter.html` | Konversi dua arah CSV dan KML | `.csv`, `.kml`, `.txt` | `.kml` atau `.csv` |
+| `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.csv`, `.txt` | File dengan format asal |
+| `tiangnew.html` | Generate placemark otomatis di sepanjang path | `.kml`, `.kmz` | KML baru berisi path dan titik |
+| `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel, peta |
+| `splitline.html` | Pecah jalur KML menjadi beberapa segmen | `.kml`, `.xml` | KML gabungan atau file segmen terpisah |
+| `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
 
-## Uraian Tiap Aplikasi
+## Ringkasan Fitur Per Modul
 
-### 1. Workspace Utama (`index.html`)
+### 1. Workspace utama (`index.html`)
 
-Halaman ini berfungsi sebagai pusat akses seluruh modul. Modul dimuat di dalam iframe dan tinggi konten disesuaikan otomatis melalui `postMessage`, sehingga setiap aplikasi tetap dapat dibuka dalam satu halaman tanpa kehilangan konteks kerja.
+Halaman ini adalah entry point utama. Shell memuat tiap modul secara lazy-load di dalam `iframe`, menyimpan tool aktif lewat query string atau hash, lalu menyinkronkan metadata judul, deskripsi, dan tombol pembuka halaman standalone.
 
-Fitur utama:
+Fitur penting:
 
-- Navigasi antarmodul dari satu halaman.
-- Tombol pembukaan modul dalam tab atau jendela tersendiri.
-- Penyesuaian mode tersemat untuk penggunaan dalam iframe.
-- Dukungan penyesuaian tampilan bila dijalankan di lingkungan Telegram WebApp.
-- Tombol `Force Reload Core` untuk membersihkan cache, cookie, dan storage bila diperlukan.
+- Navigasi semua tool dari satu halaman.
+- Dukungan deep link seperti `index.html?tool=bulkrename` atau `index.html#tool-ukurallpro`.
+- Tombol `Ekspansi Layar` untuk membuka tool aktif di tab terpisah.
+- Tombol `Force Reload Core` untuk membersihkan cookie, storage, dan cache browser.
+- Mode Telegram WebApp bila objek `Telegram.WebApp` tersedia.
 
-### 2. Konverter CSV dan KML (`converter.html`)
+### 2. Konverter CSV <-> KML (`converter.html`)
 
-Modul ini menyediakan konversi dua arah antara data tabular dan data spasial sederhana berbasis placemark.
+Tool ini menangani konversi dua arah antara data tabular dan placemark point pada KML.
 
-Kemampuan utama:
+Fitur penting:
 
-- Mengubah CSV menjadi KML.
-- Mengubah KML menjadi CSV.
-- Menentukan nama folder KML dan deskripsi folder.
-- Memilih ikon default placemark untuk hasil KML.
-- Menyediakan berkas contoh CSV.
-- Menampilkan hasil KML pada peta sebagai pratinjau.
+- Konversi `CSV -> KML`.
+- Konversi `KML -> CSV`.
+- Pengaturan nama folder dan deskripsi folder saat ekspor KML.
+- Pemilihan ikon placemark default.
+- Unduhan file contoh CSV.
+- Preview hasil KML di peta Leaflet.
 
-Ketentuan penting:
+Catatan:
 
-- Untuk konversi CSV ke KML, kolom minimum yang diperlukan adalah `name`, `latitude`, dan `longitude`.
+- CSV minimum membutuhkan kolom `name`, `latitude`, dan `longitude`.
 - Kolom `description` bersifat opsional.
-- Konversi KML ke CSV difokuskan pada `Placemark` bertipe `Point`.
+- Konversi `KML -> CSV` difokuskan pada `Placemark` bertipe `Point`.
 
 ### 3. Bulk Rename Nama (`bulkrename.html`)
 
-Modul ini digunakan untuk mengganti nama secara massal pada kumpulan data berbasis nama tanpa perlu mengedit item satu per satu.
+Tool ini ditujukan untuk penggantian nama secara massal tanpa edit satu per satu.
 
-Kemampuan utama:
+Fitur penting:
 
-- Membaca file KML, CSV, dan TXT.
-- Mengganti nama dengan pola `find/replace`.
-- Menambahkan prefix dan suffix secara massal.
-- Membuat template nama menggunakan token seperti `{name}` dan `{n}`.
-- Menambahkan nomor urut otomatis dengan pengaturan digit padding.
-- Menampilkan preview nama sebelum dan sesudah diubah.
-- Mengekspor hasil dengan format yang sama seperti file asal.
+- Mendukung file `KML`, `CSV`, dan `TXT`.
+- Rename dengan pola `find/replace`.
+- Penambahan `prefix` dan `suffix`.
+- Template nama dengan token `{name}` dan `{n}`.
+- Nomor urut otomatis dengan pengaturan digit padding.
+- Preview sebelum dan sesudah rename.
+- Ekspor hasil dalam format yang sama seperti file sumber.
 
-Catatan operasional:
+Catatan:
 
-- Pada file KML, modul ini memproses elemen `Placemark > name`.
-- Pada file CSV, modul ini memerlukan kolom `name`.
-- Pada file TXT, setiap baris non-kosong dianggap sebagai satu nama.
+- Untuk `KML`, tool memproses `Placemark > name`.
+- Untuk `CSV`, tool mengharapkan kolom `name`.
+- Untuk `TXT`, setiap baris non-kosong dianggap satu entri nama.
 
 ### 4. Auto Placemark Tiang (`tiangnew.html`)
 
-Modul ini digunakan untuk menghasilkan titik-titik placemark baru secara otomatis di sepanjang path Google Earth berdasarkan interval jarak tertentu.
+Tool ini membuat placemark baru secara otomatis di sepanjang jalur berdasarkan interval meter tertentu.
 
-Kemampuan utama:
+Fitur penting:
 
-- Membaca file jalur berformat KML dan KMZ.
-- Menempatkan titik pertama di awal jalur dan titik-titik berikutnya berdasarkan interval meter.
-- Menyediakan nama placemark kustom atau nama default berurutan.
-- Menampilkan pratinjau koordinat hasil.
-- Menampilkan jalur dan placemark pada peta.
-- Mengekspor KML baru dengan struktur folder yang disesuaikan untuk kebutuhan jaringan.
+- Mendukung input `KML` dan `KMZ`.
+- Bisa klik upload atau drag-and-drop file.
+- Menempatkan titik secara berurutan sepanjang path.
+- Nama placemark bisa kustom atau auto-numbering.
+- Menampilkan preview koordinat dan visualisasi peta.
+- Menghasilkan KML dengan folder `KABEL` dan `TIANG`.
 
-Catatan operasional:
+Catatan:
 
-- Hasil ekspor mempertahankan jalur asli pada folder `KABEL`.
-- Placemark baru ditempatkan pada folder `TIANG`.
-- File hasil diunduh dengan pola nama `<nama_file>_placemarks.kml`.
+- File hasil diunduh sebagai `<nama_file>_placemarks.kml`.
+- Jalur asli tetap disertakan di hasil ekspor.
 
-### 5. Hitung Asesoris Tiang Eksisting (`asesoristiang.html`)
+### 5. Hitung Asesoris Tiang Existing (`asesoristiang.html`)
 
-Modul ini menganalisis file KML atau KMZ yang telah berisi path dan titik lapangan, lalu menghitung kebutuhan asesoris berdasarkan aturan spasial yang tertanam di aplikasi.
+Tool ini menganalisis KML/KMZ existing untuk menambahkan hasil perhitungan asesoris tanpa menghapus data utama yang sudah ada.
 
-Kemampuan utama:
+Fitur penting:
 
-- Membaca data yang sudah ada tanpa membuat placemark tiang baru.
-- Mempertahankan data yang sudah ada dan hanya menambahkan folder baru bernama `ASESORIS TIANG`.
-- Menghasilkan kategori asesoris seperti `PU-AS-DE-50/70`, `PU-AS-HL`, dan `PU-AS-SC`.
-- Menampilkan ringkasan hasil, tabel, dan peta.
+- Mendukung upload klik maupun drag-and-drop.
+- Membaca data line dan titik dari file existing.
+- Menambahkan folder `ASESORIS TIANG` ke hasil akhir.
+- Menampilkan ringkasan, tabel, dan peta hasil analisis.
 - Mengekspor KML hasil analisis.
 
-Aturan yang terlihat di implementasi:
+Aturan yang tampak di implementasi saat ini:
 
-- Perhitungan memanfaatkan radius referensi tertentu, termasuk aturan jarak 250 meter pada kondisi tertentu.
-- Folder dan label seperti `CATUAN`, `ODP PLAN`, serta kategori tiang `TE`, `TN`, `TB`, dan `TP` ikut dipertimbangkan.
-- Jika folder `ASESORIS TIANG` sudah ada, folder tersebut akan diganti dengan hasil perhitungan baru.
+- `PU-AS-DE-50/70` dan `PU-AS-HL` dihitung berdasarkan kondisi belokan, line lurus, dan interval tertentu termasuk aturan `250 meter`.
+- Folder seperti `CATUAN` dan `ODP PLAN` ikut dipakai sebagai pemicu pada path terdekat.
+- `PU-AS-SC` dihitung sepanjang ruas path terkait dengan penghindaran titik yang bertumpuk atau terlalu dekat.
+- Jika folder `ASESORIS TIANG` sudah ada, hasil baru akan menggantikannya.
 
-Catatan teknis:
+Catatan:
 
-- Modul ini masih memuat rutinitas pembersihan cookie, cache peramban, `localStorage`, dan `sessionStorage` pada kondisi tertentu.
-- File hasil diunduh dengan pola nama `<nama_file>_asesoris_tiang.kml`.
+- File hasil diunduh sebagai `<nama_file>_asesoris_tiang.kml`.
 
 ### 6. Google Earth Split Line (`splitline.html`)
 
-Modul ini digunakan untuk memecah path KML menjadi beberapa segmen yang lebih pendek berdasarkan panjang segmen yang ditentukan pengguna.
+Tool ini memecah path KML panjang menjadi segmen-segmen yang lebih pendek.
 
-Kemampuan utama:
+Fitur penting:
 
-- Membaca file KML atau XML yang berisi `LineString`.
-- Memecah jalur menjadi beberapa segmen dengan panjang target dalam meter.
-- Melakukan interpolasi titik jika jarak antarkoordinat terlalu jauh.
-- Menyediakan unduhan dalam satu file gabungan atau file terpisah per segmen.
-- Menampilkan visualisasi hasil segmentasi pada peta.
+- Menerima file `KML` atau `XML`.
+- Menghasilkan segmen berdasarkan panjang target dalam meter.
+- Melakukan interpolasi bila titik pada jalur terlalu renggang.
+- Menyediakan dua mode unduh:
+  - satu file gabungan `combined_path_segments.kml`
+  - file terpisah untuk tiap segmen
+- Menyediakan peta visualisasi hasil segmentasi.
 
-Catatan operasional:
+Catatan:
 
-- Modul ini hanya relevan untuk `Placemark` yang memiliki `LineString`.
-- Nama segmen dibentuk dari nama placemark asal ditambah nomor segmen.
-- File gabungan diunduh sebagai `combined_path_segments.kml`.
+- Tool ini hanya relevan untuk `Placemark` yang memiliki `LineString`.
 
 ### 7. Ukur Jarak Allpro Masal (`ukurallpro.html`)
 
-Modul ini menghitung jarak jalan aktual dari banyak titik asal ke titik alat produksi terdekat berdasarkan database KML.
+Tool ini menghitung jarak jalan aktual dari banyak titik asal ke titik target terdekat pada database KML.
 
-Kemampuan utama:
+Fitur penting:
 
-- Membaca data titik asal dari Excel (`.xlsx`, `.xls`) atau CSV.
-- Membaca database titik target dari file KML.
-- Menentukan titik target terdekat terlebih dahulu dengan jarak lurus.
-- Meminta rute jalan aktual ke layanan OSRM publik.
-- Menampilkan progres perhitungan, ringkasan statistik, tabel hasil, dan peta rute.
-- Mengekspor hasil ke file Excel.
+- Input titik asal dari `Excel` (`.xlsx`, `.xls`) atau `CSV`.
+- Input database target dari `KML`.
+- Pencarian target terdekat diawali dengan jarak lurus.
+- Perhitungan rute jalan aktual memakai OSRM publik.
+- Progress proses, tabel hasil, ringkasan statistik, dan peta rute.
+- Ekspor hasil ke Excel.
 
-Ketentuan data:
+Catatan:
 
-- File Excel atau CSV diharapkan memiliki tiga kolom utama: nama lokasi, latitude, dan longitude.
-- File KML digunakan sebagai basis data titik alat produksi.
-
-Catatan teknis:
-
-- Bila permintaan rute ke OSRM gagal, aplikasi menggunakan mekanisme cadangan berupa estimasi berbasis jarak lurus dengan faktor pengali.
+- Format minimal file lokasi asal mengikuti tiga kolom utama: nama lokasi, latitude, longitude.
+- Saat routing OSRM gagal, tool memiliki fallback berbasis jarak lurus dengan faktor pengali.
 - File hasil diunduh sebagai `hasil_jarak_jalan_alat_produksi.xlsx`.
 
-## Teknologi yang Digunakan
+## Arsitektur Frontend
 
-Repositori ini tidak menggunakan pengelola paket maupun proses kompilasi. Seluruh dependensi frontend dipanggil langsung dari CDN.
+Repositori ini sekarang memakai shell frontend sederhana agar semua tool terasa seperti satu aplikasi utuh walau tetap berbasis halaman HTML terpisah.
 
-Komponen utama yang digunakan:
+Komponen utamanya:
+
+- `index.html`
+  - shell workspace, hero section, navigasi modul, dan area `iframe`
+- `scripts/app-shell.js`
+  - aktivasi tab
+  - lazy-load `iframe`
+  - sinkronisasi hash/query ke tool aktif
+  - pembaruan metadata tool aktif
+  - auto-resize `iframe`
+  - dukungan Telegram WebApp
+  - `Force Reload Core`
+- `scripts/tool-embed.js`
+  - dipasang pada halaman tool
+  - mengukur tinggi konten halaman anak
+  - mengirim tinggi ke parent via `postMessage` dengan tipe `kmltools:frame-size`
+- `styles/kmltools-pro.css`
+  - stylesheet bersama untuk shell utama dan seluruh modul
+
+Setiap halaman tool mendeteksi mode embedded dengan:
+
+```js
+if (window.self !== window.top) {
+  document.documentElement.classList.add('embedded-tool');
+}
+```
+
+Dengan pola ini, satu tool bisa dipakai dalam dua mode:
+
+- standalone, langsung buka file HTML-nya
+- embedded, dimuat dari `index.html`
+
+## Teknologi Yang Dipakai
+
+Semua dependensi frontend dimuat langsung dari CDN.
 
 - HTML5
 - CSS3
 - JavaScript ES6+
-- Leaflet.js
-- OpenStreetMap tiles
+- Leaflet
+- OpenStreetMap
 - Font Awesome
 - JSZip
 - PapaParse
@@ -213,61 +231,70 @@ Komponen utama yang digunakan:
         `-- static.yml
 ```
 
-Keterangan berkas pendukung:
+## Menjalankan Proyek
 
-- `scripts/app-shell.js` menangani navigasi ruang kerja utama, sinkronisasi metadata modul, mode tersemat, dan pembersihan cache dari halaman utama.
-- `scripts/tool-embed.js` mengirimkan tinggi konten halaman anak ke iframe induk agar ukuran tampilan menyesuaikan otomatis.
-- `styles/kmltools-pro.css` memuat gaya visual utama seluruh aplikasi.
+### Opsi 1: buka langsung di browser
 
-## Cara Menjalankan
+1. Clone atau unduh repositori ini.
+2. Buka `index.html` di browser modern.
+3. Pilih tool yang ingin digunakan dari workspace utama.
 
-### Opsi 1: Membuka langsung dari peramban
+Mode ini cocok untuk penggunaan cepat, tetapi beberapa browser bisa lebih ketat terhadap akses file lokal, cache, atau perilaku `iframe`.
 
-1. Unduh atau clone repositori ini.
-2. Buka file `index.html` di peramban modern.
-3. Pilih modul yang ingin digunakan dari ruang kerja utama.
+### Opsi 2: jalankan lewat server lokal
 
-Pendekatan ini dapat digunakan untuk sebagian besar fungsi. Namun, pada beberapa peramban, pembacaan berkas lokal atau kebijakan keamanan tertentu dapat membatasi fitur tertentu.
+Cara ini lebih direkomendasikan agar seluruh halaman, `iframe`, dan asset eksternal berjalan lebih konsisten.
 
-### Opsi 2: Menjalankan melalui server lokal
-
-Pendekatan ini lebih disarankan agar pemuatan berkas, iframe, dan aset berjalan lebih konsisten.
-
-Contoh menggunakan Python:
+Contoh dengan Python:
 
 ```bash
 python -m http.server 8000
 ```
 
-Setelah itu, buka:
+Lalu buka:
 
 ```text
 http://localhost:8000
 ```
 
-## Publikasi dengan GitHub Pages
+Contoh deep link:
 
-Repositori ini telah menyiapkan workflow GitHub Actions pada `.github/workflows/static.yml`.
+```text
+http://localhost:8000/index.html?tool=converter
+http://localhost:8000/index.html#tool-bulkrename
+```
 
-Saat terdapat push ke branch `main`, workflow akan:
+## Deploy Ke GitHub Pages
 
-1. melakukan checkout repositori,
-2. menyiapkan GitHub Pages,
-3. mengunggah isi repositori sebagai artifact,
-4. melakukan deployment ke GitHub Pages.
+Workflow deploy sudah tersedia di [`.github/workflows/static.yml`](.github/workflows/static.yml).
 
-Karena proyek ini berupa situs statis, seluruh isi repositori dapat dipublikasikan tanpa tahap kompilasi tambahan.
+Saat ada `push` ke branch `main`, workflow akan:
 
-## Kebutuhan Koneksi Internet
+1. checkout repository
+2. menjalankan `configure-pages`
+3. mengunggah seluruh isi repository sebagai artifact
+4. deploy artifact ke GitHub Pages
 
-Walaupun sebagian besar logika aplikasi berjalan secara lokal di peramban, beberapa fitur tetap bergantung pada koneksi internet, yaitu:
+Karena proyek ini murni situs statis, tidak ada build step tambahan sebelum deploy.
 
-- pemuatan pustaka eksternal dari CDN,
-- tile peta dari OpenStreetMap,
-- ikon KML yang merujuk ke URL Google Maps,
-- layanan routing OSRM pada modul `ukurallpro.html`.
+## Koneksi Internet Dan Batasan
 
-Tanpa internet, fungsi yang sepenuhnya lokal masih dapat berjalan terbatas, tetapi fitur peta, ikon eksternal, serta routing tidak akan berfungsi secara penuh.
+Walau logika utama berjalan di browser, beberapa fitur tetap membutuhkan koneksi internet:
+
+- library frontend dimuat dari CDN
+- tile peta berasal dari OpenStreetMap
+- beberapa ikon KML memakai URL ikon Google Maps
+- modul `ukurallpro.html` membutuhkan layanan routing OSRM publik
+
+Implikasinya:
+
+- konversi atau manipulasi file lokal masih bisa berjalan terbatas
+- preview peta tidak akan tampil penuh tanpa internet
+- routing jarak jalan akan gagal bila OSRM tidak dapat diakses
+
+## Catatan Privasi
+
+Untuk fungsi inti, file kerja diproses di browser pengguna. Itu berarti data utama tidak perlu diunggah ke server aplikasi ini. Namun, saat pengguna menyalakan fitur peta atau routing, browser tetap berkomunikasi dengan layanan pihak ketiga seperti CDN, OpenStreetMap, dan OSRM.
 
 ## Pengembang
 
@@ -275,4 +302,4 @@ Developed by Amirun Rayan Ariandi
 
 ---
 
-Dikembangkan secara privat untuk keperluan otomasi operasional infrastruktur jaringan.
+Workspace ini dikembangkan secara privat untuk kebutuhan otomasi operasional dan pengolahan data geospasial lapangan.
