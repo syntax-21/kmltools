@@ -6,14 +6,15 @@ Repositori ini dibangun sebagai situs statis. Aplikasi dapat dijalankan secara l
 
 ## Gambaran Umum
 
-Ruang kerja ini terdiri atas satu halaman utama dan lima modul operasional:
+Ruang kerja ini terdiri atas satu halaman utama dan enam modul operasional:
 
 1. `index.html` sebagai ruang kerja utama yang memuat seluruh modul.
 2. `converter.html` untuk konversi dua arah antara CSV dan KML.
-3. `tiangnew.html` untuk pembuatan placemark tiang baru secara otomatis di sepanjang jalur.
-4. `asesoristiang.html` untuk analisis kebutuhan asesoris berdasarkan data KML/KMZ eksisting.
-5. `splitline.html` untuk memecah path KML menjadi beberapa segmen.
-6. `ukurallpro.html` untuk menghitung jarak jalan aktual secara massal menggunakan OSRM dan OpenStreetMap.
+3. `bulkrename.html` untuk rename nama secara massal pada data KML, CSV, dan TXT.
+4. `tiangnew.html` untuk pembuatan placemark tiang baru secara otomatis di sepanjang jalur.
+5. `asesoristiang.html` untuk analisis kebutuhan asesoris berdasarkan data KML/KMZ eksisting.
+6. `splitline.html` untuk memecah path KML menjadi beberapa segmen.
+7. `ukurallpro.html` untuk menghitung jarak jalan aktual secara massal menggunakan OSRM dan OpenStreetMap.
 
 Karakteristik utama proyek ini adalah sebagai berikut:
 
@@ -29,6 +30,7 @@ Karakteristik utama proyek ini adalah sebagai berikut:
 | --- | --- | --- | --- |
 | `index.html` | Ruang kerja utama dan navigasi antarmodul | Tidak ada input data khusus | Akses terpadu ke seluruh modul |
 | `converter.html` | Konversi CSV ke KML dan KML ke CSV | `.csv`, `.kml`, `.txt` | File `.kml` atau `.csv` |
+| `bulkrename.html` | Rename nama secara massal dengan pola template atau numbering | `.kml`, `.csv`, `.txt` | File dengan format yang sama |
 | `tiangnew.html` | Pembuatan placemark tiang otomatis berdasarkan interval | `.kml`, `.kmz` | File KML baru berisi placemark |
 | `asesoristiang.html` | Analisis dan penambahan folder asesoris pada KML eksisting | `.kml`, `.kmz` | File KML asesoris, ringkasan, tabel, peta |
 | `splitline.html` | Pemecahan jalur KML menjadi segmen-segmen lebih pendek | `.kml`, `.xml` | KML gabungan atau beberapa file KML segmen |
@@ -67,7 +69,27 @@ Ketentuan penting:
 - Kolom `description` bersifat opsional.
 - Konversi KML ke CSV difokuskan pada `Placemark` bertipe `Point`.
 
-### 3. Auto Placemark Tiang (`tiangnew.html`)
+### 3. Bulk Rename Nama (`bulkrename.html`)
+
+Modul ini digunakan untuk mengganti nama secara massal pada kumpulan data berbasis nama tanpa perlu mengedit item satu per satu.
+
+Kemampuan utama:
+
+- Membaca file KML, CSV, dan TXT.
+- Mengganti nama dengan pola `find/replace`.
+- Menambahkan prefix dan suffix secara massal.
+- Membuat template nama menggunakan token seperti `{name}` dan `{n}`.
+- Menambahkan nomor urut otomatis dengan pengaturan digit padding.
+- Menampilkan preview nama sebelum dan sesudah diubah.
+- Mengekspor hasil dengan format yang sama seperti file asal.
+
+Catatan operasional:
+
+- Pada file KML, modul ini memproses elemen `Placemark > name`.
+- Pada file CSV, modul ini memerlukan kolom `name`.
+- Pada file TXT, setiap baris non-kosong dianggap sebagai satu nama.
+
+### 4. Auto Placemark Tiang (`tiangnew.html`)
 
 Modul ini digunakan untuk menghasilkan titik-titik placemark baru secara otomatis di sepanjang path Google Earth berdasarkan interval jarak tertentu.
 
@@ -86,7 +108,7 @@ Catatan operasional:
 - Placemark baru ditempatkan pada folder `TIANG`.
 - File hasil diunduh dengan pola nama `<nama_file>_placemarks.kml`.
 
-### 4. Hitung Asesoris Tiang Eksisting (`asesoristiang.html`)
+### 5. Hitung Asesoris Tiang Eksisting (`asesoristiang.html`)
 
 Modul ini menganalisis file KML atau KMZ yang telah berisi path dan titik lapangan, lalu menghitung kebutuhan asesoris berdasarkan aturan spasial yang tertanam di aplikasi.
 
@@ -109,7 +131,7 @@ Catatan teknis:
 - Modul ini masih memuat rutinitas pembersihan cookie, cache peramban, `localStorage`, dan `sessionStorage` pada kondisi tertentu.
 - File hasil diunduh dengan pola nama `<nama_file>_asesoris_tiang.kml`.
 
-### 5. Google Earth Split Line (`splitline.html`)
+### 6. Google Earth Split Line (`splitline.html`)
 
 Modul ini digunakan untuk memecah path KML menjadi beberapa segmen yang lebih pendek berdasarkan panjang segmen yang ditentukan pengguna.
 
@@ -127,7 +149,7 @@ Catatan operasional:
 - Nama segmen dibentuk dari nama placemark asal ditambah nomor segmen.
 - File gabungan diunduh sebagai `combined_path_segments.kml`.
 
-### 6. Ukur Jarak Allpro Masal (`ukurallpro.html`)
+### 7. Ukur Jarak Allpro Masal (`ukurallpro.html`)
 
 Modul ini menghitung jarak jalan aktual dari banyak titik asal ke titik alat produksi terdekat berdasarkan database KML.
 
@@ -174,6 +196,7 @@ Komponen utama yang digunakan:
 .
 |-- index.html
 |-- converter.html
+|-- bulkrename.html
 |-- tiangnew.html
 |-- asesoristiang.html
 |-- splitline.html
