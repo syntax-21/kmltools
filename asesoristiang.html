@@ -389,46 +389,66 @@
         }
 
         function extractFeatures(kmlDoc, styleContext) {
-            return Array.from(kmlDoc.getElementsByTagName('Placemark')).map((placemark, index) => {
+            return Array.from(kmlDoc.getElementsByTagName('Placemark')).flatMap((placemark, index) => {
                 const name = getImmediateChildText(placemark, 'name') || `Placemark ${index + 1}`;
                 const description = getImmediateChildText(placemark, 'description');
                 const folderPath = getPlacemarkFolderPath(placemark);
                 const style = resolveFeatureStyle(placemark, styleContext);
+                const geometries = extractPlacemarkGeometries(placemark);
 
-                let geometryType = '';
-                let coordinates = [];
+                return geometries.map((geometry, geometryIndex) => {
+                    const hasMultipleGeometries = geometries.length > 1;
+                    const geometryLabel = geometry.geometryType === 'LineString'
+                        ? 'Line'
+                        : geometry.geometryType;
 
-                const pointElement = placemark.getElementsByTagName('Point')[0];
-                const lineStringElement = placemark.getElementsByTagName('LineString')[0];
-                const polygonElement = placemark.getElementsByTagName('Polygon')[0];
+                    return {
+                        id: `${index + 1}-${geometryIndex + 1}`,
+                        name: hasMultipleGeometries
+                            ? `${name} (${geometryLabel} ${geometryIndex + 1})`
+                            : name,
+                        description,
+                        folderPath,
+                        geometryType: geometry.geometryType,
+                        coordinates: geometry.coordinates,
+                        representativePoint: getRepresentativePoint(geometry.coordinates),
+                        style,
+                        isGeneratedAccessory: folderPath.some(part => normalizeLabel(part) === 'asesoris tiang')
+                    };
+                });
+            });
+        }
 
-                if (pointElement) {
-                    geometryType = 'Point';
-                    coordinates = parseCoordinatesFromElement(pointElement);
-                } else if (lineStringElement) {
-                    geometryType = 'LineString';
-                    coordinates = parseCoordinatesFromElement(lineStringElement);
-                } else if (polygonElement) {
-                    geometryType = 'Polygon';
-                    coordinates = parseCoordinatesFromElement(polygonElement);
-                }
+        function extractPlacemarkGeometries(placemark) {
+            const geometries = [];
 
-                if (coordinates.length === 0) {
-                    return null;
-                }
+            Array.from(placemark.childNodes).forEach(node => {
+                collectGeometriesFromNode(node, geometries);
+            });
 
-                return {
-                    id: index + 1,
-                    name,
-                    description,
-                    folderPath,
-                    geometryType,
-                    coordinates,
-                    representativePoint: getRepresentativePoint(coordinates),
-                    style,
-                    isGeneratedAccessory: folderPath.some(part => normalizeLabel(part) === 'asesoris tiang')
-                };
-            }).filter(Boolean);
+            return geometries.filter(geometry => geometry.coordinates.length > 0);
+        }
+
+        function collectGeometriesFromNode(node, geometries) {
+            if (!node || node.nodeType !== 1) {
+                return;
+            }
+
+            if (node.localName === 'MultiGeometry') {
+                Array.from(node.childNodes).forEach(childNode => {
+                    collectGeometriesFromNode(childNode, geometries);
+                });
+                return;
+            }
+
+            if (node.localName === 'Point' ||
+                node.localName === 'LineString' ||
+                node.localName === 'Polygon') {
+                geometries.push({
+                    geometryType: node.localName,
+                    coordinates: parseCoordinatesFromElement(node)
+                });
+            }
         }
 
         function parseCoordinatesFromElement(element) {
@@ -1282,7 +1302,7 @@
                         <span>${accessoryPlan.counts.total}</span>
                     </div>
                 </div>
-                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
+                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika satu placemark atau jalur memiliki lebih dari satu LineString, semua line tersebut sekarang ikut terbaca dan dihitung. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
         }
 
         function buildAccessoryTableHtml(accessories) {
