@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV &lt;-&gt; KML Converter</title>
+    <title>Data &lt;-&gt; KML Converter</title>
     <script>
         if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
     </script>
@@ -18,13 +18,13 @@
             <div class="hero-grid">
                 <div>
                     <span class="eyebrow"><i class="fas fa-exchange-alt"></i> Konversi Data Geospasial</span>
-                    <h1 class="display-title">CSV &lt;-&gt; KML Converter</h1>
+                    <h1 class="display-title">Data &lt;-&gt; KML Converter</h1>
                     <p class="hero-description">
-                        Konversi file CSV menjadi KML atau balik lagi ke CSV langsung di browser. Tool ini tetap
+                        Konversi file CSV, TXT, atau Excel menjadi KML, atau ubah KML/KMZ menjadi CSV langsung di browser. Tool ini tetap
                         bekerja tanpa backend, sekarang dengan workspace yang lebih rapi untuk upload, pengaturan, hasil, dan preview peta.
                     </p>
                     <div class="status-strip">
-                        <span class="status-pill"><i class="fas fa-file-csv"></i> CSV ke KML</span>
+                        <span class="status-pill"><i class="fas fa-file-csv"></i> CSV/TXT/Excel ke KML</span>
                         <span class="status-pill"><i class="fas fa-map-location-dot"></i> Preview peta</span>
                         <span class="status-pill"><i class="fas fa-icons"></i> Pilihan ikon placemark</span>
                     </div>
@@ -34,7 +34,7 @@
                         <strong>Alur Kerja</strong>
                         <span>Upload file, atur output, lalu unduh hasil</span>
                         <p class="support-text">
-                            Saat file CSV dipilih, Anda bisa mengatur nama folder dan ikon placemark sebelum melakukan ekspor KML.
+                            Saat file tabular dipilih, Anda bisa mengatur nama folder dan ikon placemark sebelum melakukan ekspor KML.
                         </p>
                     </div>
                     <div class="hero-metrics">
@@ -66,11 +66,11 @@
 
                     <div class="upload-zone">
                         <h3>Upload file kerja</h3>
-                        <p class="upload-copy">Mendukung file <strong>.csv</strong>, <strong>.kml</strong>, dan <strong>.txt</strong> untuk alur konversi yang relevan.</p>
+                        <p class="upload-copy">Mendukung file <strong>.csv</strong>, <strong>.txt</strong>, <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.kml</strong>, dan <strong>.kmz</strong> untuk alur konversi yang relevan.</p>
                         <div class="helper-row">
                             <span class="status-pill"><i class="fas fa-file-arrow-up"></i> Klik area ini untuk memilih file</span>
                         </div>
-                        <input type="file" id="fileInput" accept=".csv,.kml,.txt">
+                        <input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.kml,.kmz">
                         <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
                     </div>
 
@@ -98,8 +98,8 @@
                     <div id="error" class="error"></div>
 
                     <div class="tool-actions">
-                        <button id="convertToKML" type="button"><i class="fas fa-file-export"></i> Convert CSV to KML</button>
-                        <button id="convertToCSV" type="button" class="button-muted"><i class="fas fa-table"></i> Convert KML to CSV</button>
+                        <button id="convertToKML" type="button"><i class="fas fa-file-export"></i> Convert Data to KML</button>
+                        <button id="convertToCSV" type="button" class="button-muted"><i class="fas fa-table"></i> Convert KML/KMZ to CSV</button>
                     </div>
 
                     <div id="downloadSection" class="folder-form" style="display:none;">
@@ -140,8 +140,8 @@
                         <span class="eyebrow card-kicker">Referensi Format</span>
                         <h2 class="card-title">Format file yang didukung</h2>
                     </div>
-                    <h4>CSV untuk konversi ke KML</h4>
-                    <p>File CSV minimal memiliki kolom berikut:</p>
+                    <h4>Data tabular untuk konversi ke KML</h4>
+                    <p>File CSV, TXT, XLSX, atau XLS minimal memiliki kolom berikut:</p>
                     <ul>
                         <li><strong>name</strong>: Nama lokasi atau titik</li>
                         <li><strong>latitude</strong>: Koordinat lintang desimal</li>
@@ -153,8 +153,8 @@
 Tugu Monas,-6.175392,106.827153,Monumen Nasional
 Bundaran HI,-6.194444,106.822956,Bundaran Hotel Indonesia</pre>
 
-                    <h4>Struktur KML untuk konversi ke CSV</h4>
-                    <p>File KML sebaiknya berisi placemark dengan koordinat point yang valid.</p>
+                    <h4>Struktur KML/KMZ untuk konversi ke CSV</h4>
+                    <p>File KML/KMZ sebaiknya berisi placemark dengan koordinat point yang valid.</p>
                     <pre>&lt;Placemark&gt;
   &lt;name&gt;Tugu Monas&lt;/name&gt;
   &lt;description&gt;Monumen Nasional&lt;/description&gt;
@@ -169,6 +169,8 @@ Bundaran HI,-6.194444,106.822956,Bundaran Hotel Indonesia</pre>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
         // Variabel untuk menyimpan hasil konversi
@@ -340,8 +342,10 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
                 downloadSection.style.display = 'none';
                 mapContainer.style.display = 'none';
                 
-                // Tampilkan form folder dan icon selection hanya untuk konversi CSV ke KML
-                if (file.name.toLowerCase().endsWith('.csv')) {
+                const lowerName = file.name.toLowerCase();
+                const isTabularInput = ['.csv', '.txt', '.xlsx', '.xls'].some(ext => lowerName.endsWith(ext));
+                // Tampilkan form folder dan icon selection hanya untuk konversi data tabular ke KML
+                if (isTabularInput) {
                     folderForm.style.display = 'block';
                     iconSelection.style.display = 'block';
                 } else {
@@ -372,6 +376,82 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             }
             result.push(curVal);
             return result.map(v => v.trim());
+        }
+
+        function getFileStem(fileName) {
+            return fileName.replace(/\.[^.]+$/, '');
+        }
+
+        function isTabularFile(fileName) {
+            const lowerName = fileName.toLowerCase();
+            return ['.csv', '.txt', '.xlsx', '.xls'].some(ext => lowerName.endsWith(ext));
+        }
+
+        function isKmlSourceFile(fileName) {
+            const lowerName = fileName.toLowerCase();
+            return lowerName.endsWith('.kml') || lowerName.endsWith('.kmz');
+        }
+
+        function arrayToCsv(rows) {
+            return rows
+                .filter(row => Array.isArray(row) && row.some(cell => String(cell ?? '').trim() !== ''))
+                .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+                .join('\n');
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(String(event.target.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function readTabularFileAsCsv(file) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+                if (!window.XLSX) {
+                    throw new Error('SheetJS belum tersedia untuk membaca Excel.');
+                }
+                const buffer = await readFileAsArrayBuffer(file);
+                const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                if (!firstSheetName) {
+                    throw new Error('File Excel tidak memiliki sheet.');
+                }
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1, defval: '' });
+                return arrayToCsv(rows);
+            }
+
+            return readFileAsText(file);
+        }
+
+        async function readKmlSourceFile(file) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.endsWith('.kmz')) {
+                if (!window.JSZip) {
+                    throw new Error('JSZip belum tersedia untuk membaca KMZ.');
+                }
+                const buffer = await readFileAsArrayBuffer(file);
+                const zip = await JSZip.loadAsync(buffer);
+                const kmlName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+                if (!kmlName) {
+                    throw new Error('File KMZ tidak mengandung KML.');
+                }
+                return zip.file(kmlName).async('string');
+            }
+
+            return readFileAsText(file);
         }
 
         function findDescendantsByLocalName(root, localName) {
@@ -598,15 +678,15 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
         }
 
         // Event listener untuk tombol konversi
-        convertToKMLBtn.addEventListener('click', function () {
+        convertToKMLBtn.addEventListener('click', async function () {
             if (!fileInput.files.length) {
-                errorDiv.textContent = 'Silakan pilih file CSV terlebih dahulu';
+                errorDiv.textContent = 'Silakan pilih file CSV, TXT, atau Excel terlebih dahulu';
                 return;
             }
 
             const file = fileInput.files[0];
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                errorDiv.textContent = 'File harus berformat CSV (.csv) untuk konversi ini';
+            if (!isTabularFile(file.name)) {
+                errorDiv.textContent = 'File harus berformat CSV, TXT, XLSX, atau XLS untuk konversi ini';
                 return;
             }
 
@@ -615,41 +695,33 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             downloadSection.style.display = 'none';
             mapContainer.style.display = 'none';
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                try {
-                    const csvText = e.target.result;
-                    const folderName = folderNameInput.value.trim();
-                    const folderDescription = folderDescriptionInput.value.trim();
-                    const kmlResult = csvToKml(csvText, folderName, folderDescription, selectedIcon);
+            try {
+                const csvText = await readTabularFileAsCsv(file);
+                const folderName = folderNameInput.value.trim();
+                const folderDescription = folderDescriptionInput.value.trim();
+                const kmlResult = csvToKml(csvText, folderName, folderDescription, selectedIcon);
 
-                    convertedContent = kmlResult;
-                    convertedFileName = file.name.replace('.csv', '') + '.kml';
-                    convertedFileType = 'application/vnd.google-earth.kml+xml';
+                convertedContent = kmlResult;
+                convertedFileName = `${getFileStem(file.name)}.kml`;
+                convertedFileType = 'application/vnd.google-earth.kml+xml';
 
-                    downloadSection.style.display = 'block';
-                    loading.style.display = 'none';
-                } catch (error) {
-                    errorDiv.textContent = 'Error: ' + error.message;
-                    loading.style.display = 'none';
-                }
-            };
-            reader.onerror = function () {
-                errorDiv.textContent = 'Gagal membaca file';
+                downloadSection.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            } finally {
                 loading.style.display = 'none';
-            };
-            reader.readAsText(file);
+            }
         });
 
-        convertToCSVBtn.addEventListener('click', function () {
+        convertToCSVBtn.addEventListener('click', async function () {
             if (!fileInput.files.length) {
-                errorDiv.textContent = 'Silakan pilih file KML terlebih dahulu';
+                errorDiv.textContent = 'Silakan pilih file KML atau KMZ terlebih dahulu';
                 return;
             }
 
             const file = fileInput.files[0];
-            if (!file.name.toLowerCase().endsWith('.kml')) {
-                errorDiv.textContent = 'File harus berformat KML (.kml) untuk konversi ini';
+            if (!isKmlSourceFile(file.name)) {
+                errorDiv.textContent = 'File harus berformat KML atau KMZ untuk konversi ini';
                 return;
             }
 
@@ -658,28 +730,20 @@ Masjid Istiqlal,-6.170166,106.831375,Masjid Nasional Indonesia`;
             downloadSection.style.display = 'none';
             mapContainer.style.display = 'none';
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                try {
-                    const kmlText = e.target.result;
-                    const csvResult = kmlToCsv(kmlText);
+            try {
+                const kmlText = await readKmlSourceFile(file);
+                const csvResult = kmlToCsv(kmlText);
 
-                    convertedContent = csvResult;
-                    convertedFileName = file.name.replace('.kml', '') + '.csv';
-                    convertedFileType = 'text/csv';
+                convertedContent = csvResult;
+                convertedFileName = `${getFileStem(file.name)}.csv`;
+                convertedFileType = 'text/csv';
 
-                    downloadSection.style.display = 'block';
-                    loading.style.display = 'none';
-                } catch (error) {
-                    errorDiv.textContent = 'Error: ' + error.message;
-                    loading.style.display = 'none';
-                }
-            };
-            reader.onerror = function () {
-                errorDiv.textContent = 'Gagal membaca file';
+                downloadSection.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            } finally {
                 loading.style.display = 'none';
-            };
-            reader.readAsText(file);
+            }
         });
 
         // Event listener untuk tombol download

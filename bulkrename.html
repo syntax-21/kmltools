@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles/kmltools-pro.css">
     <script src="scripts/tool-embed.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
     <style>
         .summary-grid {
             display: grid;
@@ -102,11 +104,11 @@
                     <h1 class="display-title">Rename Nama Secara Massal</h1>
                     <p class="hero-description">
                         Tool ini dibuat khusus untuk mengganti nama secara massal tanpa backend. Cocok untuk
-                        <strong>KML</strong>, <strong>CSV</strong>, dan <strong>TXT</strong> dengan kombinasi
+                        <strong>KML</strong>, <strong>KMZ</strong>, <strong>CSV</strong>, <strong>TXT</strong>, dan <strong>Excel</strong> dengan kombinasi
                         prefix, suffix, find/replace, template nama, serta nomor urut otomatis.
                     </p>
                     <div class="status-strip">
-                        <span class="status-pill"><i class="fas fa-file-code"></i> KML / CSV / TXT</span>
+                        <span class="status-pill"><i class="fas fa-file-code"></i> KML / KMZ / CSV / TXT / Excel</span>
                         <span class="status-pill"><i class="fas fa-pen-ruler"></i> Rename Bertahap</span>
                         <span class="status-pill"><i class="fas fa-list-ol"></i> Sequence Otomatis</span>
                     </div>
@@ -116,18 +118,18 @@
                         <strong>Mode Rename</strong>
                         <span>Nama diproses secara lokal di browser</span>
                         <p class="support-text">
-                            Untuk file KML, tool ini akan mengganti elemen <code>&lt;name&gt;</code> di setiap
-                            <code>Placemark</code>. Untuk CSV, kolom <code>name</code> akan diperbarui.
+                            Untuk file KML/KMZ, tool ini akan mengganti elemen <code>&lt;name&gt;</code> di setiap
+                            <code>Placemark</code>. Untuk CSV dan Excel, kolom <code>name</code> akan diperbarui.
                         </p>
                     </div>
                     <div class="hero-metrics">
                         <div class="hero-stat">
                             <strong>Input</strong>
-                            <span>KML</span>
+                            <span>KML/KMZ</span>
                         </div>
                         <div class="hero-stat">
                             <strong>Input</strong>
-                            <span>CSV</span>
+                            <span>CSV/Excel</span>
                         </div>
                         <div class="hero-stat">
                             <strong>Input</strong>
@@ -149,11 +151,11 @@
 
                     <div class="upload-zone">
                         <h3>Upload file kerja</h3>
-                        <p class="upload-copy">Mendukung file <strong>.kml</strong>, <strong>.csv</strong>, dan <strong>.txt</strong>.</p>
+                        <p class="upload-copy">Mendukung file <strong>.kml</strong>, <strong>.kmz</strong>, <strong>.csv</strong>, <strong>.txt</strong>, <strong>.xlsx</strong>, dan <strong>.xls</strong>.</p>
                         <div class="helper-row">
                             <span class="status-pill"><i class="fas fa-file-arrow-up"></i> Klik area ini untuk memilih file</span>
                         </div>
-                        <input type="file" id="fileInput" accept=".kml,.csv,.txt">
+                        <input type="file" id="fileInput" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls">
                         <p class="file-info" id="fileInfo">Belum ada file yang dipilih</p>
                     </div>
 
@@ -359,8 +361,11 @@ NODE-{n} | {name}</pre>
         function detectFormat(fileName) {
             const lowerName = fileName.toLowerCase();
             if (lowerName.endsWith('.kml')) return 'kml';
+            if (lowerName.endsWith('.kmz')) return 'kmz';
             if (lowerName.endsWith('.csv')) return 'csv';
             if (lowerName.endsWith('.txt')) return 'txt';
+            if (lowerName.endsWith('.xlsx')) return 'xlsx';
+            if (lowerName.endsWith('.xls')) return 'xls';
             return '';
         }
 
@@ -434,6 +439,24 @@ NODE-{n} | {name}</pre>
             return text.includes('\r\n') ? '\r\n' : '\n';
         }
 
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(String(event.target.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
         function parseKmlInput(fileName, text) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(text, 'application/xml');
@@ -463,6 +486,29 @@ NODE-{n} | {name}</pre>
                 formatLabel: 'KML Placemark',
                 text,
                 entries
+            };
+        }
+
+        async function parseKmzInput(file) {
+            if (!window.JSZip) {
+                throw new Error('JSZip belum tersedia untuk membaca KMZ.');
+            }
+
+            const buffer = await readFileAsArrayBuffer(file);
+            const zip = await JSZip.loadAsync(buffer);
+            const kmlName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+            if (!kmlName) {
+                throw new Error('File KMZ tidak mengandung KML.');
+            }
+
+            const kmlText = await zip.file(kmlName).async('string');
+            const parsed = parseKmlInput(file.name, kmlText);
+            return {
+                ...parsed,
+                format: 'kmz',
+                formatLabel: 'KMZ Placemark',
+                kmzBuffer: buffer,
+                kmzKmlName: kmlName
             };
         }
 
@@ -547,14 +593,70 @@ NODE-{n} | {name}</pre>
             };
         }
 
-        function parseInputFile(fileName, text) {
-            const format = detectFormat(fileName);
+        function parseWorkbookInput(fileName, buffer) {
+            if (!window.XLSX) {
+                throw new Error('SheetJS belum tersedia untuk membaca Excel.');
+            }
 
-            if (format === 'kml') return parseKmlInput(fileName, text);
-            if (format === 'csv') return parseCsvInput(fileName, text);
-            if (format === 'txt') return parseTxtInput(fileName, text);
+            const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            if (!firstSheetName) {
+                throw new Error('File Excel tidak memiliki sheet.');
+            }
 
-            throw new Error('Format file belum didukung. Gunakan KML, CSV, atau TXT.');
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+            if (!rows.length || !rows[0].length) {
+                throw new Error('File Excel kosong atau header tidak ditemukan.');
+            }
+
+            const headers = rows[0].map(value => String(value ?? '').trim());
+            const nameIndex = headers.findIndex(header => header.toLowerCase() === 'name');
+            if (nameIndex === -1) {
+                throw new Error("Kolom 'name' tidak ditemukan dalam file Excel");
+            }
+
+            const entries = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i] || [];
+                if (!row.some(cell => String(cell ?? '').trim() !== '')) {
+                    continue;
+                }
+                entries.push({
+                    index: entries.length,
+                    rowIndex: i,
+                    originalName: String(row[nameIndex] ?? '')
+                });
+            }
+
+            if (!entries.length) {
+                throw new Error('Tidak ditemukan baris data yang bisa diproses pada file Excel');
+            }
+
+            return {
+                fileName,
+                format: detectFormat(fileName),
+                formatLabel: 'Excel Name Column',
+                workbook,
+                firstSheetName,
+                rows,
+                nameIndex,
+                entries
+            };
+        }
+
+        async function parseInputFile(file) {
+            const format = detectFormat(file.name);
+
+            if (format === 'kmz') return parseKmzInput(file);
+            if (format === 'xlsx' || format === 'xls') return parseWorkbookInput(file.name, await readFileAsArrayBuffer(file));
+
+            const text = await readFileAsText(file);
+            if (format === 'kml') return parseKmlInput(file.name, text);
+            if (format === 'csv') return parseCsvInput(file.name, text);
+            if (format === 'txt') return parseTxtInput(file.name, text);
+
+            throw new Error('Format file belum didukung. Gunakan KML, KMZ, CSV, TXT, XLSX, atau XLS.');
         }
 
         function getRenameOptions() {
@@ -642,6 +744,16 @@ NODE-{n} | {name}</pre>
             return serialized;
         }
 
+        async function buildKmzOutput(sourceFile, renamedEntries) {
+            if (!window.JSZip) {
+                throw new Error('JSZip belum tersedia untuk menulis KMZ.');
+            }
+
+            const zip = await JSZip.loadAsync(sourceFile.kmzBuffer);
+            zip.file(sourceFile.kmzKmlName, buildKmlOutput(sourceFile.text, renamedEntries));
+            return zip.generateAsync({ type: 'blob' });
+        }
+
         function buildCsvOutput(sourceFile, renamedEntries) {
             const lines = [toCSVLine(sourceFile.headers)];
             let entryCursor = 0;
@@ -680,7 +792,24 @@ NODE-{n} | {name}</pre>
             return renamedLines.join(sourceFile.lineBreak);
         }
 
-        function buildOutputFile(sourceFile, renamedEntries) {
+        function buildWorkbookOutput(sourceFile, renamedEntries) {
+            const rows = sourceFile.rows.map(row => row.slice());
+            renamedEntries.forEach(entry => {
+                if (!rows[entry.rowIndex]) {
+                    rows[entry.rowIndex] = [];
+                }
+                rows[entry.rowIndex][sourceFile.nameIndex] = entry.renamedName;
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            sourceFile.workbook.Sheets[sourceFile.firstSheetName] = worksheet;
+            return XLSX.write(sourceFile.workbook, {
+                bookType: sourceFile.format === 'xls' ? 'xls' : 'xlsx',
+                type: 'array'
+            });
+        }
+
+        async function buildOutputFile(sourceFile, renamedEntries) {
             if (sourceFile.format === 'kml') {
                 return {
                     content: buildKmlOutput(sourceFile.text, renamedEntries),
@@ -688,10 +817,26 @@ NODE-{n} | {name}</pre>
                 };
             }
 
+            if (sourceFile.format === 'kmz') {
+                return {
+                    content: await buildKmzOutput(sourceFile, renamedEntries),
+                    mimeType: 'application/vnd.google-earth.kmz'
+                };
+            }
+
             if (sourceFile.format === 'csv') {
                 return {
                     content: buildCsvOutput(sourceFile, renamedEntries),
                     mimeType: 'text/csv'
+                };
+            }
+
+            if (sourceFile.format === 'xlsx' || sourceFile.format === 'xls') {
+                return {
+                    content: buildWorkbookOutput(sourceFile, renamedEntries),
+                    mimeType: sourceFile.format === 'xls'
+                        ? 'application/vnd.ms-excel'
+                        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                 };
             }
 
@@ -781,7 +926,7 @@ NODE-{n} | {name}</pre>
             downloadBtn.disabled = isLoading;
         }
 
-        function loadSelectedFile(file) {
+        async function loadSelectedFile(file) {
             if (!file) return;
 
             fileInfo.textContent = `File dipilih: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
@@ -789,33 +934,22 @@ NODE-{n} | {name}</pre>
             resetDownloadState();
             setLoadingState(true);
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                try {
-                    loadedFile = parseInputFile(file.name, event.target.result);
-                    const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
-                    renderPreview(loadedFile.formatLabel, initialPreview);
-                } catch (error) {
-                    loadedFile = null;
-                    previewBody.innerHTML = '<tr><td colspan="4">Gagal membaca isi file untuk preview.</td></tr>';
-                    previewCaption.textContent = 'Upload file yang valid untuk melanjutkan.';
-                    updateSummary('', []);
-                    errorDiv.textContent = `Error: ${error.message}`;
-                } finally {
-                    setLoadingState(false);
-                }
-            };
-
-            reader.onerror = function () {
+            try {
+                loadedFile = await parseInputFile(file);
+                const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
+                renderPreview(loadedFile.formatLabel, initialPreview);
+            } catch (error) {
                 loadedFile = null;
+                previewBody.innerHTML = '<tr><td colspan="4">Gagal membaca isi file untuk preview.</td></tr>';
+                previewCaption.textContent = 'Upload file yang valid untuk melanjutkan.';
+                updateSummary('', []);
+                errorDiv.textContent = `Error: ${error.message}`;
+            } finally {
                 setLoadingState(false);
-                errorDiv.textContent = 'Gagal membaca file yang dipilih.';
-            };
-
-            reader.readAsText(file);
+            }
         }
 
-        function processRename() {
+        async function processRename() {
             if (!loadedFile) {
                 errorDiv.textContent = 'Silakan pilih file terlebih dahulu.';
                 return;
@@ -826,7 +960,7 @@ NODE-{n} | {name}</pre>
                 errorDiv.textContent = '';
 
                 const renamedEntries = buildRenamedEntries(loadedFile.entries, getRenameOptions());
-                const outputFile = buildOutputFile(loadedFile, renamedEntries);
+                const outputFile = await buildOutputFile(loadedFile, renamedEntries);
                 const outputFileName = buildOutputFileName(loadedFile.fileName);
                 const changedCount = renamedEntries.filter(entry => entry.changed).length;
 

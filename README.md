@@ -33,12 +33,12 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | File | Fungsi | Input utama | Output utama |
 | --- | --- | --- | --- |
 | `index.html` | Workspace utama dan navigasi semua tool | - | Akses terpadu ke seluruh modul |
-| `converter.html` | Konversi dua arah CSV dan KML | `.csv`, `.kml`, `.txt` | `.kml` atau `.csv` |
-| `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.csv`, `.txt` | File dengan format asal |
+| `converter.html` | Konversi data tabular ke KML dan KML/KMZ ke CSV | `.csv`, `.txt`, `.xlsx`, `.xls`, `.kml`, `.kmz` | `.kml` atau `.csv` |
+| `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.kmz`, `.csv`, `.txt`, `.xlsx`, `.xls` | File dengan format asal |
 | `clusterhousehold.html` | Cluster titik household ke polygon area | `.kml`, `.kmz` | ZIP KML per area dan rekap Excel |
 | `tiangnew.html` | Generate placemark otomatis di sepanjang path | `.kml`, `.kmz` | KML baru berisi path dan titik |
 | `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel paginasi, peta |
-| `splitline.html` | Pecah jalur KML menjadi beberapa segmen | `.kml`, `.xml` | KML gabungan atau file segmen terpisah |
+| `splitline.html` | Pecah jalur KML/KMZ menjadi beberapa segmen | `.kml`, `.kmz`, `.xml` | KML gabungan atau file segmen terpisah |
 | `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
 
 ## Ringkasan Fitur Per Modul
@@ -55,14 +55,14 @@ Fitur penting:
 - Tombol `Reset Aplikasi` dengan konfirmasi untuk membersihkan cookie, storage, dan cache browser.
 - Mode Telegram WebApp bila objek `Telegram.WebApp` tersedia.
 
-### 2. Konverter CSV <-> KML (`converter.html`)
+### 2. Konverter Data <-> KML (`converter.html`)
 
 Tool ini menangani konversi dua arah antara data tabular dan placemark point pada KML.
 
 Fitur penting:
 
-- Konversi `CSV -> KML`.
-- Konversi `KML -> CSV`.
+- Konversi `CSV`, `TXT`, `XLSX`, atau `XLS` ke `KML`.
+- Konversi `KML` atau `KMZ` ke `CSV`.
 - Pengaturan nama folder dan deskripsi folder saat ekspor KML.
 - Pemilihan ikon placemark default.
 - Unduhan file contoh CSV.
@@ -70,9 +70,9 @@ Fitur penting:
 
 Catatan:
 
-- CSV minimum membutuhkan kolom `name`, `latitude`, dan `longitude`.
+- Data tabular minimum membutuhkan kolom `name`, `latitude`, dan `longitude`.
 - Kolom `description` bersifat opsional.
-- Konversi `KML -> CSV` difokuskan pada `Placemark` bertipe `Point`.
+- Konversi `KML/KMZ -> CSV` difokuskan pada `Placemark` bertipe `Point`.
 
 ### 3. Bulk Rename Nama (`bulkrename.html`)
 
@@ -80,7 +80,7 @@ Tool ini ditujukan untuk penggantian nama secara massal tanpa edit satu per satu
 
 Fitur penting:
 
-- Mendukung file `KML`, `CSV`, dan `TXT`.
+- Mendukung file `KML`, `KMZ`, `CSV`, `TXT`, `XLSX`, dan `XLS`.
 - Rename dengan pola `find/replace`.
 - Penambahan `prefix` dan `suffix`.
 - Template nama dengan token `{name}` dan `{n}`.
@@ -90,8 +90,8 @@ Fitur penting:
 
 Catatan:
 
-- Untuk `KML`, tool memproses `Placemark > name`.
-- Untuk `CSV`, tool mengharapkan kolom `name`.
+- Untuk `KML` dan `KMZ`, tool memproses `Placemark > name`.
+- Untuk `CSV` dan Excel, tool mengharapkan kolom `name`.
 - Untuk `TXT`, setiap baris non-kosong dianggap satu entri nama.
 
 ### 4. Auto Cluster Household Polygon (`clusterhousehold.html`)
@@ -160,11 +160,11 @@ Catatan:
 
 ### 7. Google Earth Split Line (`splitline.html`)
 
-Tool ini memecah path KML panjang menjadi segmen-segmen yang lebih pendek.
+Tool ini memecah path KML/KMZ panjang menjadi segmen-segmen yang lebih pendek.
 
 Fitur penting:
 
-- Menerima file `KML` atau `XML`.
+- Menerima file `KML`, `KMZ`, atau `XML`.
 - Menghasilkan segmen berdasarkan panjang target dalam meter.
 - Melakukan interpolasi bila titik pada jalur terlalu renggang.
 - Menyediakan dua mode unduh:

@@ -43,21 +43,21 @@
         </div>
         <div class="nav-menu" role="tablist" aria-label="Daftar tool KML">
           <button class="nav-item active" type="button" role="tab" aria-selected="true" data-tab="converter"
-            data-title="Konverter CSV &lt;-&gt; KML"
-            data-description="Konversi dua arah antara data tabel CSV dan placemark KML."
-            data-badge="Konversi Data" data-status="Siapkan file CSV, KML, atau TXT untuk diproses."
-            data-url="converter.html?tool=converter" data-meta="CSV dan KML">
-            <span class="nav-title"><i class="fas fa-exchange-alt"></i> Konverter CSV &lt;-&gt; KML</span>
+            data-title="Konverter Data &lt;-&gt; KML"
+            data-description="Konversi data tabular CSV/TXT/Excel menjadi KML, atau KML/KMZ menjadi CSV."
+            data-badge="Konversi Data" data-status="Siapkan file CSV, TXT, Excel, KML, atau KMZ untuk diproses."
+            data-url="converter.html?tool=converter" data-meta="CSV, Excel, KML, KMZ">
+            <span class="nav-title"><i class="fas fa-exchange-alt"></i> Konverter Data &lt;-&gt; KML</span>
             <span class="nav-copy">Ubah data koordinat menjadi placemark atau tabel.</span>
           </button>
 
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="bulkrename"
             data-title="Bulk Rename Nama"
-            data-description="Workspace rename massal untuk mengubah nama placemark atau kolom name secara cepat dengan pola template, prefix, suffix, dan nomor urut."
-            data-badge="Automasi Nama" data-status="Menunggu file KML, CSV, atau TXT..."
+            data-description="Workspace rename massal untuk mengubah nama placemark atau kolom name secara cepat pada KML/KMZ, CSV/TXT, dan Excel."
+            data-badge="Automasi Nama" data-status="Menunggu file KML, KMZ, CSV, TXT, atau Excel..."
             data-url="bulkrename.html?tool=bulkrename" data-meta="Rename Engine">
             <span class="nav-title"><i class="fas fa-signature"></i> Bulk Rename Nama</span>
-            <span class="nav-copy">Ganti nama secara massal untuk KML, CSV, dan TXT tanpa backend.</span>
+            <span class="nav-copy">Ganti nama secara massal untuk KML, KMZ, CSV, TXT, dan Excel tanpa backend.</span>
           </button>
 
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="clusterhousehold"
@@ -89,8 +89,8 @@
 
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="split"
             data-title="Split Line Google Earth"
-            data-description="Pecah jalur KML panjang menjadi beberapa segmen terukur."
-            data-badge="Split Line" data-status="Siapkan file KML/XML berisi LineString." data-url="splitline.html?tool=split"
+            data-description="Pecah jalur KML/KMZ panjang menjadi beberapa segmen terukur."
+            data-badge="Split Line" data-status="Siapkan file KML/KMZ/XML berisi LineString." data-url="splitline.html?tool=split"
             data-meta="Segmentasi Garis">
             <span class="nav-title"><i class="fas fa-cut"></i> Split Line Google Earth</span>
             <span class="nav-copy">Pecah jalur panjang menjadi beberapa sub-segmen terukur.</span>
@@ -114,11 +114,11 @@
               style="background: rgba(0, 248, 157, 0.1); color: var(--neon-green); border-color: rgba(0, 248, 157, 0.3);">Konversi
               Data</span>
             <h2 id="activeToolFrameTitle"
-              style="font-size: 2rem; margin-top: 0.5rem; text-shadow: 0 0 20px rgba(255,255,255,0.2);">Konverter CSV
+              style="font-size: 2rem; margin-top: 0.5rem; text-shadow: 0 0 20px rgba(255,255,255,0.2);">Konverter Data
               &lt;-&gt; KML</h2>
-            <p id="workspaceStatus" style="font-family: monospace; color: var(--neon-blue);">Siapkan file CSV, KML, atau TXT untuk diproses.</p>
+            <p id="workspaceStatus" style="font-family: monospace; color: var(--neon-blue);">Siapkan file CSV, TXT, Excel, KML, atau KMZ untuk diproses.</p>
             <div class="status-strip" style="margin-top: 1rem;">
-              <span class="status-pill"><i class="fas fa-terminal"></i> <span id="activeMeta">CSV dan KML</span></span>
+              <span class="status-pill"><i class="fas fa-terminal"></i> <span id="activeMeta">CSV, Excel, KML, KMZ</span></span>
             </div>
           </div>
           <div class="toolbar-actions">
@@ -132,7 +132,7 @@
         <div id="converter" class="tab-content active" data-tool-panel aria-hidden="false">
           <div class="tool-stage">
             <iframe src="converter.html?tool=converter" data-src="converter.html?tool=converter"
-              title="CSV ke KML Converter" scrolling="no"></iframe>
+              title="Data ke KML Converter" scrolling="no"></iframe>
           </div>
         </div>
         <div id="bulkrename" class="tab-content" data-tool-panel aria-hidden="true">
@@ -168,8 +168,8 @@
 
         <div class="footer-card" style="margin-top: 0.5rem;">
           <div>
-            <p><strong id="activeToolName" style="color: #fff;">Konverter CSV &lt;-&gt; KML</strong></p>
-            <p id="activeToolDescription" style="font-size: 0.85rem; max-width: 500px;">Konversi dua arah antara data tabel CSV dan placemark KML.</p>
+            <p><strong id="activeToolName" style="color: #fff;">Konverter Data &lt;-&gt; KML</strong></p>
+            <p id="activeToolDescription" style="font-size: 0.85rem; max-width: 500px;">Konversi data tabular CSV/TXT/Excel menjadi KML, atau KML/KMZ menjadi CSV.</p>
           </div>
           <div style="text-align: right; font-size: 0.85rem;">
             <p><strong>Developed by</strong> <a href="https://t.me/amirun_rayan" target="_blank"

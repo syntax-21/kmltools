@@ -24,7 +24,7 @@
                         Hasilnya bisa diunduh dalam satu file gabungan atau dipisah per segmen.
                     </p>
                     <div class="status-strip">
-                        <span class="status-pill"><i class="fas fa-route"></i> Input LineString KML</span>
+                        <span class="status-pill"><i class="fas fa-route"></i> Input LineString KML/KMZ</span>
                         <span class="status-pill"><i class="fas fa-ruler"></i> Panjang segmen fleksibel</span>
                         <span class="status-pill"><i class="fas fa-download"></i> Download gabung atau terpisah</span>
                     </div>
@@ -40,7 +40,7 @@
                     <div class="hero-metrics">
                         <div class="hero-stat">
                             <strong>Input</strong>
-                            <span>KML / XML</span>
+                            <span>KML / KMZ / XML</span>
                         </div>
                         <div class="hero-stat">
                             <strong>Preview</strong>
@@ -61,16 +61,16 @@
                     <div class="card-header">
                         <span class="eyebrow card-kicker">Workspace</span>
                         <h2 class="card-title">Upload path dan proses segmentasi</h2>
-                        <p class="card-copy">Masukkan file KML berisi LineString, tentukan panjang segmen, lalu proses langsung di browser.</p>
+                        <p class="card-copy">Masukkan file KML/KMZ berisi LineString, tentukan panjang segmen, lalu proses langsung di browser.</p>
                     </div>
 
                     <div class="upload-zone">
-                        <h3>Unggah file KML</h3>
+                        <h3>Unggah file KML/KMZ</h3>
                         <p class="upload-copy">Gunakan file yang berisi <strong>LineString</strong> valid dari Google Earth agar proses segmentasi berjalan dengan baik.</p>
                         <div class="helper-row">
                             <span class="status-pill"><i class="fas fa-file-upload"></i> Klik area ini untuk memilih file</span>
                         </div>
-                        <input type="file" id="kmlFile" accept=".kml,.xml">
+                        <input type="file" id="kmlFile" accept=".kml,.kmz,.xml">
                     </div>
 
                     <div class="form-group">
@@ -121,7 +121,7 @@
 
                     <h3>Langkah penggunaan</h3>
                     <ol class="steps">
-                        <li>Upload file KML yang berisi path LineString.</li>
+                        <li>Upload file KML/KMZ yang berisi path LineString.</li>
                         <li>Masukkan panjang segmen yang diinginkan dalam meter.</li>
                         <li>Proses file dan tunggu ringkasan hasil muncul.</li>
                         <li>Pilih unduhan gabungan atau per segmen sesuai kebutuhan.</li>
@@ -140,6 +140,7 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         document.getElementById('processBtn').addEventListener('click', processKML);
         document.getElementById('toggleMapBtn').addEventListener('click', toggleMap);
@@ -270,12 +271,48 @@
             return colors[index % colors.length];
         }
 
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(String(event.target.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function readKmlOrKmz(file) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.endsWith('.kmz')) {
+                if (!window.JSZip) {
+                    throw new Error('JSZip belum tersedia untuk membaca KMZ.');
+                }
+                const buffer = await readFileAsArrayBuffer(file);
+                const zip = await JSZip.loadAsync(buffer);
+                const kmlName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+                if (!kmlName) {
+                    throw new Error('File KMZ tidak mengandung KML.');
+                }
+                return zip.file(kmlName).async('string');
+            }
+
+            return readFileAsText(file);
+        }
+
         async function processKML() {
             const fileInput = document.getElementById('kmlFile');
             const segmentLength = parseFloat(document.getElementById('segmentLength').value);
             
             if (!fileInput.files.length) {
-                alert('Silakan pilih file KML terlebih dahulu.');
+                alert('Silakan pilih file KML/KMZ terlebih dahulu.');
                 return;
             }
             
@@ -285,11 +322,8 @@
             }
 
             const file = fileInput.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const kmlContent = e.target.result;
+            try {
+                    const kmlContent = await readKmlOrKmz(file);
                     const parser = new DOMParser();
                     const kmlDoc = parser.parseFromString(kmlContent, 'text/xml');
                     
@@ -412,13 +446,6 @@
                     console.error('Kesalahan umum saat memproses file KML:', error);
                     alert('Terjadi kesalahan saat memproses file KML: ' + error.message + '. Periksa konsol browser untuk detail lebih lanjut.');
                 }
-            };
-            
-            reader.onerror = function() {
-                alert('Gagal membaca file.');
-            };
-            
-            reader.readAsText(file);
         }
 
         function downloadAllInOneFile() {
