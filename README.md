@@ -133,7 +133,7 @@ Catatan:
 - File hasil diunduh sebagai `<nama_file>_placemarks.kml`.
 - Jalur asli tetap disertakan di hasil ekspor.
 
-### 6. Hitung Asesoris Tiang Existing (`asesoristiang.html`)
+### 6. Hitung Asesoris Tiang (`asesoristiang.html`)
 
 Tool ini menganalisis KML/KMZ existing untuk menambahkan hasil perhitungan asesoris tanpa menghapus data utama yang sudah ada.
 
