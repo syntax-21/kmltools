@@ -104,6 +104,7 @@ Fitur penting:
 - Input satu atau banyak file polygon `KML`/`KMZ`.
 - Membaca polygon biasa maupun polygon di dalam `MultiGeometry`.
 - Menghitung jumlah household yang masuk ke setiap polygon memakai Turf.js di browser.
+- Menyediakan setting style output KML untuk polygon dan household, termasuk warna, opacity, lebar garis, mode fill/outline, icon, dan scale.
 - Menampilkan preview peta berisi polygon area, master household, dan household yang masuk polygon.
 - Membuat output KML per area dengan folder `POLYGON` dan `HOUSEHOLD`.
 - Mengekspor semua KML hasil sebagai satu file ZIP.
