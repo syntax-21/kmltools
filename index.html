@@ -20,7 +20,7 @@
           <span class="eyebrow"><i class="fas fa-map-location-dot"></i> Workspace</span>
           <h1 class="display-title">KML Tools Workspace</h1>
           <p class="hero-description" style="font-size: 1.1rem; margin-bottom: 2rem;">
-            Kumpulan tool browser untuk konversi, rename, generate tiang, hitung asesoris, split line, dan ukur jarak.
+            Kumpulan tool browser untuk konversi, rename, cluster household, generate tiang, hitung asesoris, split line, dan ukur jarak.
             File kerja tetap diproses di perangkat ini.
           </p>
           <div class="status-strip">
@@ -28,7 +28,6 @@
             <span class="status-pill"><i class="fas fa-route" style="color: var(--neon-blue)"></i> KML, KMZ, CSV, Excel</span>
             <span class="status-pill"><i class="fas fa-map" style="color: var(--neon-purple)"></i> Mudah Digunakan</span>
           </div>
-        </div>
         </div>
       </div>
     </section>
@@ -61,6 +60,15 @@
             <span class="nav-copy">Ganti nama secara massal untuk KML, CSV, dan TXT tanpa backend.</span>
           </button>
 
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="clusterhousehold"
+            data-title="Auto Cluster Household Polygon"
+            data-description="Cocokkan titik household dari master KML/KMZ ke polygon area, lalu export KML per area dan rekap Excel."
+            data-badge="Cluster Household" data-status="Siapkan master household dan file polygon area."
+            data-url="clusterhousehold.html?tool=clusterhousehold" data-meta="Point in Polygon">
+            <span class="nav-title"><i class="fas fa-draw-polygon"></i> Auto Cluster Household</span>
+            <span class="nav-copy">Kelompokkan titik household berdasarkan polygon area.</span>
+          </button>
+
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="tiangnew"
             data-title="Auto Placemark Tiang"
             data-description="Buat titik tiang otomatis berdasarkan interval sepanjang jalur KML."
@@ -71,11 +79,11 @@
           </button>
 
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="asesoristiang"
-            data-title="Hitung Asesoris Eksisting"
+            data-title="Hitung Asesoris Tiang"
             data-description="Hitung kebutuhan asesoris pada jalur telekomunikasi existing dari file KML/KMZ."
             data-badge="Asesoris Tiang" data-status="Siapkan peta jaringan existing."
             data-url="asesoristiang.html?tool=asesoristiang" data-meta="Perhitungan material">
-            <span class="nav-title"><i class="fas fa-sitemap"></i> Hitung Asesoris Eksisting</span>
+            <span class="nav-title"><i class="fas fa-sitemap"></i> Hitung Asesoris Tiang</span>
             <span class="nav-copy">Kalkulasi presisi untuk total kebutuhan material berdasarkan rute.</span>
           </button>
 
@@ -130,6 +138,11 @@
         <div id="bulkrename" class="tab-content" data-tool-panel aria-hidden="true">
           <div class="tool-stage">
             <iframe data-src="bulkrename.html?tool=bulkrename" title="Bulk Rename Nama" scrolling="no"></iframe>
+          </div>
+        </div>
+        <div id="clusterhousehold" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="clusterhousehold.html?tool=clusterhousehold" title="Auto Cluster Household Polygon" scrolling="no"></iframe>
           </div>
         </div>
         <div id="tiangnew" class="tab-content" data-tool-panel aria-hidden="true">

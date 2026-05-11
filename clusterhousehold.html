@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Cluster Household Polygon</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
+    <script src="scripts/tool-embed.js" defer></script>
+</head>
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-draw-polygon"></i> Cluster Household</span>
+                    <h1 class="display-title">Auto Cluster Household Polygon</h1>
+                    <p class="hero-description">
+                        Cocokkan titik household dari master KML ke polygon area, lalu hasilkan KML per area dan rekap Excel
+                        langsung dari browser.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-house"></i> Master household KML/KMZ</span>
+                        <span class="status-pill"><i class="fas fa-vector-square"></i> Multi polygon KML/KMZ</span>
+                        <span class="status-pill"><i class="fas fa-file-zipper"></i> ZIP KML + Excel</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Output</strong>
+                        <span>KML per area dan rekap Excel</span>
+                        <p class="support-text">
+                            Modul ini adalah versi web dari Tools Auto Cluster Household Polygon agar bisa ikut deploy di GitHub Pages.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Input</strong>
+                            <span>KML/KMZ</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Proses</strong>
+                            <span>Browser</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Rekap</strong>
+                            <span>Excel</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Input Data</span>
+                        <h2 class="card-title">Upload master household dan polygon</h2>
+                    <p class="card-copy">Master harus berisi placemark Point. File polygon dapat satu atau banyak file dan boleh berisi Polygon atau MultiGeometry.</p>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="upload-zone">
+                            <h3>Master Household</h3>
+                            <p class="upload-copy">Upload file KML/KMZ berisi titik household.</p>
+                            <div class="helper-row">
+                                <span class="status-pill"><i class="fas fa-house-user"></i> Klik untuk pilih master</span>
+                            </div>
+                            <input type="file" id="masterInput" accept=".kml,.kmz">
+                            <p class="file-info" id="masterInfo">Belum ada master household.</p>
+                        </div>
+
+                        <div class="upload-zone">
+                            <h3>Polygon Area</h3>
+                            <p class="upload-copy">Upload satu atau banyak file KML/KMZ polygon.</p>
+                            <div class="helper-row">
+                                <span class="status-pill"><i class="fas fa-layer-group"></i> Bisa pilih banyak file</span>
+                            </div>
+                            <input type="file" id="polygonInput" accept=".kml,.kmz" multiple>
+                            <p class="file-info" id="polygonInfo">Belum ada polygon area.</p>
+                        </div>
+                    </div>
+
+                    <div class="tool-actions">
+                        <button id="processBtn" type="button" disabled><i class="fas fa-wand-magic-sparkles"></i> Proses Cluster</button>
+                        <button id="showMapBtn" type="button" class="map-toggle" disabled><i class="fas fa-map-location-dot"></i> Tampilkan Peta</button>
+                        <button id="downloadZipBtn" type="button" class="button-success" disabled><i class="fas fa-file-zipper"></i> Download ZIP KML</button>
+                        <button id="downloadExcelBtn" type="button" class="button-accent" disabled><i class="fas fa-file-excel"></i> Download Excel</button>
+                    </div>
+
+                    <div id="clusterStatus" class="section-note">Upload master household dan polygon untuk mulai proses.</div>
+                    <div id="clusterError" class="error"></div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil</span>
+                        <h2 class="card-title">Preview ringkasan cluster</h2>
+                        <p class="card-copy">Ringkasan menampilkan total household per polygon. Detail lengkap tersedia di file Excel.</p>
+                    </div>
+                    <div id="summaryOutput">
+                        <p class="section-note">Belum ada hasil. Jalankan proses cluster terlebih dahulu.</p>
+                    </div>
+                </section>
+
+                <section class="card" id="clusterMapCard" style="display: none;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Peta</span>
+                        <h2 class="card-title">Preview master, polygon, dan household hasil</h2>
+                        <p class="card-copy">Polygon area ditampilkan sebagai bidang, household master sebagai titik biru, dan household yang masuk polygon sebagai titik hijau.</p>
+                    </div>
+                    <div id="clusterMap" class="map-container"></div>
+                    <div class="map-controls">
+                        <button id="hideMapBtn" type="button" class="map-toggle"><i class="fas fa-eye-slash"></i> Sembunyikan Peta</button>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Alur</span>
+                        <h2 class="card-title">Cara kerja</h2>
+                    </div>
+                    <ol>
+                        <li>Upload master household KML/KMZ yang berisi titik pelanggan atau rumah.</li>
+                        <li>Upload file polygon area, bisa satu file atau banyak file sekaligus.</li>
+                        <li>Klik Proses Cluster untuk menghitung titik yang masuk tiap polygon.</li>
+                        <li>Download ZIP KML untuk hasil per area dan Excel untuk rekap.</li>
+                    </ol>
+                </section>
+
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Catatan</span>
+                        <h2 class="card-title">Batasan versi web</h2>
+                    </div>
+                    <ul>
+                        <li>Spatial join mengikuti konsep tool Python: titik hanya masuk jika berada di dalam/intersects polygon.</li>
+                        <li>Point yang masuk lebih dari satu polygon akan ikut tercatat di semua polygon tersebut, seperti hasil spatial join.</li>
+                        <li>Output KML dibuat ulang berisi folder <strong>POLYGON</strong> dan <strong>HOUSEHOLD</strong>.</li>
+                        <li>Untuk file sangat besar, proses tergantung kemampuan perangkat pengguna.</li>
+                    </ul>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <script>
+        const HOUSEHOLD_ICON = 'http://maps.google.com/mapfiles/kml/shapes/ranger_station.png';
+
+        const masterInput = document.getElementById('masterInput');
+        const polygonInput = document.getElementById('polygonInput');
+        const masterInfo = document.getElementById('masterInfo');
+        const polygonInfo = document.getElementById('polygonInfo');
+        const processBtn = document.getElementById('processBtn');
+        const showMapBtn = document.getElementById('showMapBtn');
+        const hideMapBtn = document.getElementById('hideMapBtn');
+        const downloadZipBtn = document.getElementById('downloadZipBtn');
+        const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+        const clusterStatus = document.getElementById('clusterStatus');
+        const clusterError = document.getElementById('clusterError');
+        const summaryOutput = document.getElementById('summaryOutput');
+        const clusterMapCard = document.getElementById('clusterMapCard');
+        const clusterMapEl = document.getElementById('clusterMap');
+
+        let householdPoints = [];
+        let polygonAreas = [];
+        let clusterResults = [];
+        let generatedKmlFiles = [];
+        let excelWorkbookData = null;
+        let clusterSummaryPage = 1;
+        let clusterRowsPerPage = 25;
+        let clusterMap = null;
+        let clusterMapLayers = [];
+
+        masterInput.addEventListener('change', handleMasterChange);
+        polygonInput.addEventListener('change', handlePolygonChange);
+        processBtn.addEventListener('click', processCluster);
+        showMapBtn.addEventListener('click', showClusterMap);
+        hideMapBtn.addEventListener('click', hideClusterMap);
+        downloadZipBtn.addEventListener('click', downloadKmlZip);
+        downloadExcelBtn.addEventListener('click', downloadExcel);
+        summaryOutput.addEventListener('click', handleClusterPaginationClick);
+        summaryOutput.addEventListener('change', handleClusterPaginationChange);
+
+        function updateProcessState() {
+            processBtn.disabled = !householdPoints.length || !polygonAreas.length;
+            showMapBtn.disabled = !clusterResults.length;
+            downloadZipBtn.disabled = !generatedKmlFiles.length;
+            downloadExcelBtn.disabled = !excelWorkbookData;
+        }
+
+        async function handleMasterChange(event) {
+            resetResultState();
+            const file = event.target.files[0];
+            if (!file) {
+                householdPoints = [];
+                masterInfo.textContent = 'Belum ada master household.';
+                updateProcessState();
+                return;
+            }
+
+            try {
+                setStatus('Membaca master household...');
+                const text = await readKmlOrKmz(file);
+                householdPoints = parseHouseholdPoints(text, file.name);
+                masterInfo.textContent = `${file.name} - ${householdPoints.length} titik household`;
+                setStatus('Master household terbaca. Upload polygon lalu proses cluster.');
+            } catch (error) {
+                householdPoints = [];
+                masterInfo.textContent = 'Gagal membaca master household.';
+                showError(error.message);
+            }
+
+            updateProcessState();
+        }
+
+        async function handlePolygonChange(event) {
+            resetResultState();
+            const files = Array.from(event.target.files || []);
+            if (!files.length) {
+                polygonAreas = [];
+                polygonInfo.textContent = 'Belum ada polygon area.';
+                updateProcessState();
+                return;
+            }
+
+            try {
+                setStatus('Membaca polygon area...');
+                const parsed = [];
+                for (const file of files) {
+                    const text = await readKmlOrKmz(file);
+                    parsed.push(...parsePolygonAreas(text, file.name));
+                }
+                polygonAreas = assignPolygonOutputMetadata(parsed);
+                polygonInfo.textContent = `${files.length} file - ${polygonAreas.length} polygon area`;
+                setStatus('Polygon area terbaca. Klik Proses Cluster untuk menghitung household per polygon.');
+            } catch (error) {
+                polygonAreas = [];
+                polygonInfo.textContent = 'Gagal membaca polygon area.';
+                showError(error.message);
+            }
+
+            updateProcessState();
+        }
+
+        function resetResultState() {
+            clusterResults = [];
+            generatedKmlFiles = [];
+            excelWorkbookData = null;
+            clusterSummaryPage = 1;
+            clusterError.textContent = '';
+            summaryOutput.innerHTML = '<p class="section-note">Belum ada hasil. Jalankan proses cluster terlebih dahulu.</p>';
+            hideClusterMap();
+            clearClusterMapLayers();
+            updateProcessState();
+        }
+
+        async function readKmlOrKmz(file) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.endsWith('.kmz')) {
+                if (!window.JSZip) {
+                    throw new Error('JSZip belum tersedia untuk membaca KMZ.');
+                }
+                const buffer = await readFileAsArrayBuffer(file);
+                const zip = await JSZip.loadAsync(buffer);
+                const kmlName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+                if (!kmlName) {
+                    throw new Error(`${file.name} tidak mengandung file KML.`);
+                }
+                return zip.file(kmlName).async('string');
+            }
+
+            if (lowerName.endsWith('.kml')) {
+                return readFileAsText(file);
+            }
+
+            throw new Error('Format file harus KML atau KMZ.');
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function parseXml(text, fileName) {
+            const doc = new DOMParser().parseFromString(text, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length) {
+                throw new Error(`${fileName} bukan KML valid.`);
+            }
+            return doc;
+        }
+
+        function findChildrenByLocalName(parent, localName) {
+            return Array.from(parent.childNodes || []).filter(node =>
+                node.nodeType === 1 && node.localName === localName
+            );
+        }
+
+        function findFirstDescendant(parent, localName) {
+            return Array.from(parent.getElementsByTagName('*')).find(node => node.localName === localName) || null;
+        }
+
+        function getImmediateChildText(parent, localName) {
+            const child = findChildrenByLocalName(parent, localName)[0];
+            return child ? (child.textContent || '').trim() : '';
+        }
+
+        function parseCoordinateList(raw) {
+            return String(raw || '').trim().split(/\s+/).map(item => {
+                const parts = item.split(',').map(Number);
+                if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+                    return null;
+                }
+                const normalized = normalizeLonLat(parts[0], parts[1]);
+                return [normalized.lon, normalized.lat, Number.isFinite(parts[2]) ? parts[2] : 0];
+            }).filter(Boolean);
+        }
+
+        function normalizeLonLat(firstValue, secondValue) {
+            let lon = firstValue;
+            let lat = secondValue;
+            const firstLooksLikeLat = Math.abs(firstValue) <= 90;
+            const secondLooksLikeLon = Math.abs(secondValue) > 90 && Math.abs(secondValue) <= 180;
+            const firstLooksInvalidLon = Math.abs(firstValue) > 180;
+            const secondLooksInvalidLat = Math.abs(secondValue) > 90;
+
+            if ((firstLooksLikeLat && secondLooksLikeLon) || firstLooksInvalidLon || secondLooksInvalidLat) {
+                lon = secondValue;
+                lat = firstValue;
+            }
+
+            return { lon, lat };
+        }
+
+        function closeRing(ring) {
+            if (ring.length < 3) {
+                return ring;
+            }
+            const first = ring[0];
+            const last = ring[ring.length - 1];
+            if (first[0] !== last[0] || first[1] !== last[1]) {
+                return [...ring, first];
+            }
+            return ring;
+        }
+
+        function parseHouseholdPoints(text, fileName) {
+            const doc = parseXml(text, fileName);
+            const placemarks = Array.from(doc.getElementsByTagName('Placemark'));
+            const points = [];
+
+            placemarks.forEach((placemark, index) => {
+                const pointNode = Array.from(placemark.getElementsByTagName('*')).find(node => node.localName === 'Point');
+                if (!pointNode) {
+                    return;
+                }
+                const coordNode = findFirstDescendant(pointNode, 'coordinates');
+                const coords = coordNode ? parseCoordinateList(coordNode.textContent) : [];
+                if (!coords.length) {
+                    return;
+                }
+                const coord = coords[0];
+                points.push({
+                    id: points.length + 1,
+                    name: getImmediateChildText(placemark, 'name') || `HOUSEHOLD ${index + 1}`,
+                    description: getImmediateChildText(placemark, 'description'),
+                    lon: coord[0],
+                    lat: coord[1],
+                    alt: coord[2] || 0,
+                    sourceFile: fileName
+                });
+            });
+
+            if (!points.length) {
+                throw new Error(`${fileName} tidak memiliki placemark Point.`);
+            }
+            return points;
+        }
+
+        function extractPolygonRings(polygonNode) {
+            const outerNode = Array.from(polygonNode.getElementsByTagName('*')).find(node => node.localName === 'outerBoundaryIs');
+            if (!outerNode) {
+                return null;
+            }
+            const outerCoordinates = findFirstDescendant(outerNode, 'coordinates');
+            const outerRing = outerCoordinates ? closeRing(parseCoordinateList(outerCoordinates.textContent).map(coord => [coord[0], coord[1]])) : [];
+            if (outerRing.length < 4) {
+                return null;
+            }
+
+            const innerRings = Array.from(polygonNode.getElementsByTagName('*'))
+                .filter(node => node.localName === 'innerBoundaryIs')
+                .map(innerNode => {
+                    const coordNode = findFirstDescendant(innerNode, 'coordinates');
+                    return coordNode ? closeRing(parseCoordinateList(coordNode.textContent).map(coord => [coord[0], coord[1]])) : [];
+                })
+                .filter(ring => ring.length >= 4);
+
+            return [outerRing, ...innerRings];
+        }
+
+        function parsePolygonAreas(text, fileName) {
+            const doc = parseXml(text, fileName);
+            const placemarks = Array.from(doc.getElementsByTagName('Placemark'));
+            const areas = [];
+
+            placemarks.forEach((placemark, index) => {
+                const polygonNodes = Array.from(placemark.getElementsByTagName('*')).filter(node => node.localName === 'Polygon');
+                const polygons = polygonNodes.map(extractPolygonRings).filter(Boolean);
+                if (!polygons.length) {
+                    return;
+                }
+
+                const areaName = getImmediateChildText(placemark, 'name') || `Polygon ${index + 1}`;
+                areas.push({
+                    sourceFile: fileName,
+                    areaName,
+                    polygonIndex: areas.length + 1,
+                    polygons,
+                    outputFile: '',
+                    feature: polygons.length === 1 ? turf.polygon(polygons[0]) : turf.multiPolygon(polygons)
+                });
+            });
+
+            if (!areas.length) {
+                throw new Error(`${fileName} tidak memiliki Polygon atau MultiGeometry Polygon.`);
+            }
+            return areas;
+        }
+
+        function assignPolygonOutputMetadata(areas) {
+            const sourceCounts = new Map();
+            const nameCountsBySource = new Map();
+            areas.forEach(area => {
+                sourceCounts.set(area.sourceFile, (sourceCounts.get(area.sourceFile) || 0) + 1);
+            });
+
+            const usedNames = new Set();
+            return areas.map((area, index) => {
+                const sourceNameCounts = nameCountsBySource.get(area.sourceFile) || new Map();
+                const baseAreaName = area.areaName || `Polygon ${index + 1}`;
+                const count = (sourceNameCounts.get(baseAreaName) || 0) + 1;
+                sourceNameCounts.set(baseAreaName, count);
+                nameCountsBySource.set(area.sourceFile, sourceNameCounts);
+
+                const displayAreaName = count === 1 ? baseAreaName : `${baseAreaName} (${count})`;
+                const sourceStem = sanitizeFilename(area.sourceFile.replace(/\.[^.]+$/, ''), 'Polygon');
+                const outputBase = sourceCounts.get(area.sourceFile) === 1
+                    ? `Hasil_${sanitizeFilename(area.sourceFile, 'Polygon.kml').replace(/\.[^.]+$/, '')}`
+                    : `Hasil_${sourceStem}_${sanitizeFilename(displayAreaName, `Polygon_${index + 1}`)}`;
+
+                return {
+                    ...area,
+                    areaName: displayAreaName,
+                    polygonKey: `${area.sourceFile}::${index + 1}::${displayAreaName}`,
+                    outputFile: makeUniqueFileName(`${outputBase}.kml`, usedNames)
+                };
+            });
+        }
+
+        function processCluster() {
+            if (!householdPoints.length || !polygonAreas.length) {
+                showError('Upload master household dan polygon terlebih dahulu.');
+                return;
+            }
+            if (!window.turf || !window.JSZip || !window.XLSX) {
+                showError('Library JSZip, SheetJS, atau Turf.js belum berhasil dimuat.');
+                return;
+            }
+
+            try {
+                setStatus('Memproses spatial join di browser...');
+                clusterResults = runSpatialJoin(householdPoints, polygonAreas);
+
+                generatedKmlFiles = clusterResults.map(result => ({
+                    name: result.outputFile,
+                    content: buildClusterKml(result)
+                }));
+                excelWorkbookData = buildExcelData(clusterResults);
+                clusterSummaryPage = 1;
+                renderSummary(clusterResults);
+                showClusterMap();
+                const finalMatched = clusterResults.reduce((sum, item) => sum + item.households.length, 0);
+                const bboxNote = finalMatched === 0 ? ` ${buildNoMatchDiagnostic()}` : '';
+                setStatus(`Selesai. ${householdPoints.length} titik dicek ke ${polygonAreas.length} polygon area. Match: ${finalMatched}.${bboxNote}`);
+            } catch (error) {
+                generatedKmlFiles = [];
+                excelWorkbookData = null;
+                showError(error.message);
+            }
+
+            updateProcessState();
+        }
+
+        function runSpatialJoin(points, areas) {
+            return areas.map(area => {
+                const households = points.filter(point =>
+                    turf.booleanPointInPolygon(turf.point([point.lon, point.lat]), area.feature, { ignoreBoundary: false })
+                );
+                return { ...area, households };
+            });
+        }
+
+        function buildNoMatchDiagnostic() {
+            const pointBbox = buildPointBbox(householdPoints);
+            const polygonBbox = buildPolygonBbox(polygonAreas);
+            if (!pointBbox || !polygonBbox) {
+                return 'Tidak ada overlap terdeteksi antara titik dan polygon.';
+            }
+
+            if (bboxOverlaps(pointBbox, polygonBbox)) {
+                return 'BBox titik dan polygon overlap, tetapi tidak ada titik yang berada di dalam polygon.';
+            }
+
+            return `BBox titik (${formatBbox(pointBbox)}) tidak overlap dengan bbox polygon (${formatBbox(polygonBbox)}). Cek apakah master dan polygon berasal dari area yang sama.`;
+        }
+
+        function buildPointBbox(points) {
+            if (!points.length) {
+                return null;
+            }
+            return points.reduce((bbox, point) => expandBbox(bbox, point.lon, point.lat), null);
+        }
+
+        function buildPolygonBbox(areas) {
+            let bbox = null;
+            areas.forEach(area => {
+                area.polygons.forEach(polygon => {
+                    polygon.forEach(ring => {
+                        ring.forEach(coord => {
+                            bbox = expandBbox(bbox, coord[0], coord[1]);
+                        });
+                    });
+                });
+            });
+            return bbox;
+        }
+
+        function expandBbox(bbox, lon, lat) {
+            if (!bbox) {
+                return { minLon: lon, minLat: lat, maxLon: lon, maxLat: lat };
+            }
+            return {
+                minLon: Math.min(bbox.minLon, lon),
+                minLat: Math.min(bbox.minLat, lat),
+                maxLon: Math.max(bbox.maxLon, lon),
+                maxLat: Math.max(bbox.maxLat, lat)
+            };
+        }
+
+        function bboxOverlaps(a, b) {
+            return a.minLon <= b.maxLon && a.maxLon >= b.minLon && a.minLat <= b.maxLat && a.maxLat >= b.minLat;
+        }
+
+        function formatBbox(bbox) {
+            return `${bbox.minLon.toFixed(5)},${bbox.minLat.toFixed(5)} - ${bbox.maxLon.toFixed(5)},${bbox.maxLat.toFixed(5)}`;
+        }
+
+        function buildClusterKml(result) {
+            const polygonPlacemarks = result.polygons.map((rings, index) => {
+                const innerXml = rings.slice(1).map(ring => `
+                    <innerBoundaryIs>
+                        <LinearRing>
+                            <coordinates>${coordinatesToKml(ring)}</coordinates>
+                        </LinearRing>
+                    </innerBoundaryIs>`).join('');
+
+                return `
+                <Placemark>
+                    <name>${escapeXml(result.areaName)}${result.polygons.length > 1 ? ` ${index + 1}` : ''}</name>
+                    <Polygon>
+                        <outerBoundaryIs>
+                            <LinearRing>
+                                <coordinates>${coordinatesToKml(rings[0])}</coordinates>
+                            </LinearRing>
+                        </outerBoundaryIs>
+                        ${innerXml}
+                    </Polygon>
+                </Placemark>`;
+            }).join('');
+
+            const householdPlacemarks = result.households.map(point => `
+                <Placemark>
+                    <name>${escapeXml(point.name)}</name>
+                    <description>${escapeXml(point.description || '')}</description>
+                    <Style>
+                        <IconStyle>
+                            <Icon><href>${HOUSEHOLD_ICON}</href></Icon>
+                        </IconStyle>
+                    </Style>
+                    <Point>
+                        <coordinates>${point.lon},${point.lat},${point.alt || 0}</coordinates>
+                    </Point>
+                </Placemark>`).join('');
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>
+        <name>${escapeXml(result.areaName)}</name>
+        <Folder>
+            <name>POLYGON</name>
+            ${polygonPlacemarks}
+        </Folder>
+        <Folder>
+            <name>HOUSEHOLD</name>
+            ${householdPlacemarks}
+        </Folder>
+    </Document>
+</kml>`;
+        }
+
+        function coordinatesToKml(ring) {
+            return ring.map(coord => `${coord[0]},${coord[1]},0`).join(' ');
+        }
+
+        function buildExcelData(results) {
+            const detailRows = [];
+            const summaryRows = [];
+
+            results.forEach(result => {
+                summaryRows.push({
+                    File: result.sourceFile,
+                    Output_KML: result.outputFile,
+                    Area: result.areaName,
+                    Total_Household: result.households.length
+                });
+
+                if (!result.households.length) {
+                    detailRows.push({
+                        File: result.sourceFile,
+                        Output_KML: result.outputFile,
+                        Area: result.areaName,
+                        Household_ID: '',
+                        Total_Household_Area: 0,
+                        Longitude: '',
+                        Latitude: ''
+                    });
+                    return;
+                }
+
+                result.households.forEach(point => {
+                    detailRows.push({
+                        File: result.sourceFile,
+                        Output_KML: result.outputFile,
+                        Area: result.areaName,
+                        Household_ID: point.name,
+                        Total_Household_Area: result.households.length,
+                        Longitude: roundCoord(point.lon),
+                        Latitude: roundCoord(point.lat)
+                    });
+                });
+            });
+
+            return { detailRows, summaryRows };
+        }
+
+        function renderSummary(results) {
+            const totalMatched = results.reduce((sum, item) => sum + item.households.length, 0);
+            const totalPages = Math.max(1, Math.ceil(results.length / clusterRowsPerPage));
+            clusterSummaryPage = Math.min(Math.max(1, clusterSummaryPage), totalPages);
+            const startIndex = (clusterSummaryPage - 1) * clusterRowsPerPage;
+            const pageItems = results.slice(startIndex, startIndex + clusterRowsPerPage);
+            const endIndex = startIndex + pageItems.length;
+            const pageSizeOptions = [10, 25, 50, 100].map(size =>
+                `<option value="${size}" ${size === clusterRowsPerPage ? 'selected' : ''}>${size} baris</option>`
+            ).join('');
+            const rows = pageItems.map((result, index) => `
+                <tr>
+                    <td>${startIndex + index + 1}</td>
+                    <td>${escapeHtml(result.sourceFile)}</td>
+                    <td>${escapeHtml(result.areaName)}</td>
+                    <td>${escapeHtml(result.outputFile)}</td>
+                    <td>${result.households.length}</td>
+                </tr>`).join('');
+
+            summaryOutput.innerHTML = `
+                <div class="summary-grid">
+                    <div class="summary-card"><strong>Household Master</strong><span>${householdPoints.length}</span></div>
+                    <div class="summary-card"><strong>Polygon Area</strong><span>${results.length}</span></div>
+                    <div class="summary-card"><strong>Total Match</strong><span>${totalMatched}</span></div>
+                    <div class="summary-card"><strong>Output KML</strong><span>${generatedKmlFiles.length}</span></div>
+                </div>
+                <h3>Ringkasan Polygon</h3>
+                <div class="table-pagination">
+                    <div class="pagination-info">
+                        Menampilkan ${startIndex + 1}-${endIndex} dari ${results.length} polygon
+                    </div>
+                    <div class="pagination-controls">
+                        <label for="clusterRowsPerPage">Per halaman</label>
+                        <select id="clusterRowsPerPage" class="pagination-select">
+                            ${pageSizeOptions}
+                        </select>
+                        <button type="button" class="pagination-button" data-cluster-page="prev" ${clusterSummaryPage === 1 ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-left"></i> Sebelumnya
+                        </button>
+                        <span class="pagination-current">Halaman ${clusterSummaryPage} / ${totalPages}</span>
+                        <button type="button" class="pagination-button" data-cluster-page="next" ${clusterSummaryPage === totalPages ? 'disabled' : ''}>
+                            Berikutnya <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <table id="coordinateTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>File</th>
+                            <th>Area</th>
+                            <th>Output KML</th>
+                            <th>Total Household</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        function handleClusterPaginationClick(event) {
+            const button = event.target.closest('[data-cluster-page]');
+            if (!button || !clusterResults.length) {
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(clusterResults.length / clusterRowsPerPage));
+            if (button.dataset.clusterPage === 'prev') {
+                clusterSummaryPage = Math.max(1, clusterSummaryPage - 1);
+            }
+            if (button.dataset.clusterPage === 'next') {
+                clusterSummaryPage = Math.min(totalPages, clusterSummaryPage + 1);
+            }
+
+            renderSummary(clusterResults);
+        }
+
+        function handleClusterPaginationChange(event) {
+            if (event.target.id !== 'clusterRowsPerPage' || !clusterResults.length) {
+                return;
+            }
+
+            const nextSize = Number(event.target.value);
+            clusterRowsPerPage = Number.isFinite(nextSize) && nextSize > 0 ? nextSize : 25;
+            clusterSummaryPage = 1;
+            renderSummary(clusterResults);
+        }
+
+        function showClusterMap() {
+            if (!clusterResults.length) {
+                return;
+            }
+            if (!window.L) {
+                clusterError.textContent = 'Leaflet belum berhasil dimuat, peta belum bisa ditampilkan.';
+                return;
+            }
+
+            clusterMapCard.style.display = '';
+            ensureClusterMap();
+            renderClusterMap();
+            setTimeout(() => clusterMap.invalidateSize(), 80);
+        }
+
+        function hideClusterMap() {
+            clusterMapCard.style.display = 'none';
+        }
+
+        function ensureClusterMap() {
+            if (clusterMap) {
+                return clusterMap;
+            }
+
+            clusterMap = L.map(clusterMapEl, {
+                scrollWheelZoom: true,
+                preferCanvas: true
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 20,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(clusterMap);
+            return clusterMap;
+        }
+
+        function clearClusterMapLayers() {
+            if (!clusterMap) {
+                clusterMapLayers = [];
+                return;
+            }
+            clusterMapLayers.forEach(layer => clusterMap.removeLayer(layer));
+            clusterMapLayers = [];
+        }
+
+        function renderClusterMap() {
+            if (!clusterMap || !clusterResults.length) {
+                return;
+            }
+
+            clearClusterMapLayers();
+            const boundsPoints = [];
+
+            clusterResults.forEach((result, index) => {
+                result.polygons.forEach(polygon => {
+                    const latLngRings = polygon.map(ring => ringToLatLngs(ring));
+                    if (!latLngRings[0]?.length) {
+                        return;
+                    }
+                    latLngRings.flat().forEach(latLng => boundsPoints.push(latLng));
+                    const layer = L.polygon(latLngRings, {
+                        color: getClusterColor(index),
+                        weight: 2,
+                        opacity: 0.9,
+                        fillColor: getClusterColor(index),
+                        fillOpacity: result.households.length ? 0.18 : 0.07
+                    }).bindPopup(`
+                        <strong>${escapeHtml(result.areaName)}</strong><br>
+                        File: ${escapeHtml(result.sourceFile)}<br>
+                        Household: ${result.households.length}<br>
+                        Output: ${escapeHtml(result.outputFile)}
+                    `);
+                    layer.addTo(clusterMap);
+                    clusterMapLayers.push(layer);
+                });
+            });
+
+            const matchedKeys = new Set();
+            clusterResults.forEach(result => {
+                result.households.forEach(point => matchedKeys.add(getPointKey(point)));
+            });
+
+            householdPoints.forEach(point => {
+                const isMatched = matchedKeys.has(getPointKey(point));
+                const marker = L.circleMarker([point.lat, point.lon], {
+                    radius: isMatched ? 5 : 3,
+                    color: isMatched ? '#21f0c3' : '#35c7ff',
+                    weight: isMatched ? 2 : 1,
+                    fillColor: isMatched ? '#21f0c3' : '#35c7ff',
+                    fillOpacity: isMatched ? 0.9 : 0.45
+                }).bindPopup(`
+                    <strong>${escapeHtml(point.name)}</strong><br>
+                    Status: ${isMatched ? 'Masuk polygon' : 'Master household'}<br>
+                    Lat/Lon: ${roundCoord(point.lat)}, ${roundCoord(point.lon)}
+                `);
+                marker.addTo(clusterMap);
+                clusterMapLayers.push(marker);
+                boundsPoints.push([point.lat, point.lon]);
+            });
+
+            if (boundsPoints.length) {
+                clusterMap.fitBounds(L.latLngBounds(boundsPoints), { padding: [24, 24], maxZoom: 18 });
+            } else {
+                clusterMap.setView([-2.5, 118], 5);
+            }
+        }
+
+        function ringToLatLngs(ring) {
+            return ring
+                .filter(coord => Array.isArray(coord) && Number.isFinite(coord[0]) && Number.isFinite(coord[1]))
+                .map(coord => [coord[1], coord[0]]);
+        }
+
+        function getClusterColor(index) {
+            const colors = ['#38bdf8', '#21f0c3', '#facc15', '#fb7185', '#a78bfa', '#f97316', '#4ade80', '#60a5fa'];
+            return colors[index % colors.length];
+        }
+
+        function getPointKey(point) {
+            return String(point.id ?? `${point.name}|${roundCoord(point.lon)}|${roundCoord(point.lat)}`);
+        }
+
+        async function downloadKmlZip() {
+            if (!generatedKmlFiles.length) {
+                return;
+            }
+            const zip = new JSZip();
+            generatedKmlFiles.forEach(file => zip.file(file.name, file.content));
+            const blob = await zip.generateAsync({ type: 'blob' });
+            downloadBlob(blob, `hasil_cluster_household_${Date.now()}.zip`);
+        }
+
+        function downloadExcel() {
+            if (!excelWorkbookData) {
+                return;
+            }
+            const workbook = XLSX.utils.book_new();
+            const detailSheet = XLSX.utils.json_to_sheet(excelWorkbookData.detailRows);
+            const summarySheet = XLSX.utils.json_to_sheet(excelWorkbookData.summaryRows);
+            XLSX.utils.book_append_sheet(workbook, detailSheet, 'Detail_Household');
+            XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan_Polygon');
+            XLSX.writeFile(workbook, `rekap_cluster_household_${Date.now()}.xlsx`);
+        }
+
+        function downloadBlob(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function sanitizeFilename(value, fallback) {
+            const text = String(value || '').trim()
+                .replace(/[<>:"/\\|?*]+/g, '_')
+                .replace(/\s+/g, ' ')
+                .replace(/[. ]+$/g, '');
+            return text || fallback;
+        }
+
+        function makeUniqueFileName(fileName, usedNames) {
+            const safeName = sanitizeFilename(fileName, 'output.kml');
+            const dotIndex = safeName.lastIndexOf('.');
+            const base = dotIndex > -1 ? safeName.slice(0, dotIndex) : safeName;
+            const extension = dotIndex > -1 ? safeName.slice(dotIndex) : '.kml';
+            let candidate = `${base}${extension}`;
+            let counter = 2;
+            while (usedNames.has(candidate.toLowerCase())) {
+                candidate = `${base}_${counter}${extension}`;
+                counter += 1;
+            }
+            usedNames.add(candidate.toLowerCase());
+            return candidate;
+        }
+
+        function roundCoord(value) {
+            return Number(value).toFixed(8);
+        }
+
+        function setStatus(message) {
+            clusterStatus.textContent = message;
+            clusterError.textContent = '';
+        }
+
+        function showError(message) {
+            clusterError.textContent = message;
+            clusterStatus.textContent = 'Terjadi kendala saat memproses data.';
+            updateProcessState();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeXml(value) {
+            return escapeHtml(value);
+        }
+    </script>
+</body>
+</html>

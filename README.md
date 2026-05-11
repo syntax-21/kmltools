@@ -10,6 +10,8 @@ Versi ini dapat dipakai mandiri tanpa mengubah versi tool sebelumnya.
 - Dukungan deep link ke tool tertentu melalui query string atau hash.
 - Tombol buka penuh untuk membuka modul aktif sebagai halaman standalone.
 - Reset aplikasi dengan konfirmasi untuk membersihkan cache/storage lokal saat diperlukan.
+- Modul Auto Cluster Household Polygon untuk mencocokkan titik household ke area polygon.
+- Preview peta Auto Cluster untuk melihat polygon, master household, dan titik yang masuk area.
 - Preview tabel Asesoris Tiang memakai pagination agar data banyak tetap nyaman dibaca.
 - PWA ringan melalui `manifest.webmanifest` dan `sw.js` saat dibuka lewat HTTP/GitHub Pages.
 
@@ -33,6 +35,7 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | `index.html` | Workspace utama dan navigasi semua tool | - | Akses terpadu ke seluruh modul |
 | `converter.html` | Konversi dua arah CSV dan KML | `.csv`, `.kml`, `.txt` | `.kml` atau `.csv` |
 | `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.csv`, `.txt` | File dengan format asal |
+| `clusterhousehold.html` | Cluster titik household ke polygon area | `.kml`, `.kmz` | ZIP KML per area dan rekap Excel |
 | `tiangnew.html` | Generate placemark otomatis di sepanjang path | `.kml`, `.kmz` | KML baru berisi path dan titik |
 | `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel paginasi, peta |
 | `splitline.html` | Pecah jalur KML menjadi beberapa segmen | `.kml`, `.xml` | KML gabungan atau file segmen terpisah |
@@ -91,7 +94,28 @@ Catatan:
 - Untuk `CSV`, tool mengharapkan kolom `name`.
 - Untuk `TXT`, setiap baris non-kosong dianggap satu entri nama.
 
-### 4. Auto Placemark Tiang (`tiangnew.html`)
+### 4. Auto Cluster Household Polygon (`clusterhousehold.html`)
+
+Tool ini mencocokkan titik household dari master KML/KMZ ke satu atau banyak polygon area.
+
+Fitur penting:
+
+- Input master household dari `KML` atau `KMZ` yang berisi placemark `Point`.
+- Input satu atau banyak file polygon `KML`/`KMZ`.
+- Membaca polygon biasa maupun polygon di dalam `MultiGeometry`.
+- Menghitung jumlah household yang masuk ke setiap polygon memakai Turf.js di browser.
+- Menampilkan preview peta berisi polygon area, master household, dan household yang masuk polygon.
+- Membuat output KML per area dengan folder `POLYGON` dan `HOUSEHOLD`.
+- Mengekspor semua KML hasil sebagai satu file ZIP.
+- Mengekspor rekap Excel dengan sheet `Detail_Household` dan `Ringkasan_Polygon`.
+
+Catatan:
+
+- Point yang masuk lebih dari satu polygon akan ikut tercatat pada semua polygon yang memuat titik tersebut.
+- Output KML dibuat ulang dari hasil proses, bukan mempertahankan seluruh style asli file sumber.
+- Untuk file sangat besar, performa bergantung pada kemampuan perangkat pengguna.
+
+### 5. Auto Placemark Tiang (`tiangnew.html`)
 
 Tool ini membuat placemark baru secara otomatis di sepanjang jalur berdasarkan interval meter tertentu.
 
@@ -109,7 +133,7 @@ Catatan:
 - File hasil diunduh sebagai `<nama_file>_placemarks.kml`.
 - Jalur asli tetap disertakan di hasil ekspor.
 
-### 5. Hitung Asesoris Tiang Existing (`asesoristiang.html`)
+### 6. Hitung Asesoris Tiang Existing (`asesoristiang.html`)
 
 Tool ini menganalisis KML/KMZ existing untuk menambahkan hasil perhitungan asesoris tanpa menghapus data utama yang sudah ada.
 
@@ -134,7 +158,7 @@ Catatan:
 - File hasil diunduh sebagai `<nama_file>_asesoris_tiang.kml`.
 - Pagination hanya memengaruhi tampilan preview di browser; hasil export KML tetap memuat seluruh asesoris yang terdeteksi.
 
-### 6. Google Earth Split Line (`splitline.html`)
+### 7. Google Earth Split Line (`splitline.html`)
 
 Tool ini memecah path KML panjang menjadi segmen-segmen yang lebih pendek.
 
@@ -152,7 +176,7 @@ Catatan:
 
 - Tool ini hanya relevan untuk `Placemark` yang memiliki `LineString`.
 
-### 7. Ukur Jarak Allpro Masal (`ukurallpro.html`)
+### 8. Ukur Jarak Allpro Masal (`ukurallpro.html`)
 
 Tool ini menghitung jarak jalan aktual dari banyak titik asal ke titik target terdekat pada database KML.
 
@@ -222,6 +246,7 @@ Semua dependensi frontend dimuat langsung dari CDN.
 - JSZip
 - PapaParse
 - SheetJS / XLSX
+- Turf.js
 - OSRM public routing API
 - GitHub Pages
 
@@ -232,6 +257,7 @@ Semua dependensi frontend dimuat langsung dari CDN.
 |-- index.html
 |-- converter.html
 |-- bulkrename.html
+|-- clusterhousehold.html
 |-- tiangnew.html
 |-- asesoristiang.html
 |-- splitline.html

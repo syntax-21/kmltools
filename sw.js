@@ -1,9 +1,10 @@
-const CACHE_NAME = 'kmltools-workspace-v3';
+const CACHE_NAME = 'kmltools-workspace-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
   './converter.html',
   './bulkrename.html',
+  './clusterhousehold.html',
   './tiangnew.html',
   './asesoristiang.html',
   './splitline.html',
