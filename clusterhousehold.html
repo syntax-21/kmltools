@@ -86,6 +86,70 @@
                         </div>
                     </div>
 
+                    <div class="folder-form">
+                        <h4>Setting tampilan output KML</h4>
+                        <div class="folder-form-grid">
+                            <div class="folder-form-group">
+                                <label for="polygonLineColor">Polygon line color</label>
+                                <input type="color" id="polygonLineColor" value="#ff0000">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="polygonLineWidth">Polygon line width</label>
+                                <input type="number" id="polygonLineWidth" min="0.1" max="20" step="0.1" value="2">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="polygonLineOpacity">Polygon line opacity (%)</label>
+                                <input type="number" id="polygonLineOpacity" min="0" max="100" step="1" value="100">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="polygonFillColor">Polygon fill color</label>
+                                <input type="color" id="polygonFillColor" value="#ffffff">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="polygonFillOpacity">Polygon fill opacity (%)</label>
+                                <input type="number" id="polygonFillOpacity" min="0" max="100" step="1" value="45">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="polygonMode">Polygon mode</label>
+                                <select id="polygonMode">
+                                    <option value="filled-outlined">Filled + Outlined</option>
+                                    <option value="outlined">Outlined saja</option>
+                                    <option value="filled">Filled saja</option>
+                                </select>
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdLabelColor">Household label color</label>
+                                <input type="color" id="householdLabelColor" value="#ffffff">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdLabelScale">Household label scale</label>
+                                <input type="number" id="householdLabelScale" min="0" max="5" step="0.1" value="1">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdIconColor">Household icon color</label>
+                                <input type="color" id="householdIconColor" value="#ffffff">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdIconScale">Household icon scale</label>
+                                <input type="number" id="householdIconScale" min="0.1" max="5" step="0.1" value="1.2">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdIconOpacity">Household icon opacity (%)</label>
+                                <input type="number" id="householdIconOpacity" min="0" max="100" step="1" value="100">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="householdIconUrl">Household icon</label>
+                                <select id="householdIconUrl">
+                                    <option value="http://maps.google.com/mapfiles/kml/shapes/ranger_station.png">Household</option>
+                                    <option value="http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png">Circle</option>
+                                    <option value="http://maps.google.com/mapfiles/kml/shapes/placemark_square.png">Square</option>
+                                    <option value="http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png">Pushpin</option>
+                                    <option value="http://maps.google.com/mapfiles/kml/paddle/wht-circle.png">White Circle</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="tool-actions">
                         <button id="processBtn" type="button" disabled><i class="fas fa-wand-magic-sparkles"></i> Proses Cluster</button>
                         <button id="showMapBtn" type="button" class="map-toggle" disabled><i class="fas fa-map-location-dot"></i> Tampilkan Peta</button>
@@ -173,6 +237,9 @@
         const summaryOutput = document.getElementById('summaryOutput');
         const clusterMapCard = document.getElementById('clusterMapCard');
         const clusterMapEl = document.getElementById('clusterMap');
+        const styleInputs = Array.from(document.querySelectorAll(
+            '#polygonLineColor, #polygonLineWidth, #polygonLineOpacity, #polygonFillColor, #polygonFillOpacity, #polygonMode, #householdLabelColor, #householdLabelScale, #householdIconColor, #householdIconScale, #householdIconOpacity, #householdIconUrl'
+        ));
 
         let householdPoints = [];
         let polygonAreas = [];
@@ -193,12 +260,32 @@
         downloadExcelBtn.addEventListener('click', downloadExcel);
         summaryOutput.addEventListener('click', handleClusterPaginationClick);
         summaryOutput.addEventListener('change', handleClusterPaginationChange);
+        styleInputs.forEach(input => input.addEventListener('input', handleStyleSettingChange));
+        styleInputs.forEach(input => input.addEventListener('change', handleStyleSettingChange));
 
         function updateProcessState() {
             processBtn.disabled = !householdPoints.length || !polygonAreas.length;
             showMapBtn.disabled = !clusterResults.length;
             downloadZipBtn.disabled = !generatedKmlFiles.length;
             downloadExcelBtn.disabled = !excelWorkbookData;
+        }
+
+        function handleStyleSettingChange() {
+            if (!clusterResults.length) {
+                return;
+            }
+            rebuildGeneratedKmlFiles();
+            if (clusterMapCard.style.display !== 'none') {
+                renderClusterMap();
+            }
+        }
+
+        function rebuildGeneratedKmlFiles() {
+            generatedKmlFiles = clusterResults.map(result => ({
+                name: result.outputFile,
+                content: buildClusterKml(result)
+            }));
+            updateProcessState();
         }
 
         async function handleMasterChange(event) {
@@ -497,10 +584,7 @@
                 setStatus('Memproses spatial join di browser...');
                 clusterResults = runSpatialJoin(householdPoints, polygonAreas);
 
-                generatedKmlFiles = clusterResults.map(result => ({
-                    name: result.outputFile,
-                    content: buildClusterKml(result)
-                }));
+                rebuildGeneratedKmlFiles();
                 excelWorkbookData = buildExcelData(clusterResults);
                 clusterSummaryPage = 1;
                 renderSummary(clusterResults);
@@ -582,6 +666,7 @@
         }
 
         function buildClusterKml(result) {
+            const style = getOutputStyleSettings();
             const polygonPlacemarks = result.polygons.map((rings, index) => {
                 const innerXml = rings.slice(1).map(ring => `
                     <innerBoundaryIs>
@@ -593,7 +678,9 @@
                 return `
                 <Placemark>
                     <name>${escapeXml(result.areaName)}${result.polygons.length > 1 ? ` ${index + 1}` : ''}</name>
+                    <styleUrl>#clusterPolygonStyle</styleUrl>
                     <Polygon>
+                        <tessellate>1</tessellate>
                         <outerBoundaryIs>
                             <LinearRing>
                                 <coordinates>${coordinatesToKml(rings[0])}</coordinates>
@@ -608,11 +695,7 @@
                 <Placemark>
                     <name>${escapeXml(point.name)}</name>
                     <description>${escapeXml(point.description || '')}</description>
-                    <Style>
-                        <IconStyle>
-                            <Icon><href>${HOUSEHOLD_ICON}</href></Icon>
-                        </IconStyle>
-                    </Style>
+                    <styleUrl>#clusterHouseholdStyle</styleUrl>
                     <Point>
                         <coordinates>${point.lon},${point.lat},${point.alt || 0}</coordinates>
                     </Point>
@@ -622,6 +705,28 @@
 <kml xmlns="http://www.opengis.net/kml/2.2">
     <Document>
         <name>${escapeXml(result.areaName)}</name>
+        <Style id="clusterPolygonStyle">
+            <LineStyle>
+                <color>${hexToKmlColor(style.polygonLineColor, style.polygonLineOpacity)}</color>
+                <width>${style.polygonLineWidth}</width>
+            </LineStyle>
+            <PolyStyle>
+                <color>${hexToKmlColor(style.polygonFillColor, style.polygonFillOpacity)}</color>
+                <fill>${style.polygonFillEnabled ? 1 : 0}</fill>
+                <outline>${style.polygonOutlineEnabled ? 1 : 0}</outline>
+            </PolyStyle>
+        </Style>
+        <Style id="clusterHouseholdStyle">
+            <LabelStyle>
+                <color>${hexToKmlColor(style.householdLabelColor, 100)}</color>
+                <scale>${style.householdLabelScale}</scale>
+            </LabelStyle>
+            <IconStyle>
+                <color>${hexToKmlColor(style.householdIconColor, style.householdIconOpacity)}</color>
+                <scale>${style.householdIconScale}</scale>
+                <Icon><href>${escapeXml(style.householdIconUrl)}</href></Icon>
+            </IconStyle>
+        </Style>
         <Folder>
             <name>POLYGON</name>
             ${polygonPlacemarks}
@@ -636,6 +741,49 @@
 
         function coordinatesToKml(ring) {
             return ring.map(coord => `${coord[0]},${coord[1]},0`).join(' ');
+        }
+
+        function getOutputStyleSettings() {
+            const polygonMode = getControlValue('polygonMode', 'filled-outlined');
+            return {
+                polygonLineColor: getControlValue('polygonLineColor', '#ff0000'),
+                polygonLineWidth: clampNumber(getControlValue('polygonLineWidth', 2), 0.1, 20, 2),
+                polygonLineOpacity: clampNumber(getControlValue('polygonLineOpacity', 100), 0, 100, 100),
+                polygonFillColor: getControlValue('polygonFillColor', '#ffffff'),
+                polygonFillOpacity: clampNumber(getControlValue('polygonFillOpacity', 45), 0, 100, 45),
+                polygonFillEnabled: polygonMode !== 'outlined',
+                polygonOutlineEnabled: polygonMode !== 'filled',
+                householdLabelColor: getControlValue('householdLabelColor', '#ffffff'),
+                householdLabelScale: clampNumber(getControlValue('householdLabelScale', 1), 0, 5, 1),
+                householdIconColor: getControlValue('householdIconColor', '#ffffff'),
+                householdIconScale: clampNumber(getControlValue('householdIconScale', 1.2), 0.1, 5, 1.2),
+                householdIconOpacity: clampNumber(getControlValue('householdIconOpacity', 100), 0, 100, 100),
+                householdIconUrl: getControlValue('householdIconUrl', HOUSEHOLD_ICON)
+            };
+        }
+
+        function getControlValue(id, fallback) {
+            const control = document.getElementById(id);
+            return control ? control.value : fallback;
+        }
+
+        function clampNumber(value, min, max, fallback) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) {
+                return fallback;
+            }
+            return Math.min(max, Math.max(min, number));
+        }
+
+        function hexToKmlColor(hex, opacityPercent) {
+            const match = String(hex || '').trim().match(/^#?([0-9a-f]{6})$/i);
+            const cleanHex = match ? match[1] : 'ffffff';
+            const opacity = clampNumber(opacityPercent, 0, 100, 100);
+            const alpha = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0');
+            const red = cleanHex.slice(0, 2);
+            const green = cleanHex.slice(2, 4);
+            const blue = cleanHex.slice(4, 6);
+            return `${alpha}${blue}${green}${red}`.toLowerCase();
         }
 
         function buildExcelData(results) {
@@ -817,6 +965,7 @@
 
             clearClusterMapLayers();
             const boundsPoints = [];
+            const outputStyle = getOutputStyleSettings();
 
             clusterResults.forEach((result, index) => {
                 result.polygons.forEach(polygon => {
@@ -826,11 +975,12 @@
                     }
                     latLngRings.flat().forEach(latLng => boundsPoints.push(latLng));
                     const layer = L.polygon(latLngRings, {
-                        color: getClusterColor(index),
-                        weight: 2,
-                        opacity: 0.9,
-                        fillColor: getClusterColor(index),
-                        fillOpacity: result.households.length ? 0.18 : 0.07
+                        color: outputStyle.polygonLineColor,
+                        weight: outputStyle.polygonOutlineEnabled ? outputStyle.polygonLineWidth : 0,
+                        opacity: outputStyle.polygonOutlineEnabled ? outputStyle.polygonLineOpacity / 100 : 0,
+                        fill: outputStyle.polygonFillEnabled,
+                        fillColor: outputStyle.polygonFillColor,
+                        fillOpacity: outputStyle.polygonFillEnabled ? outputStyle.polygonFillOpacity / 100 : 0
                     }).bindPopup(`
                         <strong>${escapeHtml(result.areaName)}</strong><br>
                         File: ${escapeHtml(result.sourceFile)}<br>
@@ -851,10 +1001,10 @@
                 const isMatched = matchedKeys.has(getPointKey(point));
                 const marker = L.circleMarker([point.lat, point.lon], {
                     radius: isMatched ? 5 : 3,
-                    color: isMatched ? '#21f0c3' : '#35c7ff',
+                    color: isMatched ? outputStyle.householdIconColor : '#35c7ff',
                     weight: isMatched ? 2 : 1,
-                    fillColor: isMatched ? '#21f0c3' : '#35c7ff',
-                    fillOpacity: isMatched ? 0.9 : 0.45
+                    fillColor: isMatched ? outputStyle.householdIconColor : '#35c7ff',
+                    fillOpacity: isMatched ? outputStyle.householdIconOpacity / 100 : 0.45
                 }).bindPopup(`
                     <strong>${escapeHtml(point.name)}</strong><br>
                     Status: ${isMatched ? 'Masuk polygon' : 'Master household'}<br>
@@ -876,11 +1026,6 @@
             return ring
                 .filter(coord => Array.isArray(coord) && Number.isFinite(coord[0]) && Number.isFinite(coord[1]))
                 .map(coord => [coord[1], coord[0]]);
-        }
-
-        function getClusterColor(index) {
-            const colors = ['#38bdf8', '#21f0c3', '#facc15', '#fb7185', '#a78bfa', '#f97316', '#4ade80', '#60a5fa'];
-            return colors[index % colors.length];
         }
 
         function getPointKey(point) {
