@@ -133,6 +133,9 @@
         let map;
         let featureLayers = [];
         let accessoryLayers = [];
+        let currentAccessoryPlan = null;
+        let accessoryTablePage = 1;
+        let accessoryRowsPerPage = 25;
 
         const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
@@ -150,6 +153,8 @@
         previewBtn.addEventListener('click', previewResults);
         mapBtn.addEventListener('click', displayOnMap);
         generateBtn.addEventListener('click', generateKML);
+        outputDiv.addEventListener('click', handleAccessoryPaginationClick);
+        outputDiv.addEventListener('change', handleAccessoryPaginationChange);
 
         function handleDragOver(e) {
             e.preventDefault();
@@ -183,6 +188,8 @@
             allFeatures = [];
             pathFeatures = [];
             pointFeatures = [];
+            currentAccessoryPlan = null;
+            accessoryTablePage = 1;
             previewBtn.disabled = true;
             mapBtn.disabled = true;
             generateBtn.disabled = true;
@@ -1310,7 +1317,34 @@
                 return '<p class="section-note">Belum ada asesoris yang terdeteksi dari belokan path pada file ini.</p>';
             }
 
+            const totalPages = Math.max(1, Math.ceil(accessories.length / accessoryRowsPerPage));
+            accessoryTablePage = Math.min(Math.max(1, accessoryTablePage), totalPages);
+            const startIndex = (accessoryTablePage - 1) * accessoryRowsPerPage;
+            const pageItems = accessories.slice(startIndex, startIndex + accessoryRowsPerPage);
+            const endIndex = startIndex + pageItems.length;
+            const pageSizeOptions = [10, 25, 50, 100].map(size =>
+                `<option value="${size}" ${size === accessoryRowsPerPage ? 'selected' : ''}>${size} baris</option>`
+            ).join('');
+
             let tableHtml = `<h3>Preview Asesoris Tiang (${accessories.length} titik)</h3>
+                            <div class="table-pagination">
+                                <div class="pagination-info">
+                                    Menampilkan ${startIndex + 1}-${endIndex} dari ${accessories.length} data
+                                </div>
+                                <div class="pagination-controls">
+                                    <label for="accessoryRowsPerPage">Per halaman</label>
+                                    <select id="accessoryRowsPerPage" class="pagination-select">
+                                        ${pageSizeOptions}
+                                    </select>
+                                    <button type="button" class="pagination-button" data-accessory-page="prev" ${accessoryTablePage === 1 ? 'disabled' : ''}>
+                                        <i class="fas fa-chevron-left"></i> Sebelumnya
+                                    </button>
+                                    <span class="pagination-current">Halaman ${accessoryTablePage} / ${totalPages}</span>
+                                    <button type="button" class="pagination-button" data-accessory-page="next" ${accessoryTablePage === totalPages ? 'disabled' : ''}>
+                                        Berikutnya <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <table id="coordinateTable">
                                 <thead>
                                     <tr>
@@ -1327,22 +1361,58 @@
                                 </thead>
                                 <tbody>`;
 
-            accessories.forEach((accessory, index) => {
+            pageItems.forEach((accessory, index) => {
                 tableHtml += `<tr>
-                                <td>${index + 1}</td>
-                                <td>${accessory.name}</td>
-                                <td>${accessory.displayType || accessory.type}</td>
+                                <td>${startIndex + index + 1}</td>
+                                <td>${escapeHtml(accessory.name)}</td>
+                                <td>${escapeHtml(accessory.displayType || accessory.type)}</td>
                                 <td>${accessory.quantity}</td>
-                                <td>${accessory.pathName}</td>
+                                <td>${escapeHtml(accessory.pathName)}</td>
                                 <td>${accessory.lat.toFixed(6)}</td>
                                 <td>${accessory.lon.toFixed(6)}</td>
                                 <td>${accessory.distance.toFixed(2)}</td>
-                                <td>${accessory.note}</td>
+                                <td>${escapeHtml(accessory.note)}</td>
                             </tr>`;
             });
 
             tableHtml += `</tbody></table>`;
             return tableHtml;
+        }
+
+        function renderPreviewResults() {
+            if (!currentAccessoryPlan) {
+                return;
+            }
+
+            outputDiv.innerHTML = `${buildSummaryHtml(currentAccessoryPlan)}${buildAccessoryTableHtml(currentAccessoryPlan.allAccessories)}`;
+        }
+
+        function handleAccessoryPaginationClick(event) {
+            const button = event.target.closest('[data-accessory-page]');
+            if (!button || !currentAccessoryPlan) {
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(currentAccessoryPlan.allAccessories.length / accessoryRowsPerPage));
+            if (button.dataset.accessoryPage === 'prev') {
+                accessoryTablePage = Math.max(1, accessoryTablePage - 1);
+            }
+            if (button.dataset.accessoryPage === 'next') {
+                accessoryTablePage = Math.min(totalPages, accessoryTablePage + 1);
+            }
+
+            renderPreviewResults();
+        }
+
+        function handleAccessoryPaginationChange(event) {
+            if (event.target.id !== 'accessoryRowsPerPage' || !currentAccessoryPlan) {
+                return;
+            }
+
+            const nextSize = Number(event.target.value);
+            accessoryRowsPerPage = Number.isFinite(nextSize) && nextSize > 0 ? nextSize : 25;
+            accessoryTablePage = 1;
+            renderPreviewResults();
         }
 
         function previewResults() {
@@ -1351,8 +1421,9 @@
                 return;
             }
 
-            const accessoryPlan = buildAccessoryPlan();
-            outputDiv.innerHTML = `${buildSummaryHtml(accessoryPlan)}${buildAccessoryTableHtml(accessoryPlan.allAccessories)}`;
+            currentAccessoryPlan = buildAccessoryPlan();
+            accessoryTablePage = 1;
+            renderPreviewResults();
         }
 
         function createFeaturePopup(feature) {

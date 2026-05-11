@@ -282,6 +282,14 @@
     }
 
     async function clearCacheAndCookies() {
+        const confirmed = window.confirm(
+            'Reset aplikasi akan menghapus riwayat, session, dan cache lokal KML Tools Workspace di browser ini. Lanjutkan?'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
         try {
             document.cookie.split(';').forEach((cookie) => {
                 document.cookie = cookie.replace(/^ +/, '').replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);

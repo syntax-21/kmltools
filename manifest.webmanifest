@@ -1,0 +1,15 @@
+{
+  "name": "KML Tools Workspace",
+  "short_name": "KML Tools",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#050c18",
+  "theme_color": "#08121f",
+  "icons": [
+    {
+      "src": "kml.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

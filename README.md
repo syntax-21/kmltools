@@ -1,5 +1,18 @@
 # KML Tools Workspace
 
+KML Tools Workspace adalah kumpulan utilitas geospasial berbasis browser dengan shell workspace di `index.html`.
+Versi ini dapat dipakai mandiri tanpa mengubah versi tool sebelumnya.
+
+## Fitur Utama KML Tools Workspace
+
+- Workspace utama yang memuat semua tool dari satu halaman.
+- Navigasi modul berbasis tab dengan lazy-load `iframe`.
+- Dukungan deep link ke tool tertentu melalui query string atau hash.
+- Tombol buka penuh untuk membuka modul aktif sebagai halaman standalone.
+- Reset aplikasi dengan konfirmasi untuk membersihkan cache/storage lokal saat diperlukan.
+- Preview tabel Asesoris Tiang memakai pagination agar data banyak tetap nyaman dibaca.
+- PWA ringan melalui `manifest.webmanifest` dan `sw.js` saat dibuka lewat HTTP/GitHub Pages.
+
 KML Tools Workspace adalah kumpulan utilitas geospasial berbasis browser untuk mengolah `KML`, `KMZ`, `CSV`, `TXT`, dan `Excel` dalam satu workspace statis. Sebagian besar proses utama berjalan langsung di sisi klien, sehingga file kerja tidak perlu dikirim ke backend untuk fungsi inti seperti konversi, rename, segmentasi, analisis, dan visualisasi peta.
 
 Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman dapat dibuka langsung di browser, dijalankan lewat HTTP server lokal, atau dipublikasikan ke GitHub Pages.
@@ -21,7 +34,7 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | `converter.html` | Konversi dua arah CSV dan KML | `.csv`, `.kml`, `.txt` | `.kml` atau `.csv` |
 | `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.csv`, `.txt` | File dengan format asal |
 | `tiangnew.html` | Generate placemark otomatis di sepanjang path | `.kml`, `.kmz` | KML baru berisi path dan titik |
-| `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel, peta |
+| `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel paginasi, peta |
 | `splitline.html` | Pecah jalur KML menjadi beberapa segmen | `.kml`, `.xml` | KML gabungan atau file segmen terpisah |
 | `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
 
@@ -35,8 +48,8 @@ Fitur penting:
 
 - Navigasi semua tool dari satu halaman.
 - Dukungan deep link seperti `index.html?tool=bulkrename` atau `index.html#tool-ukurallpro`.
-- Tombol `Ekspansi Layar` untuk membuka tool aktif di tab terpisah.
-- Tombol `Force Reload Core` untuk membersihkan cookie, storage, dan cache browser.
+- Tombol `Buka Penuh` untuk membuka tool aktif di tab terpisah.
+- Tombol `Reset Aplikasi` dengan konfirmasi untuk membersihkan cookie, storage, dan cache browser.
 - Mode Telegram WebApp bila objek `Telegram.WebApp` tersedia.
 
 ### 2. Konverter CSV <-> KML (`converter.html`)
@@ -105,7 +118,8 @@ Fitur penting:
 - Mendukung upload klik maupun drag-and-drop.
 - Membaca data line dan titik dari file existing.
 - Menambahkan folder `ASESORIS TIANG` ke hasil akhir.
-- Menampilkan ringkasan, tabel, dan peta hasil analisis.
+- Menampilkan ringkasan, tabel hasil dengan pagination, dan peta hasil analisis.
+- Tabel preview mendukung pilihan `10`, `25`, `50`, atau `100` baris per halaman.
 - Mengekspor KML hasil analisis.
 
 Aturan yang tampak di implementasi saat ini:
@@ -118,6 +132,7 @@ Aturan yang tampak di implementasi saat ini:
 Catatan:
 
 - File hasil diunduh sebagai `<nama_file>_asesoris_tiang.kml`.
+- Pagination hanya memengaruhi tampilan preview di browser; hasil export KML tetap memuat seluruh asesoris yang terdeteksi.
 
 ### 6. Google Earth Split Line (`splitline.html`)
 
@@ -163,7 +178,7 @@ Repositori ini sekarang memakai shell frontend sederhana agar semua tool terasa 
 Komponen utamanya:
 
 - `index.html`
-  - shell workspace, hero section, navigasi modul, dan area `iframe`
+  - shell workspace ringkas, hero section, navigasi modul, dan area `iframe`
 - `scripts/app-shell.js`
   - aktivasi tab
   - lazy-load `iframe`
@@ -171,13 +186,15 @@ Komponen utamanya:
   - pembaruan metadata tool aktif
   - auto-resize `iframe`
   - dukungan Telegram WebApp
-  - `Force Reload Core`
+  - `Reset Aplikasi`
 - `scripts/tool-embed.js`
   - dipasang pada halaman tool
   - mengukur tinggi konten halaman anak
   - mengirim tinggi ke parent via `postMessage` dengan tipe `kmltools:frame-size`
 - `styles/kmltools-pro.css`
   - stylesheet bersama untuk shell utama dan seluruh modul
+- `sw.js`
+  - service worker PWA ringan dengan cache asset inti workspace
 
 Setiap halaman tool mendeteksi mode embedded dengan:
 
