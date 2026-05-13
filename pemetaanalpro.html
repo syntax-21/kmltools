@@ -393,8 +393,7 @@
                     const placemarks = Array.from(doc.getElementsByTagName('Placemark'));
 
                     placemarks.forEach((pm, idx) => {
-                        const nameNode = Array.from(pm.childNodes).find(n => n.localName === 'name');
-                        const areaName = nameNode ? nameNode.textContent.trim() : file.name.replace(/\.[^.]+$/, '');
+                        const areaName = file.name.replace(/\.[^.]+$/, '');
 
                         const polyNodes = Array.from(pm.getElementsByTagName('Polygon'));
                         if (polyNodes.length === 0) return;
@@ -616,9 +615,9 @@
                             'Nama Alpro / Kabel': aset.name,
                             'Kategori Folder': aset.folderName,
                             'Jenis': tipe_aset,
-                            'Panjang (Meter)': tipe_aset === 'Kabel' ? (panjang_meter > 0 ? panjang_meter.toFixed(2) : '0') : '-',
-                            'Latitude': lat_aset.toFixed(6),
-                            'Longitude': lon_aset.toFixed(6),
+                            'Panjang (Meter)': tipe_aset === 'Kabel' ? (panjang_meter > 0 ? Number(panjang_meter.toFixed(2)) : 0) : '-',
+                            'Latitude': Number(lat_aset.toFixed(6)),
+                            'Longitude': Number(lon_aset.toFixed(6)),
                             'Nama Ruas Jalan': area.areaName
                         });
                         totalAset++;
@@ -739,7 +738,7 @@
                                     total_panjang_area += panjang_meter;
                                     dataJalanRows.push({
                                         'Nama Ruas Jalan': nama_jalan,
-                                        'Panjang di dalam area (Meter)': panjang_meter.toFixed(2)
+                                        'Panjang di dalam area (Meter)': Number(panjang_meter.toFixed(2))
                                     });
                                 }
                             }
@@ -751,7 +750,7 @@
                     dataJalanRows.sort((a, b) => a['Nama Ruas Jalan'].localeCompare(b['Nama Ruas Jalan']));
                     dataJalanRows.push({
                         'Nama Ruas Jalan': 'TOTAL KESELURUHAN AREA:',
-                        'Panjang di dalam area (Meter)': total_panjang_area.toFixed(2)
+                        'Panjang di dalam area (Meter)': Number(total_panjang_area.toFixed(2))
                     });
 
                     const ws = XLSX.utils.json_to_sheet(dataJalanRows);
