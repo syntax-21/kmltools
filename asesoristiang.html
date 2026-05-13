@@ -68,6 +68,7 @@
                         <li>Ikon titik di peta mengikuti style KML asli selama URL ikonnya bisa diakses browser.</li>
                         <li>Titik referensi terdekat dengan jarak 250 meter antar line dapat memicu perhitungan <strong>PU-AS-HL</strong> beserta seberangannya.</li>
                         <li>Pada line lurus, <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong> juga dihitung tiap <strong>250 meter</strong>.</li>
+                        <li>Jika ada kabel yang menyeberang path lain dan terdapat tiang di dekat titik silang, titik tersebut ikut dihitung sebagai <strong>PU-AS-HL</strong> atau <strong>PU-AS-DE-50/70</strong>.</li>
                         <li>Titik pada folder <strong>CATUAN</strong> dan <strong>ODP PLAN</strong> juga dipakai untuk memicu <strong>PU-AS-HL</strong> atau <strong>PU-AS-DE-50/70</strong> pada path terdekat, selama tidak bertumpuk dengan titik utama yang sudah ada. Jika primary point dekat <strong>ODP PLAN</strong>, titik asesoris akan ditempatkan di <strong>ODP PLAN</strong> saja. Jika titik tersebut berada di ujung jalur, qty-nya menjadi <strong>1</strong>.</li>
                         <li><strong>PU-AS-SC</strong> sekarang dihitung pada setiap tiang yang berada di sepanjang ruas path terkait, bukan hanya tiang sebelum dan sesudah titik <strong>PU-AS-DE-50/70</strong> atau <strong>PU-AS-HL</strong>, namun tetap dilewati bila posisinya bertumpuk atau terlalu dekat dengan titik tersebut.</li>
                         <li>Kategori tiang yang dikenali untuk aturan sebelum dan sesudah adalah <strong>TE</strong> (existing), <strong>TN</strong> (new), <strong>TB</strong> (baru), dan <strong>TP</strong> (plan).</li>
@@ -122,6 +123,7 @@
         const SC_PRIMARY_OVERLAP_RADIUS = 15;
         const ENDPOINT_PRIMARY_ACCESSORY_RADIUS = 25;
         const ODP_PLAN_SNAP_RADIUS = 50;
+        const CABLE_CROSSING_POLE_RADIUS = 20;
         const DEFAULT_POINT_ICON = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png';
 
         let currentKmlText = '';
@@ -618,6 +620,50 @@
             return { ...path[path.length - 1] };
         }
 
+        function findSegmentIntersection(segmentAStart, segmentAEnd, segmentBStart, segmentBEnd) {
+            const refLat = (segmentAStart.lat + segmentAEnd.lat + segmentBStart.lat + segmentBEnd.lat) / 4;
+            const metersPerLat = 111320;
+            const metersPerLon = 111320 * Math.cos(refLat * Math.PI / 180);
+            const toXY = point => ({
+                x: point.lon * metersPerLon,
+                y: point.lat * metersPerLat
+            });
+            const aStart = toXY(segmentAStart);
+            const aEnd = toXY(segmentAEnd);
+            const bStart = toXY(segmentBStart);
+            const bEnd = toXY(segmentBEnd);
+            const aDx = aEnd.x - aStart.x;
+            const aDy = aEnd.y - aStart.y;
+            const bDx = bEnd.x - bStart.x;
+            const bDy = bEnd.y - bStart.y;
+            const denominator = (aDx * bDy) - (aDy * bDx);
+
+            if (Math.abs(denominator) < 0.000001) {
+                return null;
+            }
+
+            const deltaX = bStart.x - aStart.x;
+            const deltaY = bStart.y - aStart.y;
+            const fractionA = ((deltaX * bDy) - (deltaY * bDx)) / denominator;
+            const fractionB = ((deltaX * aDy) - (deltaY * aDx)) / denominator;
+            const epsilon = 0.000001;
+
+            if (fractionA < epsilon || fractionA > 1 - epsilon ||
+                fractionB < epsilon || fractionB > 1 - epsilon) {
+                return null;
+            }
+
+            return {
+                fractionA,
+                fractionB,
+                point: {
+                    lat: segmentAStart.lat + ((segmentAEnd.lat - segmentAStart.lat) * fractionA),
+                    lon: segmentAStart.lon + ((segmentAEnd.lon - segmentAStart.lon) * fractionA),
+                    alt: (segmentAStart.alt || 0) + (((segmentAEnd.alt || 0) - (segmentAStart.alt || 0)) * fractionA)
+                }
+            };
+        }
+
         function projectPointToSegment(point, segmentStart, segmentEnd) {
             const refLat = (segmentStart.lat + segmentEnd.lat + point.lat) / 3;
             const metersPerLat = 111320;
@@ -1035,6 +1081,93 @@
             );
         }
 
+        function findPoleNearPoint(point, polesOnPath, maxDistance) {
+            let nearestPole = null;
+            let nearestDistance = Infinity;
+
+            polesOnPath.forEach(pole => {
+                const polePoint = pole.feature.representativePoint;
+                if (!polePoint) {
+                    return;
+                }
+
+                const distance = haversineDistance(point.lat, point.lon, polePoint.lat, polePoint.lon);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestPole = pole;
+                }
+            });
+
+            if (!nearestPole || nearestDistance > maxDistance) {
+                return null;
+            }
+
+            return {
+                ...nearestPole,
+                crossingDistance: nearestDistance
+            };
+        }
+
+        function addCableCrossingAccessories(primaryAccessories, pathFeature, pathIndex, path, cumulativeDistances, polesOnPath, referencePoints) {
+            for (let i = 0; i < path.length - 1; i++) {
+                const segmentStart = path[i];
+                const segmentEnd = path[i + 1];
+                const segmentLength = cumulativeDistances[i + 1] - cumulativeDistances[i];
+
+                pathFeatures.forEach((otherPathFeature, otherPathIndex) => {
+                    if (otherPathIndex === pathIndex || otherPathFeature.coordinates.length < 2) {
+                        return;
+                    }
+
+                    for (let j = 0; j < otherPathFeature.coordinates.length - 1; j++) {
+                        const intersection = findSegmentIntersection(
+                            segmentStart,
+                            segmentEnd,
+                            otherPathFeature.coordinates[j],
+                            otherPathFeature.coordinates[j + 1]
+                        );
+
+                        if (!intersection) {
+                            continue;
+                        }
+
+                        const nearbyPole = findPoleNearPoint(
+                            intersection.point,
+                            polesOnPath,
+                            CABLE_CROSSING_POLE_RADIUS
+                        );
+
+                        if (!nearbyPole) {
+                            continue;
+                        }
+
+                        const accessoryDistance = cumulativeDistances[i] + (segmentLength * intersection.fractionA);
+                        const accessoryPoint = nearbyPole.feature.representativePoint || intersection.point;
+
+                        if (hasNearbyPrimaryAccessory(
+                            primaryAccessories,
+                            pathIndex,
+                            accessoryDistance,
+                            accessoryPoint
+                        )) {
+                            continue;
+                        }
+
+                        primaryAccessories.push(
+                            createPrimaryAccessory(
+                                pathIndex,
+                                pathFeature.name || `Path ${pathIndex + 1}`,
+                                accessoryPoint,
+                                accessoryDistance,
+                                referencePoints,
+                                `Kabel menyeberang ${otherPathFeature.name || `Path ${otherPathIndex + 1}`} dan ada tiang ${nearbyPole.poleCategory}: ${nearbyPole.feature.name}`
+                            )
+                        );
+                    }
+                });
+            }
+        }
+
         function addStraightRunAccessories(primaryAccessories, pathFeature, pathIndex, path, cumulativeDistances, referencePoints, primaryTriggersOnPath, totalPathDistance, startIndex, endIndex, includeEndPoint) {
             if (endIndex <= startIndex) {
                 return;
@@ -1164,6 +1297,16 @@
                         )
                     );
                 });
+
+                addCableCrossingAccessories(
+                    primaryAccessories,
+                    pathFeature,
+                    pathIndex,
+                    path,
+                    cumulativeDistances,
+                    polesOnPath,
+                    referencePoints
+                );
 
                 let runStartIndex = 0;
                 bendIndices.forEach(bendIndex => {
@@ -1309,7 +1452,7 @@
                         <span>${accessoryPlan.counts.total}</span>
                     </div>
                 </div>
-                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika satu placemark atau jalur memiliki lebih dari satu LineString, semua line tersebut sekarang ikut terbaca dan dihitung. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
+                <p class="section-note">Tiang pada file KML dibaca langsung dari data asli. Tool menghitung asesoris pada belokan, pada line lurus tiap 250 meter, pada kabel yang menyeberang path lain bila ada tiang dekat titik silang, dan juga pada titik CATUAN atau ODP PLAN yang berada di path terdekat. Jika satu placemark atau jalur memiliki lebih dari satu LineString, semua line tersebut sekarang ikut terbaca dan dihitung. Jika primary point dekat ODP PLAN, titik asesoris ditempatkan di ODP PLAN agar tidak dobel. Jika trigger CATUAN atau ODP PLAN berada di ujung jalur, qty PU-AS-HL atau PU-AS-DE-50/70 menjadi 1. Untuk PU-AS-SC, tool membaca semua tiang yang berada di sepanjang ruas path terkait dan memberi label TE, TN, TB, atau TP sesuai tipe yang terdeteksi, tetapi melewati titik yang bertumpuk atau terlalu dekat dengan PU-AS-HL maupun PU-AS-DE-50/70.</p>`;
         }
 
         function buildAccessoryTableHtml(accessories) {

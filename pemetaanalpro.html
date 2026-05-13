@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemetaan Alpro Telkom</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
+    <script src="scripts/tool-embed.js" defer></script>
+</head>
+
+<body class="tool-page">
+    <main class="page-shell">
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-network-wired"></i> Pemetaan Alpro</span>
+                    <h1 class="display-title">Pemetaan Alpro Telkom</h1>
+                    <p class="hero-description">
+                        Filter KML Alpro berdasar area polygon, buat laporan jumlah tiang/perangkat dan panjang kabel,
+                        serta ukur panjang jalan secara otomatis via Overpass API.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-database"></i> Database KML</span>
+                        <span class="status-pill"><i class="fas fa-vector-square"></i> Polygon Area</span>
+                        <span class="status-pill"><i class="fas fa-globe"></i> Overpass API</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Output</strong>
+                        <span>KML Visual & Excel Laporan</span>
+                        <p class="support-text">
+                            Semua proses potong/intersect kabel dan titik dilakukan langsung di browser Anda secara
+                            offline, kecuali fitur ukur jalan yang butuh internet.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Hitung</strong>
+                            <span>Panjang (m)</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Filter</strong>
+                            <span>Titik Alpro</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Rekap</strong>
+                            <span>Excel</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <div class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Input Data</span>
+                        <h2 class="card-title">Upload Database Alpro dan Polygon</h2>
+                        <p class="card-copy">Database KML harus berisi folder aset (misal: ODP, TIANG, ODC, KABEL).
+                            Polygon dapat satu atau banyak file.</p>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="upload-zone">
+                            <h3>Database Alpro (KML)</h3>
+                            <p class="upload-copy">Upload file KML master berisi seluruh alpro.</p>
+                            <div class="helper-row">
+                                <span class="status-pill"><i class="fas fa-database"></i> 1 File Master KML/KMZ</span>
+                            </div>
+                            <input type="file" id="dbInput" accept=".kml,.kmz">
+                            <p class="file-info" id="dbInfo">Belum ada database alpro.</p>
+                        </div>
+
+                        <div class="upload-zone">
+                            <h3>Polygon Area</h3>
+                            <p class="upload-copy">Upload satu atau banyak file KML polygon area.</p>
+                            <div class="helper-row">
+                                <span class="status-pill"><i class="fas fa-layer-group"></i> Bisa pilih banyak
+                                    file</span>
+                            </div>
+                            <input type="file" id="polygonInput" accept=".kml,.kmz" multiple>
+                            <p class="file-info" id="polygonInfo">Belum ada polygon area.</p>
+                        </div>
+                    </div>
+
+                    <div class="tool-actions" style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <button id="btnProsesKml" type="button" class="button-accent" disabled><i
+                                class="fas fa-eye"></i> Buat KML Visual</button>
+                        <button id="btnProsesLaporan" type="button" class="button-success" disabled><i
+                                class="fas fa-file-excel"></i> Buat Laporan Alpro</button>
+                        <button id="btnProsesJalan" type="button" class="button-warning" disabled><i
+                                class="fas fa-road"></i> Ukur Panjang Jalan (Internet)</button>
+                        <button id="showMapBtn" type="button" class="map-toggle" disabled><i
+                                class="fas fa-map-location-dot"></i> Tampilkan Peta</button>
+                    </div>
+
+                    <div id="processStatus" class="section-note">Upload database dan polygon untuk mulai memproses.
+                    </div>
+                    <div id="processError" class="error"></div>
+
+                    <div class="progress-container" id="progressContainer" style="display: none; margin-top: 1rem;">
+                        <div class="progress-bar-bg"
+                            style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                            <div id="progressBar"
+                                style="width: 0%; height: 100%; background: var(--neon-blue); transition: width 0.3s;">
+                            </div>
+                        </div>
+                        <p id="progressText" style="font-size: 0.85rem; margin-top: 0.5rem; color: #aaa;">Memproses...
+                        </p>
+                    </div>
+                </section>
+
+                <section class="card" id="mapCard" style="display: none;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Peta</span>
+                        <h2 class="card-title">Preview Visual Area & Aset</h2>
+                        <p class="card-copy">Menampilkan polygon area dan aset (Kabel, Tiang, dsb) yang ada di dalamnya.
+                        </p>
+                    </div>
+                    <div id="previewMap" class="map-container" style="height: 500px;"></div>
+                    <div class="map-controls">
+                        <button id="hideMapBtn" type="button" class="map-toggle"><i class="fas fa-eye-slash"></i>
+                            Sembunyikan Peta</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Hasil</span>
+                        <h2 class="card-title">Preview Log Proses</h2>
+                    </div>
+                    <div id="logOutput"
+                        style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap;">
+                        [Info] Sistem siap.
+                    </div>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Info Mode</span>
+                        <h2 class="card-title">Fungsi Utama</h2>
+                    </div>
+                    <ul>
+                        <li><strong>KML Visual</strong>: Mengekstrak semua titik dan kabel dari database yang masuk ke
+                            dalam tiap polygon area. Hasil berupa ZIP berisi KML per area.</li>
+                        <li><strong>Laporan Alpro</strong>: Menghitung jumlah titik (ODP/Tiang) dan panjang kabel yang
+                            memotong area. Output berupa Excel.</li>
+                        <li><strong>Panjang Jalan</strong>: Memanggil satelit OpenStreetMap (Overpass API) untuk
+                            mengukur total panjang jalan di tiap area. Output berupa Excel.</li>
+                    </ul>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <script>
+        const dbInput = document.getElementById('dbInput');
+        const polygonInput = document.getElementById('polygonInput');
+        const dbInfo = document.getElementById('dbInfo');
+        const polygonInfo = document.getElementById('polygonInfo');
+        const btnProsesKml = document.getElementById('btnProsesKml');
+        const btnProsesLaporan = document.getElementById('btnProsesLaporan');
+        const btnProsesJalan = document.getElementById('btnProsesJalan');
+        const showMapBtn = document.getElementById('showMapBtn');
+        const hideMapBtn = document.getElementById('hideMapBtn');
+        const processStatus = document.getElementById('processStatus');
+        const processError = document.getElementById('processError');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const logOutput = document.getElementById('logOutput');
+        const mapCard = document.getElementById('mapCard');
+
+        let dbPlacemarks = []; // Store parsed DB features
+        let dbStyles = ''; // Store original database styles and stylemaps
+        let polygonAreas = []; // Store parsed Polygons
+        let previewMap = null;
+        let mapLayers = L.featureGroup();
+
+        // Allowed folders based on Python script
+        const KATA_KUNCI_UTAMA = ['ODP', 'TIANG', 'ODC', 'KABEL'];
+
+        dbInput.addEventListener('change', handleDbChange);
+        polygonInput.addEventListener('change', handlePolygonChange);
+        btnProsesKml.addEventListener('click', () => jalankanProses('visual'));
+        btnProsesLaporan.addEventListener('click', () => jalankanProses('laporan'));
+        btnProsesJalan.addEventListener('click', () => jalankanProses('jalan'));
+        showMapBtn.addEventListener('click', renderMap);
+        hideMapBtn.addEventListener('click', () => { mapCard.style.display = 'none'; });
+
+        function logMsg(msg) {
+            logOutput.innerHTML += `\n${msg}`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function setStatus(msg, error = false) {
+            processStatus.textContent = msg;
+            if (error) {
+                processError.textContent = msg;
+                processStatus.style.display = 'none';
+                processError.style.display = 'block';
+            } else {
+                processError.textContent = '';
+                processStatus.style.display = 'block';
+                processError.style.display = 'none';
+            }
+        }
+
+        function updateBtnState() {
+            const ready = dbPlacemarks.length > 0 && polygonAreas.length > 0;
+            const polyReady = polygonAreas.length > 0;
+            btnProsesKml.disabled = !ready;
+            btnProsesLaporan.disabled = !ready;
+            btnProsesJalan.disabled = !polyReady; // Jalan only needs polygons
+            showMapBtn.disabled = !ready;
+        }
+
+        // --- FILE READING --- //
+
+        async function readKmlOrKmz(file) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.endsWith('.kmz')) {
+                const buffer = await file.arrayBuffer();
+                const zip = await JSZip.loadAsync(buffer);
+                const kmlName = Object.keys(zip.files).find(n => n.toLowerCase().endsWith('.kml'));
+                if (!kmlName) throw new Error(`${file.name} tidak mengandung file KML.`);
+                return zip.file(kmlName).async('string');
+            }
+            if (lowerName.endsWith('.kml')) {
+                return new Promise((res, rej) => {
+                    const reader = new FileReader();
+                    reader.onload = () => res(reader.result);
+                    reader.onerror = () => rej(new Error('Gagal baca file.'));
+                    reader.readAsText(file);
+                });
+            }
+            throw new Error('Format file harus KML atau KMZ.');
+        }
+
+        function parseXml(text, fileName) {
+            const doc = new DOMParser().parseFromString(text, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length) {
+                throw new Error(`${fileName} bukan KML valid.`);
+            }
+            return doc;
+        }
+
+        function parseCoordinates(coordStr) {
+            return String(coordStr || '').trim().split(/\s+/).map(c => {
+                const parts = c.split(',').map(Number);
+                if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+                    return [parts[0], parts[1]]; // lon, lat
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        // --- HANDLE DATABASE --- //
+
+        async function handleDbChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            setStatus('Membaca database alpro...');
+            logMsg(`[Info] Membaca ${file.name}... (bisa memakan waktu untuk file besar, jangan tutup browser)`);
+            try {
+                await new Promise(r => setTimeout(r, 50)); // Yield to let UI update
+                const text = await readKmlOrKmz(file);
+                const doc = parseXml(text, file.name);
+
+                // Extract all styles to preserve icons and line colors
+                const styleElements = Array.from(doc.getElementsByTagName('Style'));
+                const styleMapElements = Array.from(doc.getElementsByTagName('StyleMap'));
+                dbStyles = '';
+                styleElements.forEach(s => dbStyles += s.outerHTML + '\n');
+                styleMapElements.forEach(s => dbStyles += s.outerHTML + '\n');
+
+                dbPlacemarks = [];
+                const folders = doc.getElementsByTagName('Folder');
+                let processedPlacemarks = new Set();
+
+                for (let i = 0; i < folders.length; i++) {
+                    const folder = folders[i];
+                    const nameNode = folder.getElementsByTagName('name')[0];
+                    if (!nameNode) continue;
+
+                    const folderName = nameNode.textContent.trim();
+                    const folderNameUpper = folderName.toUpperCase();
+                    const isRelevant = KATA_KUNCI_UTAMA.some(k => folderNameUpper.includes(k));
+
+                    if (isRelevant) {
+                        const pms = folder.getElementsByTagName('Placemark');
+                        for (let j = 0; j < pms.length; j++) {
+                            const pm = pms[j];
+                            if (processedPlacemarks.has(pm)) continue;
+                            processedPlacemarks.add(pm);
+
+                            const pmNameNode = pm.getElementsByTagName('name')[0];
+                            const pmName = pmNameNode ? pmNameNode.textContent.trim() : 'Tanpa Nama';
+
+                            let geomType = null;
+                            let coords = [];
+                            let fullNodeXml = pm.outerHTML;
+
+                            const pointNode = pm.getElementsByTagName('Point')[0];
+                            if (pointNode) {
+                                const cNode = pointNode.getElementsByTagName('coordinates')[0];
+                                if (cNode) {
+                                    coords = parseCoordinates(cNode.textContent);
+                                    if (coords.length) geomType = 'Point';
+                                }
+                            }
+
+                            if (!geomType) {
+                                const lineNode = pm.getElementsByTagName('LineString')[0];
+                                if (lineNode) {
+                                    const cNode = lineNode.getElementsByTagName('coordinates')[0];
+                                    if (cNode) {
+                                        coords = parseCoordinates(cNode.textContent);
+                                        if (coords.length >= 2) geomType = 'LineString';
+                                    }
+                                }
+                            }
+
+                            if (geomType) {
+                                dbPlacemarks.push({
+                                    folderName: folderName, // Retain original matching folder name
+                                    name: pmName,
+                                    type: geomType,
+                                    coords: coords,
+                                    xml: fullNodeXml,
+                                    feature: geomType === 'Point' ? turf.point(coords[0]) : turf.lineString(coords)
+                                });
+                            }
+
+                            // Prevent freezing
+                            if (dbPlacemarks.length % 500 === 0) {
+                                setStatus(`Memproses... ${dbPlacemarks.length} aset ditemukan.`);
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                        }
+                    }
+                }
+
+                dbInfo.textContent = `${file.name} - ${dbPlacemarks.length} aset (Point/Line) ditemukan.`;
+                logMsg(`[Info] Berhasil ekstrak ${dbPlacemarks.length} aset dari database.`);
+                setStatus('Database siap.');
+                updateBtnState();
+            } catch (err) {
+                setStatus('Gagal membaca database', true);
+                logMsg(`[Error] ${err.message}`);
+            }
+        }
+
+        // --- HANDLE POLYGONS --- //
+
+        async function handlePolygonChange(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            setStatus('Membaca polygon...');
+            polygonAreas = [];
+            let totalPolys = 0;
+
+            for (const file of files) {
+                logMsg(`[Info] Membaca polygon ${file.name}...`);
+                try {
+                    const text = await readKmlOrKmz(file);
+                    const doc = parseXml(text, file.name);
+
+                    const styleElements = Array.from(doc.getElementsByTagName('Style'));
+                    const styleMapElements = Array.from(doc.getElementsByTagName('StyleMap'));
+                    let polyStyles = '';
+                    styleElements.forEach(s => polyStyles += s.outerHTML + '\n');
+                    styleMapElements.forEach(s => polyStyles += s.outerHTML + '\n');
+
+                    const placemarks = Array.from(doc.getElementsByTagName('Placemark'));
+
+                    placemarks.forEach((pm, idx) => {
+                        const nameNode = Array.from(pm.childNodes).find(n => n.localName === 'name');
+                        const areaName = nameNode ? nameNode.textContent.trim() : file.name.replace(/\.[^.]+$/, '');
+
+                        const polyNodes = Array.from(pm.getElementsByTagName('Polygon'));
+                        if (polyNodes.length === 0) return;
+
+                        const rings = [];
+                        polyNodes.forEach(poly => {
+                            const outer = poly.getElementsByTagName('outerBoundaryIs')[0];
+                            if (outer) {
+                                const cNode = outer.getElementsByTagName('coordinates')[0];
+                                if (cNode) {
+                                    let ringCoords = parseCoordinates(cNode.textContent);
+                                    // Ensure closed ring
+                                    if (ringCoords.length >= 3) {
+                                        const first = ringCoords[0];
+                                        const last = ringCoords[ringCoords.length - 1];
+                                        if (first[0] !== last[0] || first[1] !== last[1]) {
+                                            ringCoords.push([...first]);
+                                        }
+                                        if (ringCoords.length >= 4) rings.push(ringCoords);
+                                    }
+                                }
+                            }
+                        });
+
+                        if (rings.length > 0) {
+                            const feature = rings.length === 1 ? turf.polygon([rings[0]]) : turf.multiPolygon([rings]);
+                            polygonAreas.push({
+                                areaName: `${areaName}_${totalPolys + 1}`,
+                                feature: feature,
+                                xml: pm.outerHTML,
+                                styleStr: polyStyles
+                            });
+                            totalPolys++;
+                        }
+                    });
+                } catch (err) {
+                    logMsg(`[Error] Gagal baca ${file.name}: ${err.message}`);
+                }
+            }
+
+            polygonInfo.textContent = `${files.length} file - ${polygonAreas.length} polygon area.`;
+            setStatus('Polygon siap.');
+            updateBtnState();
+        }
+
+        // --- PROSES UTAMA --- //
+
+        async function jalankanProses(tipe) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            btnProsesKml.disabled = true;
+            btnProsesLaporan.disabled = true;
+            btnProsesJalan.disabled = true;
+
+            try {
+                if (tipe === 'visual') {
+                    await prosesKmlVisual();
+                } else if (tipe === 'laporan') {
+                    await prosesLaporan();
+                } else if (tipe === 'jalan') {
+                    await prosesJalan();
+                }
+            } catch (err) {
+                setStatus('Terjadi kesalahan saat memproses.', true);
+                logMsg(`[Error] ${err.message}`);
+            }
+
+            progressContainer.style.display = 'none';
+            updateBtnState();
+        }
+
+        async function prosesKmlVisual() {
+            logMsg(`\n=== MEMBUAT KML FILTER VISUAL ===`);
+            const zip = new JSZip();
+            let fileCount = 0;
+
+            for (let i = 0; i < polygonAreas.length; i++) {
+                const area = polygonAreas[i];
+                progressBar.style.width = `${((i + 1) / polygonAreas.length) * 100}%`;
+                progressText.textContent = `Memproses area: ${area.areaName}...`;
+                logMsg(`[*] Memproses Area: ${area.areaName}...`);
+
+                // Allow UI to update
+                await new Promise(r => setTimeout(r, 10));
+
+                let groupedPlacemarks = {};
+
+                let jumlah = 0;
+                for (const aset of dbPlacemarks) {
+                    let inside = false;
+                    try {
+                        if (aset.type === 'Point') {
+                            inside = turf.booleanPointInPolygon(aset.feature, area.feature);
+                        } else if (aset.type === 'LineString') {
+                            inside = turf.booleanIntersects(aset.feature, area.feature);
+                        }
+                    } catch (e) { }
+
+                    if (inside) {
+                        if (!groupedPlacemarks[aset.folderName]) {
+                            groupedPlacemarks[aset.folderName] = [];
+                        }
+                        groupedPlacemarks[aset.folderName].push(aset.xml);
+                        jumlah++;
+                    }
+                }
+
+                if (jumlah > 0) {
+                    let kmlFolders = '';
+                    for (const folder in groupedPlacemarks) {
+                        if (groupedPlacemarks[folder].length > 0) {
+                            kmlFolders += `
+                            <Folder>
+                                <name>${folder}</name>
+                                ${groupedPlacemarks[folder].join('\n')}
+                            </Folder>`;
+                        }
+                    }
+
+                    const outKml = `<?xml version="1.0" encoding="UTF-8"?>
+                    <kml xmlns="http://www.opengis.net/kml/2.2">
+                        <Document>
+                            <name>Visual_${area.areaName}</name>
+                            ${dbStyles}
+                            ${area.styleStr}
+                            <Folder>
+                                <name>Polygon</name>
+                                ${area.xml}
+                            </Folder>
+                            ${kmlFolders}
+                        </Document>
+                    </kml>`;
+
+                    zip.file(`Visual_${area.areaName}.kml`, outKml);
+                    fileCount++;
+                    logMsg(`  -> Selesai! ${jumlah} aset diekstrak ke KML.`);
+                } else {
+                    logMsg(`  -> Kosong. Melewati area ini.`);
+                }
+            }
+
+            if (fileCount > 0) {
+                logMsg(`[Info] Menyimpan ZIP file...`);
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "Hasil_Visual_KML.zip");
+                setStatus(`Selesai mengekstrak ${fileCount} file KML Visual.`);
+            } else {
+                setStatus(`Tidak ada aset yang bersinggungan dengan semua area.`);
+            }
+        }
+
+        async function prosesLaporan() {
+            logMsg(`\n=== MEMBUAT LAPORAN EXCEL ===`);
+            const wb = XLSX.utils.book_new();
+            let totalAset = 0;
+
+            for (let i = 0; i < polygonAreas.length; i++) {
+                const area = polygonAreas[i];
+                progressBar.style.width = `${((i + 1) / polygonAreas.length) * 100}%`;
+                progressText.textContent = `Menghitung area: ${area.areaName}...`;
+                logMsg(`[*] Menghitung Area: ${area.areaName}...`);
+
+                await new Promise(r => setTimeout(r, 10));
+
+                let dataRows = [];
+
+                for (const aset of dbPlacemarks) {
+                    let tipe_aset = "";
+                    let panjang_meter = 0;
+                    let lat_aset = 0, lon_aset = 0;
+
+                    try {
+                        if (aset.type === 'Point') {
+                            if (turf.booleanPointInPolygon(aset.feature, area.feature)) {
+                                tipe_aset = "Titik/Perangkat";
+                                lon_aset = aset.coords[0][0];
+                                lat_aset = aset.coords[0][1];
+                            }
+                        } else if (aset.type === 'LineString') {
+                            if (turf.booleanIntersects(aset.feature, area.feature)) {
+                                tipe_aset = "Kabel";
+                                // Intersect to get length inside polygon
+                                const intersection = turf.lineIntersect(aset.feature, area.feature);
+                                // turf.lineIntersect only gives points. To get the cut lines, we need turf.lineSplit
+                                // Note: For a simpler approach equivalent to geopandas intersection, we can use booleanIntersects to filter, 
+                                // and lineSplit or bboxClip. bboxClip is faster.
+                                // Since Turf doesn't have a direct 'line clip by polygon' that returns lengths easily without complex lineSplit logic,
+                                // we'll use turf.lineSplit with the polygon boundary.
+                                // A common workaround is lineIntersect and splitting, but for robustness, if it intersects, we can approximate 
+                                // or use turf.length of the original if it's mostly inside, but exact length needs splitting.
+                                // Since we need precise length inside:
+                                try {
+                                    const polyLines = turf.polygonToLine(area.feature);
+                                    const splitLines = turf.lineSplit(aset.feature, polyLines);
+                                    let insideLen = 0;
+                                    if (splitLines.features.length > 0) {
+                                        splitLines.features.forEach(seg => {
+                                            const midPoint = turf.midpoint(seg.geometry.coordinates[0], seg.geometry.coordinates[seg.geometry.coordinates.length - 1]);
+                                            if (turf.booleanPointInPolygon(midPoint, area.feature)) {
+                                                insideLen += turf.length(seg, { units: 'meters' });
+                                            }
+                                        });
+                                    } else {
+                                        // If no splits, it's either fully inside or fully outside. Since it intersects/inside, it's fully inside.
+                                        insideLen = turf.length(aset.feature, { units: 'meters' });
+                                    }
+                                    panjang_meter = insideLen;
+                                } catch (e) {
+                                    // Fallback if split fails
+                                    panjang_meter = turf.length(aset.feature, { units: 'meters' });
+                                }
+                                lon_aset = aset.coords[0][0];
+                                lat_aset = aset.coords[0][1];
+                            }
+                        }
+                    } catch (e) { }
+
+                    if (tipe_aset !== "") {
+                        dataRows.push({
+                            'Nama Alpro / Kabel': aset.name,
+                            'Kategori Folder': aset.folderName,
+                            'Jenis': tipe_aset,
+                            'Panjang (Meter)': tipe_aset === 'Kabel' ? (panjang_meter > 0 ? panjang_meter.toFixed(2) : '0') : '-',
+                            'Latitude': lat_aset.toFixed(6),
+                            'Longitude': lon_aset.toFixed(6)
+                        });
+                        totalAset++;
+                    }
+                }
+
+                if (dataRows.length > 0) {
+                    // Sort by Kategori Folder then Jenis
+                    dataRows.sort((a, b) => a['Kategori Folder'].localeCompare(b['Kategori Folder']) || a['Jenis'].localeCompare(b['Jenis']));
+                    const ws = XLSX.utils.json_to_sheet(dataRows);
+
+                    // Sheet name max 31 chars
+                    let sheetName = area.areaName.substring(0, 31);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                    logMsg(`  -> ${dataRows.length} aset tercatat.`);
+                } else {
+                    logMsg(`  -> Kosong.`);
+                }
+            }
+
+            if (wb.SheetNames.length > 0) {
+                logMsg(`[Info] Menyimpan Laporan_Alpro.xlsx...`);
+                XLSX.writeFile(wb, "Laporan_Alpro.xlsx");
+                setStatus(`Selesai membuat laporan. Total ${totalAset} baris data diekstrak.`);
+            } else {
+                setStatus(`Tidak ada data untuk dibuatkan laporan.`);
+            }
+        }
+
+        async function prosesJalan() {
+            logMsg(`\n=== MENGUKUR JALAN OTOMATIS (VIA OVERPASS) ===`);
+            const wb = XLSX.utils.book_new();
+
+            for (let i = 0; i < polygonAreas.length; i++) {
+                const area = polygonAreas[i];
+                progressBar.style.width = `${((i + 1) / polygonAreas.length) * 100}%`;
+                progressText.textContent = `Menarik jalan untuk area: ${area.areaName}...`;
+                logMsg(`[*] Ekstrak jalan: ${area.areaName}...`);
+
+                const bbox = turf.bbox(area.feature); // minX(lon), minY(lat), maxX(lon), maxY(lat)
+                const min_lon = bbox[0];
+                const min_lat = bbox[1];
+                const max_lon = bbox[2];
+                const max_lat = bbox[3];
+
+                const query = `
+                [out:json][timeout:25];
+                way["highway"](${min_lat},${min_lon},${max_lat},${max_lon});
+                out geom;
+                `;
+
+                const overpassUrl = "https://overpass-api.de/api/interpreter";
+                let dataOsm = null;
+                let success = false;
+
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    logMsg(`    -> Menghubungi Overpass API (Percobaan ${attempt + 1})...`);
+                    try {
+                        const response = await fetch(overpassUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'data=' + encodeURIComponent(query)
+                        });
+                        if (response.ok) {
+                            dataOsm = await response.json();
+                            success = true;
+                            break;
+                        } else if (response.status === 429) {
+                            logMsg(`    [!] Server sibuk (429). Tunggu 5 detik...`);
+                            await new Promise(r => setTimeout(r, 5000));
+                        } else {
+                            logMsg(`    [!] Server error ${response.status}. Tunggu 3 detik...`);
+                            await new Promise(r => setTimeout(r, 3000));
+                        }
+                    } catch (e) {
+                        logMsg(`    [!] Gagal koneksi. Tunggu 3 detik...`);
+                        await new Promise(r => setTimeout(r, 3000));
+                    }
+                }
+
+                if (!success || !dataOsm) {
+                    logMsg(`    [!] Lewati area ini karena gagal API.`);
+                    continue;
+                }
+
+                let dataJalanRows = [];
+                let total_panjang_area = 0;
+
+                if (dataOsm.elements) {
+                    for (const el of dataOsm.elements) {
+                        if (el.type === 'way' && el.geometry && el.geometry.length >= 2) {
+                            const tags = el.tags || {};
+                            const nama_jalan = tags.name || 'Jalan Tanpa Nama';
+                            const coords = el.geometry.map(g => [g.lon, g.lat]);
+
+                            const wayLine = turf.lineString(coords);
+                            if (turf.booleanIntersects(wayLine, area.feature)) {
+                                let panjang_meter = 0;
+                                try {
+                                    const polyLines = turf.polygonToLine(area.feature);
+                                    const splitLines = turf.lineSplit(wayLine, polyLines);
+                                    if (splitLines.features.length > 0) {
+                                        splitLines.features.forEach(seg => {
+                                            const midPoint = turf.midpoint(seg.geometry.coordinates[0], seg.geometry.coordinates[seg.geometry.coordinates.length - 1]);
+                                            if (turf.booleanPointInPolygon(midPoint, area.feature)) {
+                                                panjang_meter += turf.length(seg, { units: 'meters' });
+                                            }
+                                        });
+                                    } else {
+                                        panjang_meter = turf.length(wayLine, { units: 'meters' });
+                                    }
+                                } catch (e) {
+                                    panjang_meter = turf.length(wayLine, { units: 'meters' });
+                                }
+
+                                if (panjang_meter > 0) {
+                                    total_panjang_area += panjang_meter;
+                                    dataJalanRows.push({
+                                        'Nama Ruas Jalan': nama_jalan,
+                                        'Panjang di dalam area (Meter)': panjang_meter.toFixed(2)
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (dataJalanRows.length > 0) {
+                    dataJalanRows.sort((a, b) => a['Nama Ruas Jalan'].localeCompare(b['Nama Ruas Jalan']));
+                    dataJalanRows.push({
+                        'Nama Ruas Jalan': 'TOTAL KESELURUHAN AREA:',
+                        'Panjang di dalam area (Meter)': total_panjang_area.toFixed(2)
+                    });
+
+                    const ws = XLSX.utils.json_to_sheet(dataJalanRows);
+                    let sheetName = area.areaName.substring(0, 31);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                    logMsg(`    -> Berhasil! Total: ${total_panjang_area.toFixed(2)} meter.`);
+                } else {
+                    logMsg(`    -> Tidak ada jalan ditemukan.`);
+                }
+
+                // Sleep between requests to respect Overpass rules
+                if (i < polygonAreas.length - 1) {
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+
+            if (wb.SheetNames.length > 0) {
+                logMsg(`[Info] Menyimpan Panjang_Jalan.xlsx...`);
+                XLSX.writeFile(wb, "Panjang_Jalan.xlsx");
+                setStatus(`Selesai mengukur jalan.`);
+            } else {
+                setStatus(`Tidak ada hasil panjang jalan.`);
+            }
+        }
+
+        // --- MAP RENDERER --- //
+
+        function renderMap() {
+            mapCard.style.display = 'block';
+            if (!previewMap) {
+                previewMap = L.map('previewMap').setView([-2.548926, 118.0148634], 5); // Default Indonesia
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                }).addTo(previewMap);
+            }
+
+            mapLayers.clearLayers();
+
+            let hasBounds = false;
+            let bounds = L.latLngBounds();
+
+            // Render Polygons
+            polygonAreas.forEach(area => {
+                const layer = L.geoJSON(area.feature, {
+                    style: { color: '#00f89d', weight: 2, fillOpacity: 0.2 }
+                });
+                layer.bindPopup(`<b>${area.areaName}</b>`);
+                layer.addTo(mapLayers);
+                bounds.extend(layer.getBounds());
+                hasBounds = true;
+            });
+
+            // If we have DB data and Polygons, just show what's inside the bounding box
+            // Since rendering thousands of global points could crash the browser, 
+            // we will only render points that are near the polygon bounds.
+            if (dbPlacemarks.length > 0 && hasBounds) {
+                const boundingBbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+                const bboxPoly = turf.bboxPolygon(boundingBbox);
+
+                let renderedPts = 0;
+                dbPlacemarks.forEach(aset => {
+                    try {
+                        let render = false;
+                        if (aset.type === 'Point') {
+                            render = turf.booleanPointInPolygon(aset.feature, bboxPoly);
+                        } else {
+                            render = turf.booleanIntersects(aset.feature, bboxPoly);
+                        }
+
+                        if (render) {
+                            const layer = L.geoJSON(aset.feature, {
+                                pointToLayer: (feat, latlng) => {
+                                    return L.circleMarker(latlng, {
+                                        radius: 4,
+                                        fillColor: '#b24bf3',
+                                        color: '#fff',
+                                        weight: 1,
+                                        opacity: 1,
+                                        fillOpacity: 0.8
+                                    });
+                                },
+                                style: { color: '#b24bf3', weight: 3 }
+                            });
+                            layer.bindPopup(`${aset.folderName}<br><b>${aset.name}</b>`);
+                            layer.addTo(mapLayers);
+                            renderedPts++;
+                        }
+                    } catch (e) { }
+                });
+                logMsg(`[Map] Menampilkan ${renderedPts} aset di sekitar area polygon.`);
+            }
+
+            mapLayers.addTo(previewMap);
+            if (hasBounds) {
+                previewMap.fitBounds(bounds, { padding: [20, 20] });
+            }
+        }
+
+        // Helper for file download
+        function saveAs(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        }
+
+    </script>
+</body>
+
+</html>
