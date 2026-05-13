@@ -376,6 +376,7 @@
             setStatus('Membaca polygon...');
             polygonAreas = [];
             let totalPolys = 0;
+            let usedNames = {};
 
             for (const file of files) {
                 logMsg(`[Info] Membaca polygon ${file.name}...`);
@@ -419,9 +420,19 @@
                         });
 
                         if (rings.length > 0) {
+                            let finalName = areaName;
+                            if (usedNames[finalName]) {
+                                let suffixCount = 1;
+                                while (usedNames[`${areaName}_${suffixCount}`]) {
+                                    suffixCount++;
+                                }
+                                finalName = `${areaName}_${suffixCount}`;
+                            }
+                            usedNames[finalName] = true;
+
                             const feature = rings.length === 1 ? turf.polygon([rings[0]]) : turf.multiPolygon([rings]);
                             polygonAreas.push({
-                                areaName: `${areaName}_${totalPolys + 1}`,
+                                areaName: finalName,
                                 feature: feature,
                                 xml: pm.outerHTML,
                                 styleStr: polyStyles
@@ -516,7 +527,7 @@
                     const outKml = `<?xml version="1.0" encoding="UTF-8"?>
                     <kml xmlns="http://www.opengis.net/kml/2.2">
                         <Document>
-                            <name>Visual_${area.areaName}</name>
+                            <name>${area.areaName}</name>
                             ${dbStyles}
                             ${area.styleStr}
                             <Folder>
@@ -527,7 +538,7 @@
                         </Document>
                     </kml>`;
 
-                    zip.file(`Visual_${area.areaName}.kml`, outKml);
+                    zip.file(`${area.areaName}.kml`, outKml);
                     fileCount++;
                     logMsg(`  -> Selesai! ${jumlah} aset diekstrak ke KML.`);
                 } else {
