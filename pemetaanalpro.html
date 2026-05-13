@@ -549,6 +549,7 @@
             logMsg(`\n=== MEMBUAT LAPORAN EXCEL ===`);
             const wb = XLSX.utils.book_new();
             let totalAset = 0;
+            let allDataRows = [];
 
             for (let i = 0; i < polygonAreas.length; i++) {
                 const area = polygonAreas[i];
@@ -558,7 +559,7 @@
 
                 await new Promise(r => setTimeout(r, 10));
 
-                let dataRows = [];
+                let countArea = 0;
 
                 for (const aset of dbPlacemarks) {
                     let tipe_aset = "";
@@ -575,16 +576,6 @@
                         } else if (aset.type === 'LineString') {
                             if (turf.booleanIntersects(aset.feature, area.feature)) {
                                 tipe_aset = "Kabel";
-                                // Intersect to get length inside polygon
-                                const intersection = turf.lineIntersect(aset.feature, area.feature);
-                                // turf.lineIntersect only gives points. To get the cut lines, we need turf.lineSplit
-                                // Note: For a simpler approach equivalent to geopandas intersection, we can use booleanIntersects to filter, 
-                                // and lineSplit or bboxClip. bboxClip is faster.
-                                // Since Turf doesn't have a direct 'line clip by polygon' that returns lengths easily without complex lineSplit logic,
-                                // we'll use turf.lineSplit with the polygon boundary.
-                                // A common workaround is lineIntersect and splitting, but for robustness, if it intersects, we can approximate 
-                                // or use turf.length of the original if it's mostly inside, but exact length needs splitting.
-                                // Since we need precise length inside:
                                 try {
                                     const polyLines = turf.polygonToLine(area.feature);
                                     const splitLines = turf.lineSplit(aset.feature, polyLines);
@@ -597,12 +588,10 @@
                                             }
                                         });
                                     } else {
-                                        // If no splits, it's either fully inside or fully outside. Since it intersects/inside, it's fully inside.
                                         insideLen = turf.length(aset.feature, { units: 'meters' });
                                     }
                                     panjang_meter = insideLen;
                                 } catch (e) {
-                                    // Fallback if split fails
                                     panjang_meter = turf.length(aset.feature, { units: 'meters' });
                                 }
                                 lon_aset = aset.coords[0][0];
@@ -612,30 +601,32 @@
                     } catch (e) { }
 
                     if (tipe_aset !== "") {
-                        dataRows.push({
+                        allDataRows.push({
                             'Nama Alpro / Kabel': aset.name,
                             'Kategori Folder': aset.folderName,
                             'Jenis': tipe_aset,
                             'Panjang (Meter)': tipe_aset === 'Kabel' ? (panjang_meter > 0 ? panjang_meter.toFixed(2) : '0') : '-',
                             'Latitude': lat_aset.toFixed(6),
-                            'Longitude': lon_aset.toFixed(6)
+                            'Longitude': lon_aset.toFixed(6),
+                            'Nama Ruas Jalan': area.areaName
                         });
                         totalAset++;
+                        countArea++;
                     }
                 }
 
-                if (dataRows.length > 0) {
-                    // Sort by Kategori Folder then Jenis
-                    dataRows.sort((a, b) => a['Kategori Folder'].localeCompare(b['Kategori Folder']) || a['Jenis'].localeCompare(b['Jenis']));
-                    const ws = XLSX.utils.json_to_sheet(dataRows);
-
-                    // Sheet name max 31 chars
-                    let sheetName = area.areaName.substring(0, 31);
-                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                    logMsg(`  -> ${dataRows.length} aset tercatat.`);
+                if (countArea > 0) {
+                    logMsg(`  -> ${countArea} aset tercatat.`);
                 } else {
                     logMsg(`  -> Kosong.`);
                 }
+            }
+
+            if (allDataRows.length > 0) {
+                // Sort by Nama Ruas Jalan, Kategori Folder then Jenis
+                allDataRows.sort((a, b) => a['Nama Ruas Jalan'].localeCompare(b['Nama Ruas Jalan']) || a['Kategori Folder'].localeCompare(b['Kategori Folder']) || a['Jenis'].localeCompare(b['Jenis']));
+                const ws = XLSX.utils.json_to_sheet(allDataRows);
+                XLSX.utils.book_append_sheet(wb, ws, "Semua Area");
             }
 
             if (wb.SheetNames.length > 0) {
@@ -754,6 +745,12 @@
 
                     const ws = XLSX.utils.json_to_sheet(dataJalanRows);
                     let sheetName = area.areaName.substring(0, 31);
+                    let sheetCounter = 1;
+                    while (wb.SheetNames.includes(sheetName)) {
+                        let suffix = "_" + sheetCounter;
+                        sheetName = area.areaName.substring(0, 31 - suffix.length) + suffix;
+                        sheetCounter++;
+                    }
                     XLSX.utils.book_append_sheet(wb, ws, sheetName);
                     logMsg(`    -> Berhasil! Total: ${total_panjang_area.toFixed(2)} meter.`);
                 } else {
