@@ -40,6 +40,7 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel paginasi, peta |
 | `splitline.html` | Pecah jalur KML/KMZ menjadi beberapa segmen | `.kml`, `.kmz`, `.xml` | KML gabungan atau file segmen terpisah |
 | `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
+| `pemetaanalpro.html` | Filter Alpro berdasar Polygon, buat Laporan, dan Ukur Jalan | `.kml`, `.kmz` | ZIP KML Visual, Excel Laporan |
 
 ## Ringkasan Fitur Per Modul
 
@@ -196,6 +197,25 @@ Catatan:
 - Saat routing OSRM gagal, tool memiliki fallback berbasis jarak lurus dengan faktor pengali.
 - File hasil diunduh sebagai `hasil_jarak_jalan_alat_produksi.xlsx`.
 
+### 9. Pemetaan Alpro (`pemetaanalpro.html`)
+
+Tool ini menyaring (filter) material Alpro dari database KML berdasarkan batas polygon, serta membuat laporan Excel dan menghitung panjang jalan secara otomatis.
+
+Fitur penting:
+
+- Input database KML/KMZ yang berisi point (titik) dan linestring (kabel).
+- Input satu atau banyak file polygon `KML`/`KMZ`.
+- KML Visual: Mengekstrak semua titik dan kabel yang masuk ke dalam tiap polygon area beserta mempertahankan style dan icon aslinya, lalu dibundel dalam satu file ZIP.
+- Laporan Alpro: Menghitung presisi jumlah aset dan panjang kabel riil (memotong sesuai batas bidang polygon) dengan keluaran file Excel.
+- Panjang Jalan: Menarik data satelit OpenStreetMap (Overpass API) untuk mengkalkulasi panjang jalan yang berada di dalam area polygon.
+- Visualisasi Peta: Menampilkan polygon area beserta seluruh aset database yang telah tersaring secara interaktif.
+
+Catatan:
+
+- Fitur proses KML Visual dan Laporan Alpro berjalan offline di browser menggunakan Turf.js.
+- Pemrosesan database KML berukuran sangat besar memakai chunking asinkron untuk mencegah browser macet (freeze).
+- Fitur Ukur Panjang Jalan membutuhkan koneksi internet untuk menarik data dari Overpass API.
+
 ## Arsitektur Frontend
 
 Repositori ini sekarang memakai shell frontend sederhana agar semua tool terasa seperti satu aplikasi utuh walau tetap berbasis halaman HTML terpisah.
@@ -263,6 +283,7 @@ Semua dependensi frontend dimuat langsung dari CDN.
 |-- asesoristiang.html
 |-- splitline.html
 |-- ukurallpro.html
+|-- pemetaanalpro.html
 |-- kml.png
 |-- README.md
 |-- scripts/
