@@ -9,6 +9,7 @@
         if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="styles/kmltools-pro.css">
     <script src="scripts/tool-embed.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js" defer></script>
@@ -218,6 +219,7 @@
                     <div class="tool-actions">
                         <button id="processBtn" type="button"><i class="fas fa-wand-magic-sparkles"></i> Proses Rename</button>
                         <button id="resetBtn" type="button" class="button-muted"><i class="fas fa-rotate-left"></i> Reset Opsi</button>
+                        <button id="showMapBtn" type="button" class="map-toggle" style="display: none;"><i class="fas fa-map-location-dot"></i> Tampilkan Peta</button>
                     </div>
 
                     <div id="downloadSection" class="folder-form" style="display:none;">
@@ -252,6 +254,18 @@
                             <strong>Tetap sama</strong>
                             <span id="summaryUnchanged">0</span>
                         </div>
+                    </div>
+                </section>
+
+                <section class="card" id="mapCard" style="display: none; margin-top: 1rem; margin-bottom: 1rem;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Peta</span>
+                        <h2 class="card-title">Peta Lokasi Aset</h2>
+                        <p class="card-copy" id="mapCaption">Menampilkan lokasi item sebelum dan sesudah di-rename.</p>
+                    </div>
+                    <div id="previewMap" class="map-container" style="height: 400px;"></div>
+                    <div class="map-controls">
+                        <button id="hideMapBtn" type="button" class="map-toggle"><i class="fas fa-eye-slash"></i> Sembunyikan Peta</button>
                     </div>
                 </section>
 
@@ -327,6 +341,7 @@ NODE-{n} | {name}</pre>
         </section>
     </main>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const MAX_PREVIEW_ROWS = 200;
         const DEFAULT_DOWNLOAD_NAME = 'hasil_rename_massal';
@@ -357,6 +372,15 @@ NODE-{n} | {name}</pre>
         const nameTemplateInput = document.getElementById('nameTemplate');
         const startNumberInput = document.getElementById('startNumber');
         const padLengthInput = document.getElementById('padLength');
+
+        const showMapBtn = document.getElementById('showMapBtn');
+        const hideMapBtn = document.getElementById('hideMapBtn');
+        const mapCard = document.getElementById('mapCard');
+        const mapCaption = document.getElementById('mapCaption');
+
+        let previewMap = null;
+        let mapLayers = L.featureGroup();
+        const MAX_MAP_RENDER = 2000;
 
         function detectFormat(fileName) {
             const lowerName = fileName.toLowerCase();
@@ -439,6 +463,80 @@ NODE-{n} | {name}</pre>
             return text.includes('\r\n') ? '\r\n' : '\n';
         }
 
+        function parseCoordinates(coordStr) {
+            return String(coordStr || '').trim().split(/\s+/).map(c => {
+                const parts = c.split(',').map(Number);
+                if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+                    return [parts[0], parts[1]]; // [lon, lat]
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        function extractCoordsFromPlacemark(pm) {
+            let geomType = null;
+            let coords = [];
+
+            // Point
+            const pointNode = pm.getElementsByTagName('Point')[0];
+            if (pointNode) {
+                const cNode = pointNode.getElementsByTagName('coordinates')[0];
+                if (cNode) {
+                    coords = parseCoordinates(cNode.textContent);
+                    if (coords.length) geomType = 'Point';
+                }
+            }
+
+            // LineString
+            if (!geomType) {
+                const lineNode = pm.getElementsByTagName('LineString')[0];
+                if (lineNode) {
+                    const cNode = lineNode.getElementsByTagName('coordinates')[0];
+                    if (cNode) {
+                        coords = parseCoordinates(cNode.textContent);
+                        if (coords.length >= 2) geomType = 'LineString';
+                    }
+                }
+            }
+
+            // Polygon
+            if (!geomType) {
+                const polyNode = pm.getElementsByTagName('Polygon')[0];
+                if (polyNode) {
+                    const outer = polyNode.getElementsByTagName('outerBoundaryIs')[0];
+                    if (outer) {
+                        const cNode = outer.getElementsByTagName('coordinates')[0];
+                        if (cNode) {
+                            coords = parseCoordinates(cNode.textContent);
+                            if (coords.length >= 3) geomType = 'Polygon';
+                        }
+                    }
+                }
+            }
+
+            return { geomType, coords };
+        }
+
+        function findCoordinateIndices(headers) {
+            const latKeywords = ['latitude', 'lat', 'y', 'lintang'];
+            const lonKeywords = ['longitude', 'lon', 'lng', 'long', 'x', 'bujur'];
+
+            let latIndex = -1;
+            let lonIndex = -1;
+
+            for (let i = 0; i < headers.length; i++) {
+                const h = headers[i].toLowerCase().trim();
+                if (latIndex === -1 && latKeywords.some(kw => h === kw || h.includes(kw))) {
+                    latIndex = i;
+                }
+                if (lonIndex === -1 && lonKeywords.some(kw => h === kw || h.includes(kw))) {
+                    lonIndex = i;
+                }
+            }
+
+            return { latIndex, lonIndex };
+        }
+
         function readFileAsText(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -474,9 +572,12 @@ NODE-{n} | {name}</pre>
             const entries = placemarkNodes.map((placemarkNode, index) => {
                 const directNameNode = findDirectChildByLocalName(placemarkNode, 'name');
                 const fallbackNameNode = directNameNode || findFirstDescendantByLocalName(placemarkNode, 'name');
+                const { geomType, coords } = extractCoordsFromPlacemark(placemarkNode);
                 return {
                     index,
-                    originalName: getNodeText(fallbackNameNode)
+                    originalName: getNodeText(fallbackNameNode),
+                    geomType,
+                    coords
                 };
             });
 
@@ -528,6 +629,7 @@ NODE-{n} | {name}</pre>
 
             const records = [];
             const entries = [];
+            const { latIndex, lonIndex } = findCoordinateIndices(headers);
 
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
@@ -538,10 +640,24 @@ NODE-{n} | {name}</pre>
 
                 const cells = parseCSVLine(line);
                 records.push({ type: 'data', cells });
+
+                let coords = null;
+                let geomType = null;
+                if (latIndex !== -1 && lonIndex !== -1) {
+                    const lat = parseFloat(cells[latIndex]);
+                    const lon = parseFloat(cells[lonIndex]);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        coords = [[lon, lat]];
+                        geomType = 'Point';
+                    }
+                }
+
                 entries.push({
                     index: entries.length,
                     recordIndex: records.length - 1,
-                    originalName: cells[nameIndex] || ''
+                    originalName: cells[nameIndex] || '',
+                    geomType,
+                    coords
                 });
             }
 
@@ -616,16 +732,32 @@ NODE-{n} | {name}</pre>
                 throw new Error("Kolom 'name' tidak ditemukan dalam file Excel");
             }
 
+            const { latIndex, lonIndex } = findCoordinateIndices(headers);
+
             const entries = [];
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i] || [];
                 if (!row.some(cell => String(cell ?? '').trim() !== '')) {
                     continue;
                 }
+
+                let coords = null;
+                let geomType = null;
+                if (latIndex !== -1 && lonIndex !== -1) {
+                    const lat = parseFloat(row[latIndex]);
+                    const lon = parseFloat(row[lonIndex]);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        coords = [[lon, lat]];
+                        geomType = 'Point';
+                    }
+                }
+
                 entries.push({
                     index: entries.length,
                     rowIndex: i,
-                    originalName: String(row[nameIndex] ?? '')
+                    originalName: String(row[nameIndex] ?? ''),
+                    geomType,
+                    coords
                 });
             }
 
@@ -902,6 +1034,88 @@ NODE-{n} | {name}</pre>
             downloadSection.style.display = 'none';
         }
 
+        function renderMap() {
+            if (!loadedFile) return;
+
+            mapCard.style.display = 'block';
+            if (!previewMap) {
+                previewMap = L.map('previewMap').setView([-2.548926, 118.0148634], 5); // Default Indonesia
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                }).addTo(previewMap);
+            }
+
+            mapLayers.clearLayers();
+
+            let bounds = L.latLngBounds();
+            let hasCoords = false;
+
+            const currentPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
+            const itemsWithCoords = currentPreview.filter(e => e.geomType && e.coords && e.coords.length > 0);
+
+            const displayCount = Math.min(itemsWithCoords.length, MAX_MAP_RENDER);
+            if (mapCaption) {
+                mapCaption.textContent = itemsWithCoords.length > MAX_MAP_RENDER
+                    ? `Menampilkan ${displayCount} dari ${itemsWithCoords.length} item pada peta untuk menjaga performa.`
+                    : `Menampilkan ${itemsWithCoords.length} item pada peta.`;
+            }
+
+            for (let i = 0; i < displayCount; i++) {
+                const entry = itemsWithCoords[i];
+                let layer = null;
+                const original = entry.originalName || '<tanpa nama>';
+                const currentName = entry.renamedName || original;
+                const popupText = `<b>Asli:</b> ${escapeHtml(original)}<br><b>Baru:</b> ${escapeHtml(currentName)}`;
+
+                if (entry.geomType === 'Point') {
+                    const pt = entry.coords[0];
+                    layer = L.circleMarker([pt[1], pt[0]], {
+                        radius: 6,
+                        fillColor: entry.changed ? '#35f1d0' : '#39d0ff',
+                        color: '#fff',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                    bounds.extend([pt[1], pt[0]]);
+                    hasCoords = true;
+                } else if (entry.geomType === 'LineString') {
+                    const leafletCoords = entry.coords.map(c => [c[1], c[0]]);
+                    layer = L.polyline(leafletCoords, {
+                        color: entry.changed ? '#35f1d0' : '#39d0ff',
+                        weight: 4,
+                        opacity: 0.85
+                    });
+                    leafletCoords.forEach(loc => bounds.extend(loc));
+                    hasCoords = true;
+                } else if (entry.geomType === 'Polygon') {
+                    const leafletCoords = entry.coords.map(c => [c[1], c[0]]);
+                    layer = L.polygon(leafletCoords, {
+                        color: entry.changed ? '#35f1d0' : '#39d0ff',
+                        weight: 2,
+                        fillOpacity: 0.2
+                    });
+                    leafletCoords.forEach(loc => bounds.extend(loc));
+                    hasCoords = true;
+                }
+
+                if (layer) {
+                    layer.bindPopup(popupText);
+                    layer.addTo(mapLayers);
+                }
+            }
+
+            mapLayers.addTo(previewMap);
+
+            if (hasCoords) {
+                previewMap.fitBounds(bounds, { padding: [40, 40] });
+            }
+
+            setTimeout(() => {
+                previewMap.invalidateSize();
+            }, 100);
+        }
+
         function resetRenameOptions() {
             findTextInput.value = '';
             replaceTextInput.value = '';
@@ -917,6 +1131,10 @@ NODE-{n} | {name}</pre>
             if (loadedFile) {
                 const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
                 renderPreview(loadedFile.formatLabel, initialPreview);
+
+                if (mapCard.style.display !== 'none') {
+                    renderMap();
+                }
             }
         }
 
@@ -938,12 +1156,26 @@ NODE-{n} | {name}</pre>
                 loadedFile = await parseInputFile(file);
                 const initialPreview = buildRenamedEntries(loadedFile.entries, getRenameOptions());
                 renderPreview(loadedFile.formatLabel, initialPreview);
+
+                const hasCoords = loadedFile.entries.some(e => e.geomType && e.coords && e.coords.length > 0);
+                if (hasCoords) {
+                    showMapBtn.style.display = 'inline-flex';
+                } else {
+                    showMapBtn.style.display = 'none';
+                    mapCard.style.display = 'none';
+                }
+
+                if (mapCard.style.display !== 'none' && hasCoords) {
+                    renderMap();
+                }
             } catch (error) {
                 loadedFile = null;
                 previewBody.innerHTML = '<tr><td colspan="4">Gagal membaca isi file untuk preview.</td></tr>';
                 previewCaption.textContent = 'Upload file yang valid untuk melanjutkan.';
                 updateSummary('', []);
                 errorDiv.textContent = `Error: ${error.message}`;
+                showMapBtn.style.display = 'none';
+                mapCard.style.display = 'none';
             } finally {
                 setLoadingState(false);
             }
@@ -974,6 +1206,10 @@ NODE-{n} | {name}</pre>
                 renderPreview(loadedFile.formatLabel, renamedEntries);
                 downloadSummary.textContent = `${changedCount} nama berubah dari total ${renamedEntries.length} item. File hasil akan diunduh sebagai ${outputFileName}.`;
                 downloadSection.style.display = 'block';
+
+                if (mapCard.style.display !== 'none') {
+                    renderMap();
+                }
             } catch (error) {
                 processedResult = null;
                 downloadSection.style.display = 'none';
@@ -1011,6 +1247,10 @@ NODE-{n} | {name}</pre>
         processBtn.addEventListener('click', processRename);
         resetBtn.addEventListener('click', resetRenameOptions);
         downloadBtn.addEventListener('click', downloadProcessedFile);
+        showMapBtn.addEventListener('click', renderMap);
+        hideMapBtn.addEventListener('click', function () {
+            mapCard.style.display = 'none';
+        });
 
         document.querySelectorAll('.preset-template').forEach(button => {
             button.addEventListener('click', function () {
