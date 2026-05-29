@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Rename Tiang — KML Tools</title>
+  <script>
+    if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+  <link rel="stylesheet" href="styles/kmltools-pro.css">
+  <script src="scripts/tool-embed.js" defer></script>
+  <style>
+    /* Styling khusus peta & stats */
+    .map-container {
+      height: 480px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      margin-top: 1rem;
+      background: rgba(3, 10, 20, 0.6);
+      position: relative;
+    }
+    .odp-big-label {
+      background: transparent;
+      border: none;
+      pointer-events: none;
+      width: auto !important;
+      height: auto !important;
+      margin-left: 0px !important;
+      margin-top: 0px !important;
+    }
+    .odp-box {
+      background: rgba(57, 208, 255, 0.9);
+      color: #021221;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      border: 1.5px solid #fff;
+      border-radius: 6px;
+      padding: 3px 6px;
+      box-shadow: 0 0 10px rgba(57, 208, 255, 0.4);
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      display: inline-block;
+      pointer-events: none;
+    }
+    .seq-label {
+      background: var(--neon-red);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1.5px solid #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .map-controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      align-items: center;
+      padding: 0.8rem 1.2rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-light);
+      margin-bottom: 0.8rem;
+    }
+    .map-controls-bar label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0;
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-transform: none;
+      font-weight: 500;
+      letter-spacing: normal;
+      color: var(--text-secondary);
+    }
+    .map-controls-bar input[type="checkbox"] {
+      width: auto;
+      accent-color: var(--neon-green);
+      cursor: pointer;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+    .stat-box {
+      background: rgba(5, 12, 24, 0.62);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      text-align: center;
+    }
+    .stat-box strong {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.25rem;
+    }
+    .stat-box span {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-box.highlight span {
+      color: var(--neon-green);
+    }
+    .stat-box.active-count span {
+      color: var(--neon-blue);
+    }
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding: 0.85rem 1.15rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .step-item.active {
+      color: #fff;
+    }
+    .step-item.done {
+      color: var(--neon-green);
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .step-item.done .step-num {
+      background: var(--neon-green);
+      border-color: var(--neon-green);
+      color: #040914;
+    }
+    .step-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
+      margin: 0 0.85rem;
+    }
+    td.old-desc {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    td.new-desc {
+      color: var(--neon-green);
+      font-weight: 700;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body class="tool-page">
+  <main class="page-shell">
+    <!-- TOOL HERO -->
+    <section class="tool-hero glass-card">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow"><i class="fas fa-tags"></i> Penomoran Tiang Visual</span>
+          <h1 class="display-title">Auto Rename Tiang</h1>
+          <p class="hero-description">
+            Urutkan dan ubah deskripsi tiang secara massal dari file KML / KMZ dengan mengklik tiang secara berurutan pada peta interaktif. Dilengkapi panduan posisi ODP Plan.
+          </p>
+          <div class="status-strip">
+            <span class="status-pill"><i class="fas fa-map-marked-alt"></i> Visual Klik Peta</span>
+            <span class="status-pill"><i class="fas fa-eye"></i> Live Preview</span>
+            <span class="status-pill"><i class="fas fa-shield-halved"></i> Anti Dobel Klik</span>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="status-panel">
+            <strong>Logika Proses</strong>
+            <span>Proses Lokal di Browser</span>
+            <p class="support-text">
+              Nama baru tiang akan disimpan langsung ke dalam elemen description pada placemark KML.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL GRID -->
+    <section class="panel-grid">
+      <div class="stack">
+        <!-- STEPS -->
+        <div class="step-indicator">
+          <div class="step-item active" id="step1"><div class="step-num" id="s1dot">1</div> Unggah</div>
+          <div class="step-line"></div>
+          <div class="step-item" id="step2"><div class="step-num" id="s2dot">2</div> Konfigurasi</div>
+          <div class="step-line"></div>
+          <div class="step-item" id="step3"><div class="step-num" id="s3dot">3</div> Klik Peta & Preview</div>
+          <div class="step-line"></div>
+          <div class="step-item" id="step4"><div class="step-num" id="s4dot">4</div> Unduh</div>
+        </div>
+
+        <!-- UPLOAD CARD -->
+        <section class="card">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Input</span>
+            <h2 class="card-title">Unggah File KML / KMZ</h2>
+            <p class="card-copy">Berkas harus memuat placemark titik tiang dan ODP Plan.</p>
+          </div>
+          <div class="upload-zone" id="dropZone">
+            <i class="fas fa-file-arrow-up"></i>
+            <h3>Tarik & Lepaskan berkas di sini</h3>
+            <p class="upload-copy">Mendukung berkas KML (.kml) dan KMZ (.kmz)</p>
+            <div class="helper-row">
+              <span class="status-pill"><i class="fas fa-file-import"></i> Klik untuk memilih file</span>
+            </div>
+            <input type="file" id="fileInput" accept=".kml,.kmz">
+            <div id="fileInfo"></div>
+          </div>
+        </section>
+
+        <!-- CONFIG CARD -->
+        <section class="card" id="configCard" style="display: none;">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Form</span>
+            <h2 class="card-title">Aturan Penamaan Label</h2>
+            <p class="card-copy">Format: ODC-LABEL-NNN-OWNER (Contoh: BNL-FAL-001-TLKM)</p>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="odc">ODC (Kode STO)</label>
+              <input type="text" id="odc" placeholder="Contoh: BNL" maxlength="20">
+            </div>
+            <div class="form-group">
+              <label for="label">LABEL (Kode ODC)</label>
+              <input type="text" id="label" placeholder="Contoh: FAL" maxlength="20">
+            </div>
+            <div class="form-group">
+              <label for="startNum">Nomor Awal</label>
+              <input type="number" id="startNum" value="1" min="1" max="9999">
+            </div>
+            <div class="form-group">
+              <label for="owner">OWNER</label>
+              <input type="text" id="owner" placeholder="Contoh: TLKM" maxlength="20">
+            </div>
+            <div class="form-group">
+              <label for="minDigits">Minimum Digit Nomor</label>
+              <input type="number" id="minDigits" value="3" min="1" max="6">
+            </div>
+            <div class="form-group">
+              <label for="filterFolder">Filter Folder / Layer (Opsional)</label>
+              <select id="filterFolder">
+                <option value="">— Semua placemark —</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tool-actions" style="margin-top: 1.5rem;">
+            <button class="button-muted" id="smallestBtn" type="button"><i class="fas fa-sort-numeric-down"></i> Ambil Label Terkecil KML</button>
+            <button class="button-muted" id="undoBtn" type="button" disabled><i class="fas fa-rotate-left"></i> Undo Klik</button>
+            <button class="button-muted" id="resetSeqBtn" type="button" disabled><i class="fas fa-trash"></i> Reset Klik</button>
+          </div>
+        </section>
+
+        <!-- STATS CARD -->
+        <section class="card" id="statsCard" style="display: none;">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Statistik</span>
+            <h2 class="card-title">Ringkasan Progress</h2>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-box highlight">
+              <strong>Tiang Terpilih (Diklik)</strong>
+              <span id="statClickedPoles">0</span>
+            </div>
+            <div class="stat-box">
+              <strong>Total Tiang KML</strong>
+              <span id="statTotalPoles">0</span>
+            </div>
+            <div class="stat-box active-count">
+              <strong>Total ODP Plan</strong>
+              <span id="statTotalOdp">0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- MAP CARD -->
+        <section class="card" id="mapCard" style="display: none;">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Peta</span>
+            <h2 class="card-title">Visualisasi Klik Urutan Tiang</h2>
+            <p class="card-copy">Klik tiang (bulatan hijau) secara berurutan sesuai urutan di lapangan.</p>
+          </div>
+          
+          <div class="map-controls-bar">
+            <label><input type="checkbox" id="toggleOdpLayer" checked> Tampilkan ODP Plan</label>
+            <label><input type="checkbox" id="toggleTiangLayer" checked> Tampilkan Tiang</label>
+            <label><input type="checkbox" id="toggleSeqLayer" checked> Tampilkan Nomor Urut Klik</label>
+            <label><input type="checkbox" id="toggleCableLayer" checked> Tampilkan Jalur Kabel</label>
+            <label><input type="checkbox" id="toggleOtherLayer" checked> Tampilkan Aset Lain</label>
+          </div>
+
+          <div id="map" class="map-container"></div>
+        </section>
+
+        <!-- DOWNLOAD CARD -->
+        <section class="card" id="downloadCard" style="display: none;">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Unduh</span>
+            <h2 class="card-title">Simpan Berkas Baru</h2>
+            <p class="card-copy">Ekspor berkas KML baru yang memuat deskripsi tiang yang telah diubah.</p>
+          </div>
+          <div class="tool-actions">
+            <button id="downloadBtn" type="button" disabled><i class="fas fa-download"></i> Unduh KML Baru</button>
+          </div>
+        </section>
+
+        <!-- PREVIEW CARD -->
+        <section class="card" id="previewCard" style="display: none;">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Preview</span>
+            <h2 class="card-title">Hasil Penomoran Deskripsi Tiang</h2>
+            <p class="card-copy">Tabel perbandingan nama dan deskripsi tiang sebelum dan setelah diklik.</p>
+          </div>
+          <div id="previewOutput"></div>
+        </section>
+      </div>
+
+      <!-- SIDEBAR RIGHT -->
+      <aside class="stack">
+        <section class="support-card glass-card">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Cara Pakai</span>
+            <h2 class="card-title">Alur Urutan Visual Klik</h2>
+          </div>
+          <div class="tutorial-steps">
+            <div class="tutorial-step">
+              <h3>1. Unggah File KML / KMZ</h3>
+              <p>Unggah file kerja yang memuat placemark tiang dan ODP Plan yang ingin diberi nomor urut.</p>
+            </div>
+            <div class="tutorial-step">
+              <h3>2. Atur Format Nama</h3>
+              <p>Sesuaikan isian form seperti kode ODC, Label, Nomor Awal, Owner, dan jumlah digit nomor.</p>
+            </div>
+            <div class="tutorial-step">
+              <h3>3. Klik Tiang di Peta</h3>
+              <p>Peta akan memuat tiang (hijau) dan ODP (nomor biru). Klik tiang secara berurutan sesuai rute asli di lapangan.</p>
+            </div>
+            <div class="tutorial-step">
+              <h3>4. Unduh Hasil</h3>
+              <p>Periksa hasil perubahan pada preview tabel di bagian bawah, lalu unduh KML baru yang sudah rapi.</p>
+            </div>
+          </div>
+        </section>
+        
+        <section class="support-card glass-card">
+          <div class="card-header">
+            <span class="eyebrow card-kicker">Perilaku Format</span>
+            <h2 class="card-title">Format Penulisan</h2>
+          </div>
+          <p>Label tiang akan diubah pada tag <code>&lt;description&gt;</code> dengan format:</p>
+          <pre>ODC-LABEL-NNN-OWNER</pre>
+          <p>Contoh: <code>BNL-FAL-001-TLKM</code></p>
+          <p class="support-text" style="margin-top: 1rem;">
+            * ODP Plan ditampilkan sebagai kotak biru besar agar memudahkan navigasi urutan klik dari tiang 1 ke tiang berikutnya.
+          </p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+  <script>
+    let tiangPlacemarks = [];
+    let odpPlacemarks = [];
+    let cablePlacemarks = [];
+    let otherPlacemarks = [];
+    let selectedTiang = [];
+    let kmlDoc = null;
+    let kmlFileName = '';
+    let mapInstance = null;
+    let tiangMarkers = new Map();
+    let sequenceMarkers = [];
+    let odpLayerGroup = null;
+    let tiangLayerGroup = null;
+    let seqLayerGroup = null;
+    let cableLayerGroup = null;
+    let otherLayerGroup = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileInfo = document.getElementById('fileInfo');
+    const smallestBtn = document.getElementById('smallestBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const resetSeqBtn = document.getElementById('resetSeqBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const previewOut = document.getElementById('previewOutput');
+    const filterFolder = document.getElementById('filterFolder');
+
+    const toggleOdpLayer = document.getElementById('toggleOdpLayer');
+    const toggleTiangLayer = document.getElementById('toggleTiangLayer');
+    const toggleSeqLayer = document.getElementById('toggleSeqLayer');
+    const toggleCableLayer = document.getElementById('toggleCableLayer');
+    const toggleOtherLayer = document.getElementById('toggleOtherLayer');
+
+    // Setup drag and drop
+    function setupDrop(zone, input) {
+      if (!zone || !input) return;
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('active'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('active'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('active');
+        if (e.dataTransfer.files.length) {
+          input.files = e.dataTransfer.files;
+          input.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+    setupDrop(dropZone, fileInput);
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      resetAll();
+      kmlFileName = file.name;
+      fileInfo.innerHTML = '<div class="status-pill"><i class="fas fa-spinner fa-spin"></i> Membaca berkas...</div>';
+      try {
+        const text = await readKmlFile(file);
+        const cleanText = String(text || '').replace(/^\uFEFF/, '').trim();
+        kmlDoc = new DOMParser().parseFromString(cleanText, 'text/xml');
+        const parserError = kmlDoc.querySelector('parsererror');
+        if (parserError) throw new Error('Format KML tidak valid.');
+
+        parseKmlData();
+        populateFolderFilter();
+        
+        fileInfo.innerHTML = `
+          <div class="file-badge">
+            <i class="fas fa-check-circle"></i> ${esc(kmlFileName)} — ${tiangPlacemarks.length} Tiang, ${odpPlacemarks.length} ODP, ${cablePlacemarks.length} Jalur Kabel, ${otherPlacemarks.length} Aset Lain
+          </div>`;
+        
+        // Show panel cards
+        document.getElementById('configCard').style.display = 'block';
+        document.getElementById('statsCard').style.display = 'block';
+        document.getElementById('mapCard').style.display = 'block';
+        document.getElementById('downloadCard').style.display = 'block';
+        document.getElementById('previewCard').style.display = 'block';
+
+        // Render peta
+        renderMap();
+        setStep(3);
+      } catch(e) {
+        fileInfo.innerHTML = `<div class="alert alert-error" style="margin-top: 1rem;"><i class="fas fa-circle-xmark"></i> Gagal membaca berkas: ${e.message}</div>`;
+      }
+    });
+
+    async function readKmlFile(file) {
+      if (file.name.toLowerCase().endsWith('.kmz')) {
+        const ab = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(ab);
+        const kmlEntry = Object.values(zip.files).find(f => f.name.toLowerCase().endsWith('.kml'));
+        if (!kmlEntry) throw new Error('Tidak ada berkas KML di dalam KMZ.');
+        return kmlEntry.async('string');
+      }
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = () => rej(new Error('Gagal membaca berkas.'));
+        r.readAsText(file, 'utf-8');
+      });
+    }
+
+    function parseKmlData() {
+      tiangPlacemarks = [];
+      odpPlacemarks = [];
+      cablePlacemarks = [];
+      otherPlacemarks = [];
+      const pms = [...kmlDoc.querySelectorAll('Placemark')];
+
+      for (const pm of pms) {
+        // Cek LineString untuk jalur kabel
+        const lineStringEl = pm.querySelector('LineString coordinates');
+        if (lineStringEl) {
+          const coords = parseLineStringCoordinates(lineStringEl.textContent);
+          if (coords.length > 1) {
+            const name = getDirectText(pm, 'name') || 'Jalur Kabel';
+            cablePlacemarks.push({ name, coords, el: pm });
+          }
+          continue;
+        }
+
+        // Cek Point untuk tiang, ODP, atau aset lainnya
+        const coordsEl = pm.querySelector('Point coordinates');
+        if (!coordsEl) continue;
+        const p = parseCoordinate(coordsEl.textContent);
+        if (!p) continue;
+
+        const name = getDirectText(pm, 'name');
+        const desc = getDirectText(pm, 'description');
+        const fullText = `${name} ${desc}`;
+        const folderPath = getFolderPath(pm);
+
+        if (isOdpPlan(fullText)) {
+          odpPlacemarks.push({
+            name, desc, lat: p.lat, lon: p.lon, folderPath, el: pm,
+            odpNo: getOdpNumber(fullText)
+          });
+        } else if (isTiang(fullText)) {
+          tiangPlacemarks.push({
+            name, desc, lat: p.lat, lon: p.lon, folderPath, el: pm,
+            oldLabelNumber: getTiangLabelNumber(name) || getTiangLabelNumber(desc)
+          });
+        } else {
+          otherPlacemarks.push({
+            name, desc, lat: p.lat, lon: p.lon, folderPath, el: pm
+          });
+        }
+      }
+
+      // Urutkan ODP secara numerik
+      odpPlacemarks.sort((a,b) => (Number(a.odpNo) || 999999) - (Number(b.odpNo) || 999999));
+    }
+
+    function parseLineStringCoordinates(text) {
+      return String(text || '').trim().split(/\s+/).map(coord => {
+        const parts = coord.split(',');
+        if (parts.length >= 2) {
+          const lon = parseFloat(parts[0]);
+          const lat = parseFloat(parts[1]);
+          if (!isNaN(lat) && !isNaN(lon)) return [lat, lon];
+        }
+        return null;
+      }).filter(Boolean);
+    }
+
+    function renderMap() {
+      const filtered = getFilteredTiang();
+      
+      // Setup Map Instance
+      if (!mapInstance) {
+        mapInstance = L.map('map').setView([-2.5, 118], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+          attribution: '© OpenStreetMap' 
+        }).addTo(mapInstance);
+      }
+
+      // Hapus layer lama
+      if (odpLayerGroup) mapInstance.removeLayer(odpLayerGroup);
+      if (tiangLayerGroup) mapInstance.removeLayer(tiangLayerGroup);
+      if (seqLayerGroup) mapInstance.removeLayer(seqLayerGroup);
+      if (cableLayerGroup) mapInstance.removeLayer(cableLayerGroup);
+      if (otherLayerGroup) mapInstance.removeLayer(otherLayerGroup);
+
+      odpLayerGroup = L.layerGroup();
+      tiangLayerGroup = L.layerGroup();
+      seqLayerGroup = L.layerGroup();
+      cableLayerGroup = L.layerGroup();
+      otherLayerGroup = L.layerGroup();
+
+      tiangMarkers.clear();
+      sequenceMarkers = [];
+      selectedTiang = [];
+
+      undoBtn.disabled = true;
+      downloadBtn.disabled = true;
+      
+      // Update statistics
+      updateStats();
+      recalculatePreviewTable();
+
+      const bounds = [];
+
+      // Render Jalur Kabel (Polylines)
+      cablePlacemarks.forEach(cable => {
+        L.polyline(cable.coords, {
+          color: '#6e79ff', // var(--neon-purple)
+          weight: 4,
+          opacity: 0.85,
+          dashArray: '6, 6'
+        }).bindTooltip(`<b>${esc(cable.name)}</b>`, { permanent: false })
+          .addTo(cableLayerGroup);
+
+        cable.coords.forEach(coord => bounds.push(coord));
+      });
+
+      // Render Aset Lainnya (Orange Circle Markers)
+      otherPlacemarks.forEach(other => {
+        const ll = [other.lat, other.lon];
+        bounds.push(ll);
+        L.circleMarker(ll, {
+          radius: 6,
+          color: '#ff9c4a', // var(--neon-orange)
+          fillColor: '#ff9c4a',
+          fillOpacity: 0.75,
+          weight: 1.5
+        }).bindTooltip(`<b>${esc(other.name || 'Aset Lain')}</b><br>${esc(other.desc || '-')}`, { permanent: false })
+          .addTo(otherLayerGroup);
+      });
+
+      // Render ODP (Kotak Biru)
+      odpPlacemarks.forEach(odp => {
+        const ll = [odp.lat, odp.lon];
+        bounds.push(ll);
+        L.marker(ll, {
+          interactive: false,
+          zIndexOffset: -500,
+          icon: L.divIcon({
+            className: 'odp-big-label',
+            html: `<div class="odp-box">${esc(odp.name || '?')}</div>`,
+            iconSize: null,
+            iconAnchor: null
+          })
+        }).addTo(odpLayerGroup);
+      });
+
+      // Render Tiang (Bulatan Hijau)
+      filtered.forEach(t => {
+        const ll = [t.lat, t.lon];
+        bounds.push(ll);
+        const marker = L.circleMarker(ll, {
+          radius: 8, 
+          color: '#35f1d0', 
+          fillColor: '#35f1d0', 
+          fillOpacity: 0.9, 
+          weight: 2
+        }).bindTooltip(`<b>${esc(t.name || '-')}</b><br>${esc(t.desc || '-')}`, { permanent: false });
+
+        marker.on('click', () => {
+          selectTiang(t);
+        });
+
+        marker.addTo(tiangLayerGroup);
+        tiangMarkers.set(t, marker);
+      });
+
+      // Hubungkan layer ke peta
+      if (toggleOdpLayer.checked) odpLayerGroup.addTo(mapInstance);
+      if (toggleTiangLayer.checked) tiangLayerGroup.addTo(mapInstance);
+      if (toggleSeqLayer.checked) seqLayerGroup.addTo(mapInstance);
+      if (toggleCableLayer.checked) cableLayerGroup.addTo(mapInstance);
+      if (toggleOtherLayer.checked) otherLayerGroup.addTo(mapInstance);
+
+      if (bounds.length) {
+        mapInstance.fitBounds(L.latLngBounds(bounds).pad(0.1));
+      }
+      
+      // Atur ulang ukuran kontainer peta
+      setTimeout(() => {
+        mapInstance.invalidateSize();
+      }, 100);
+    }
+
+    // Toggle layer group checkbox
+    [toggleOdpLayer, toggleTiangLayer, toggleSeqLayer, toggleCableLayer, toggleOtherLayer].forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (!mapInstance) return;
+        const mapping = {
+          toggleOdpLayer: odpLayerGroup,
+          toggleTiangLayer: tiangLayerGroup,
+          toggleSeqLayer: seqLayerGroup,
+          toggleCableLayer: cableLayerGroup,
+          toggleOtherLayer: otherLayerGroup
+        };
+        const group = mapping[cb.id];
+        if (!group) return;
+        if (cb.checked) {
+          group.addTo(mapInstance);
+        } else {
+          mapInstance.removeLayer(group);
+        }
+      });
+    });
+
+    function selectTiang(tiang) {
+      if (!tiang) return;
+
+      // PENCEGAHAN DOBEL KLIK: Jika tiang sudah dipilih, abaikan klik ini.
+      if (selectedTiang.includes(tiang)) {
+        return;
+      }
+
+      const params = getParams();
+      if (!params) return;
+
+      const number = params.startNum + selectedTiang.length;
+      const newName = buildLabel(params, number);
+      tiang.newName = newName;
+      selectedTiang.push(tiang);
+
+      // Update warna marker
+      const marker = tiangMarkers.get(tiang);
+      if (marker) {
+        marker.setStyle({ color: '#ff5f8a', fillColor: '#ff5f8a', fillOpacity: 0.95 });
+        // Ubah cursor agar menandakan tidak bisa diklik kembali
+        if (marker._path) {
+          marker._path.style.cursor = 'not-allowed';
+        }
+      }
+
+      // Tambahkan nomor sequence di atas peta
+      const seqIcon = L.divIcon({
+        className: '',
+        html: `<div class="seq-label">${selectedTiang.length}</div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      const seqMarker = L.marker([tiang.lat, tiang.lon], { icon: seqIcon, interactive: false });
+      seqMarker.addTo(seqLayerGroup || mapInstance);
+      sequenceMarkers.push(seqMarker);
+
+      // Simpan langsung di ingatan berkas KML
+      setDirectText(tiang.el, 'description', newName);
+
+      // Update progress, stats & tabel preview
+      updateStats();
+      recalculatePreviewTable();
+
+      undoBtn.disabled = false;
+      resetSeqBtn.disabled = false;
+      downloadBtn.disabled = false;
+    }
+
+    function undoLast() {
+      const last = selectedTiang.pop();
+      if (!last) return;
+
+      // Kembalikan marker visual tiang
+      const marker = tiangMarkers.get(last);
+      if (marker) {
+        marker.setStyle({ color: '#35f1d0', fillColor: '#35f1d0', fillOpacity: 0.9, weight: 2 });
+        if (marker._path) {
+          marker._path.style.cursor = 'pointer';
+        }
+      }
+
+      // Hapus marker nomor urut
+      const seq = sequenceMarkers.pop();
+      if (seq) {
+        if (seqLayerGroup && seqLayerGroup.hasLayer(seq)) {
+          seqLayerGroup.removeLayer(seq);
+        } else if (mapInstance) {
+          mapInstance.removeLayer(seq);
+        }
+      }
+
+      last.newName = null;
+      setDirectText(last.el, 'description', last.desc || '');
+
+      updateStats();
+      recalculatePreviewTable();
+
+      if (selectedTiang.length === 0) {
+        undoBtn.disabled = true;
+        resetSeqBtn.disabled = true;
+        downloadBtn.disabled = true;
+      }
+    }
+
+    function resetSelection() {
+      selectedTiang.forEach(t => {
+        t.newName = null;
+        setDirectText(t.el, 'description', t.desc || '');
+      });
+      selectedTiang = [];
+
+      // Reset semua marker tiang
+      tiangMarkers.forEach((marker) => {
+        marker.setStyle({ color: '#35f1d0', fillColor: '#35f1d0', fillOpacity: 0.9, weight: 2 });
+        if (marker._path) {
+          marker._path.style.cursor = 'pointer';
+        }
+      });
+
+      // Bersihkan marker urut
+      sequenceMarkers.forEach(m => {
+        if (seqLayerGroup && seqLayerGroup.hasLayer(m)) {
+          seqLayerGroup.removeLayer(m);
+        } else if (mapInstance) {
+          mapInstance.removeLayer(m);
+        }
+      });
+      sequenceMarkers = [];
+
+      undoBtn.disabled = true;
+      resetSeqBtn.disabled = true;
+      downloadBtn.disabled = true;
+
+      updateStats();
+      recalculatePreviewTable();
+    }
+
+    function updateStats() {
+      const filtered = getFilteredTiang();
+      const totalPoles = filtered.length;
+      const clickedPoles = selectedTiang.length;
+      const totalOdp = odpPlacemarks.length;
+
+      document.getElementById('statTotalPoles').textContent = totalPoles;
+      document.getElementById('statClickedPoles').textContent = clickedPoles;
+      document.getElementById('statTotalOdp').textContent = totalOdp;
+    }
+
+    function recalculatePreviewTable() {
+      const filtered = getFilteredTiang();
+      if (filtered.length === 0) {
+        previewOut.innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <span>Belum ada data tiang untuk folder ini.</span>
+          </div>`;
+        return;
+      }
+
+      let html = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>Nama Aset</th>
+                <th>Deskripsi Asli</th>
+                <th>Deskripsi Baru</th>
+                <th>Koordinat</th>
+                <th>Folder</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+      filtered.forEach((r, i) => {
+        const isSelected = selectedTiang.includes(r);
+        const cellClass = isSelected ? 'new-desc' : '';
+        const descText = isSelected ? r.newName : '<span class="muted-inline">(Belum diklik)</span>';
+
+        html += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${esc(r.name || '-')}</td>
+            <td class="old-desc">${esc(r.desc || '-')}</td>
+            <td class="${cellClass}">${descText}</td>
+            <td style="font-family: monospace; font-size: 11px;">${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</td>
+            <td>${esc(r.folderPath || '-')}</td>
+          </tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      previewOut.innerHTML = html;
+    }
+
+    // Recalculate labels on form parameter changes
+    function recalculateLabels() {
+      const params = getParams();
+      if (!params) return;
+      selectedTiang.forEach((t, i) => {
+        const number = params.startNum + i;
+        t.newName = buildLabel(params, number);
+        setDirectText(t.el, 'description', t.newName);
+      });
+      
+      // Update nomor sequence visual text tooltip or logs if necessary
+      recalculatePreviewTable();
+    }
+
+    // Add form change listener
+    ['odc', 'label', 'startNum', 'owner', 'minDigits'].forEach(id => {
+      document.getElementById(id).addEventListener('input', recalculateLabels);
+    });
+
+    filterFolder.addEventListener('change', () => {
+      // Atur ulang pilihan tiang saat filter diubah untuk menghindari ketidaksesuaian indeks
+      resetSelection();
+      renderMap();
+    });
+
+    smallestBtn.addEventListener('click', () => {
+      const filtered = getFilteredTiang();
+      const nums = filtered.map(t => t.oldLabelNumber).filter(Number.isFinite);
+      if (!nums.length) {
+        alert('Tidak ditemukan label nomor existing pada berkas KML. Silakan isi form manual.');
+        return;
+      }
+      const min = Math.min(...nums);
+      document.getElementById('startNum').value = min;
+      recalculateLabels();
+    });
+
+    undoBtn.addEventListener('click', undoLast);
+    resetSeqBtn.addEventListener('click', resetSelection);
+
+    downloadBtn.addEventListener('click', () => {
+      if (!kmlDoc || !selectedTiang.length) {
+        alert('Belum ada tiang yang diklik.');
+        return;
+      }
+      // Simpan perubahan terakhir
+      selectedTiang.forEach(t => setDirectText(t.el, 'description', t.newName));
+      
+      const outKml = buildOutputKml();
+      const blob = new Blob([outKml], { type: 'application/vnd.google-earth.kml+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = kmlFileName.replace(/\.(kml|kmz)$/i, '') + '_urut_visual.kml';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setStep(4);
+    });
+
+    function buildOutputKml() {
+      let xml = new XMLSerializer().serializeToString(kmlDoc).trim();
+      xml = xml.replace(/^\uFEFF/, '');
+      xml = xml.replace(/^<\?xml[^>]*\?>\s*/i, '');
+      return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml.trim();
+    }
+
+    function getParams() {
+      const odc = document.getElementById('odc').value.trim().toUpperCase();
+      const label = document.getElementById('label').value.trim().toUpperCase();
+      const owner = document.getElementById('owner').value.trim().toUpperCase();
+      const startNum = parseInt(document.getElementById('startNum').value) || 1;
+      const minDigits = parseInt(document.getElementById('minDigits').value) || 3;
+      
+      // Kita ijinkan salah satu kosong, tapi setidaknya form diisi
+      if (!odc && !label && !owner) {
+        return { odc: 'ODC', label: 'L', owner: 'OWNER', startNum, minDigits };
+      }
+      return { odc, label, owner, startNum, minDigits };
+    }
+
+    function buildLabel(params, number) {
+      const padded = String(number).padStart(params.minDigits, '0');
+      return [params.odc, params.label, padded, params.owner].filter(Boolean).join('-');
+    }
+
+    function getFilteredTiang() {
+      const folder = filterFolder.value;
+      if (!folder) return tiangPlacemarks;
+      return tiangPlacemarks.filter(p => p.folderPath === folder);
+    }
+
+    function populateFolderFilter() {
+      const folders = [...new Set(tiangPlacemarks.map(p => p.folderPath).filter(Boolean))];
+      filterFolder.innerHTML = '<option value="">— Semua placemark —</option>';
+      folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = f;
+        filterFolder.appendChild(opt);
+      });
+    }
+
+    function resetAll() {
+      tiangPlacemarks = [];
+      odpPlacemarks = [];
+      cablePlacemarks = [];
+      otherPlacemarks = [];
+      selectedTiang = [];
+      kmlDoc = null;
+      kmlFileName = '';
+      tiangMarkers.clear();
+      sequenceMarkers = [];
+      previewOut.innerHTML = '';
+      
+      downloadBtn.disabled = true;
+      undoBtn.disabled = true;
+      resetSeqBtn.disabled = true;
+
+      if (mapInstance) {
+        if (odpLayerGroup) mapInstance.removeLayer(odpLayerGroup);
+        if (tiangLayerGroup) mapInstance.removeLayer(tiangLayerGroup);
+        if (seqLayerGroup) mapInstance.removeLayer(seqLayerGroup);
+        if (cableLayerGroup) mapInstance.removeLayer(cableLayerGroup);
+        if (otherLayerGroup) mapInstance.removeLayer(otherLayerGroup);
+      }
+      odpLayerGroup = null;
+      tiangLayerGroup = null;
+      seqLayerGroup = null;
+      cableLayerGroup = null;
+      otherLayerGroup = null;
+
+      // Sembunyikan panel cards kembali
+      document.getElementById('configCard').style.display = 'none';
+      document.getElementById('statsCard').style.display = 'none';
+      document.getElementById('mapCard').style.display = 'none';
+      document.getElementById('downloadCard').style.display = 'none';
+      document.getElementById('previewCard').style.display = 'none';
+    }
+
+    function isTiang(text) {
+      const t = String(text || '').toUpperCase();
+      return (
+        t.includes('TIANG') ||
+        t.includes('POLE') ||
+        /(^|\s|[-_])TN(\s|$|[-_])/.test(t) ||
+        /(^|\s|[-_])TB(\s|$|[-_])/.test(t) ||
+        /(^|\s|[-_])TP(\s|$|[-_])/.test(t)
+      );
+    }
+
+    function isOdpPlan(text) {
+      const t = String(text || '').toUpperCase();
+      return t.includes('ODP');
+    }
+
+    function getOdpNumber(text) {
+      const t = String(text || '').toUpperCase();
+      const m = t.match(/ODP[^\d]*(\d+)/) || t.match(/\/(\d+)/) || t.match(/\b\d+\b/);
+      return m ? m[1] : '?';
+    }
+
+    function getTiangLabelNumber(desc) {
+      const t = String(desc || '').toUpperCase();
+      // Cari pola standard ODC-LABEL-NNN-OWNER (contoh: BNL-FAL-001-TLKM atau FAL-001-TLKM)
+      const m = t.match(/[A-Z0-9]+-[A-Z0-9]+-(\d+)-[A-Z0-9]+/i) || t.match(/[A-Z0-9]+-(\d+)-[A-Z0-9]+/i) || t.match(/-(\d+)-/);
+      if (m) return Number(m[1]);
+      
+      // Bersihkan dari tag HTML sebelum mencari angka fallback paling akhir
+      const cleanText = t.replace(/<[^>]*>/g, ' ');
+      const nums = cleanText.match(/\d+/g);
+      return nums ? Number(nums[nums.length - 1]) : null;
+    }
+
+    function parseCoordinate(text) {
+      const parts = String(text || '').trim().split(',');
+      if (parts.length < 2) return null;
+      const lon = parseFloat(parts[0]);
+      const lat = parseFloat(parts[1]);
+      if (isNaN(lat) || isNaN(lon)) return null;
+      return { lat, lon };
+    }
+
+    function getDirectText(parent, tag) {
+      const node = [...parent.children].find(ch => ch.localName === tag);
+      return node ? node.textContent.trim() : '';
+    }
+
+    function setDirectText(parent, tag, value) {
+      let node = [...parent.children].find(ch => ch.localName === tag);
+      if (!node) {
+        node = kmlDoc.createElement(tag);
+        parent.appendChild(node);
+      }
+      node.textContent = value;
+    }
+
+    function getFolderPath(el) {
+      const parts = [];
+      let cur = el.parentElement;
+      while (cur) {
+        if (cur.tagName === 'Folder' || cur.tagName === 'Document') {
+          const n = [...cur.children].find(ch => ch.localName === 'name')?.textContent?.trim();
+          if (n) parts.unshift(n);
+        }
+        cur = cur.parentElement;
+      }
+      return parts.join(' > ');
+    }
+
+    function setStep(n) {
+      [1,2,3,4].forEach(i => {
+        const el = document.getElementById('step' + i);
+        const dot = document.getElementById('s' + i + 'dot');
+        if (!el || !dot) return;
+        el.classList.remove('done', 'active');
+        if (i < n) { 
+          el.classList.add('done'); 
+          dot.innerHTML = '<i class="fas fa-check" style="font-size:10px"></i>'; 
+        }
+        else if (i === n) { 
+          el.classList.add('active'); 
+          dot.textContent = i; 
+        }
+        else { 
+          dot.textContent = i; 
+        }
+      });
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    setStep(1);
+  </script>
+</body>
+</html>

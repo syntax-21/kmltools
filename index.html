@@ -81,6 +81,15 @@
             <span class="nav-copy">Distribusi otomatis titik tiang di sepanjang jalur kabel.</span>
           </button>
 
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="autorenametiang"
+            data-title="Auto Rename Tiang"
+            data-description="Urutkan dan ganti nama/deskripsi tiang secara massal berdasarkan posisi klik visual interaktif pada peta."
+            data-badge="Auto Label Tiang" data-status="Siapkan file KML/KMZ berisi placemark tiang."
+            data-url="autorenametiang.html?tool=autorenametiang" data-meta="Visual Klik & Rename">
+            <span class="nav-title"><i class="fas fa-tags"></i> Auto Rename Tiang</span>
+            <span class="nav-copy">Urutkan tiang geografis via klik visual peta & ganti deskripsi.</span>
+          </button>
+
           <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="asesoristiang"
             data-title="Hitung Asesoris Tiang"
             data-description="Hitung kebutuhan asesoris pada jalur telekomunikasi dari file KML/KMZ."
@@ -163,6 +172,11 @@
         <div id="tiangnew" class="tab-content" data-tool-panel aria-hidden="true">
           <div class="tool-stage">
             <iframe data-src="tiangnew.html?tool=tiangnew" title="Auto Placemark Tiang New" scrolling="no"></iframe>
+          </div>
+        </div>
+        <div id="autorenametiang" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="autorenametiang.html?tool=autorenametiang" title="Auto Rename Tiang" scrolling="no"></iframe>
           </div>
         </div>
         <div id="asesoristiang" class="tab-content" data-tool-panel aria-hidden="true">

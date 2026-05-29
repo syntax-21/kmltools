@@ -37,6 +37,7 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | `bulkrename.html` | Rename massal untuk data bernama | `.kml`, `.kmz`, `.csv`, `.txt`, `.xlsx`, `.xls` | File dengan format asal |
 | `clusterhousehold.html` | Cluster titik household ke polygon area | `.kml`, `.kmz` | ZIP KML per area dan rekap Excel |
 | `tiangnew.html` | Generate placemark otomatis di sepanjang path | `.kml`, `.kmz` | KML baru berisi path dan titik |
+| `autorenametiang.html` | Urutkan & ganti deskripsi tiang via klik visual interaktif | `.kml`, `.kmz` | KML baru dengan penomoran urut deskripsi |
 | `asesoristiang.html` | Hitung kebutuhan asesoris tiang existing | `.kml`, `.kmz` | KML analisis, ringkasan, tabel paginasi, peta |
 | `splitline.html` | Pecah jalur KML/KMZ menjadi beberapa segmen | `.kml`, `.kmz`, `.xml` | KML gabungan atau file segmen terpisah |
 | `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
@@ -135,7 +136,20 @@ Catatan:
 - File hasil diunduh sebagai `<nama_file>_placemarks.kml`.
 - Jalur asli tetap disertakan di hasil ekspor.
 
-### 6. Hitung Asesoris Tiang (`asesoristiang.html`)
+### 6. Auto Rename Tiang (`autorenametiang.html`)
+
+Tool ini mempermudah pengurutan dan penggantian nama atau deskripsi tiang secara massal berdasarkan penentuan urutan rute riil (visual klik langsung di peta interaktif).
+
+Fitur penting:
+
+- Peta Leaflet interaktif langsung aktif secara otomatis setelah berkas KML/KMZ diunggah.
+- Visualisasi ODP Plan sebagai penanda biru besar dengan nama lengkap ODP untuk mempermudah alur urutan klik di lapangan.
+- Visualisasi jalur kabel asli (`LineString`) dan aset pendukung lainnya langsung di peta untuk ketepatan analisis spasial.
+- Validasi proteksi anti dobel klik pada marker tiang yang telah diurutkan guna menghindari entri ganda.
+- Widget statistik yang memantau total tiang, jumlah tiang terpilih, dan total ODP Plan secara dinamis.
+- Sinkronisasi live parameter form: isian ODC, label, start number, dan owner secara langsung memperbarui nama tiang yang terpilih di peta maupun di tabel preview tanpa mengulang klik.
+
+### 7. Hitung Asesoris Tiang (`asesoristiang.html`)
 
 Tool ini menganalisis KML/KMZ existing untuk menambahkan hasil perhitungan asesoris tanpa menghapus data utama yang sudah ada.
 
@@ -160,7 +174,7 @@ Catatan:
 - File hasil diunduh sebagai `<nama_file>_asesoris_tiang.kml`.
 - Pagination hanya memengaruhi tampilan preview di browser; hasil export KML tetap memuat seluruh asesoris yang terdeteksi.
 
-### 7. Google Earth Split Line (`splitline.html`)
+### 8. Google Earth Split Line (`splitline.html`)
 
 Tool ini memecah path KML/KMZ panjang menjadi segmen-segmen yang lebih pendek.
 
@@ -178,7 +192,7 @@ Catatan:
 
 - Tool ini hanya relevan untuk `Placemark` yang memiliki `LineString`.
 
-### 8. Ukur Jarak Allpro Masal (`ukurallpro.html`)
+### 9. Ukur Jarak Allpro Masal (`ukurallpro.html`)
 
 Tool ini menghitung jarak jalan aktual dari banyak titik asal ke titik target terdekat pada database KML.
 
@@ -197,7 +211,7 @@ Catatan:
 - Saat routing OSRM gagal, tool memiliki fallback berbasis jarak lurus dengan faktor pengali.
 - File hasil diunduh sebagai `hasil_jarak_jalan_alat_produksi.xlsx`.
 
-### 9. Pemetaan Alpro (`pemetaanalpro.html`)
+### 10. Pemetaan Alpro (`pemetaanalpro.html`)
 
 Tool ini menyaring (filter) material Alpro dari database KML berdasarkan batas polygon, serta membuat laporan Excel dan menghitung panjang jalan secara otomatis.
 
