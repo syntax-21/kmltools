@@ -42,6 +42,7 @@ Repositori ini dirancang sebagai situs statis tanpa build step. Semua halaman da
 | `splitline.html` | Pecah jalur KML/KMZ menjadi beberapa segmen | `.kml`, `.kmz`, `.xml` | KML gabungan atau file segmen terpisah |
 | `ukurallpro.html` | Hitung jarak jalan massal berbasis OSRM | `.xlsx`, `.xls`, `.csv`, `.kml` | Tabel hasil, peta rute, file Excel |
 | `pemetaanalpro.html` | Filter Alpro berdasar Polygon, buat Laporan, dan Ukur Jalan | `.kml`, `.kmz` | ZIP KML Visual, Excel Laporan |
+| `cekduplikasi.html` | Deteksi titik duplikat & buat placemark baru custom | `.kml`, `.kmz`, `.csv`, `.txt`, `.xlsx`, `.xls` | KML, KMZ, CSV, Excel |
 
 ## Ringkasan Fitur Per Modul
 
@@ -230,6 +231,31 @@ Catatan:
 - Pemrosesan database KML berukuran sangat besar memakai chunking asinkron untuk mencegah browser macet (freeze).
 - Fitur Ukur Panjang Jalan membutuhkan koneksi internet untuk menarik data dari Overpass API.
 
+### 11. Cek Duplikasi Titik (`cekduplikasi.html`)
+
+Tool ini membandingkan **File A (Master)** dengan **File B (Bahan)** untuk mendeteksi kesamaan koordinat, kemudian **meng-insert Placemark baru pada titik koordinat Master A yang TIDAK duplikasi dengan Bahan B** (titik master yang belum tercover / belum disurvey), lengkap dengan kustomisasi nama template, ikon visual, skala ukuran ikon, dan ekspor multi-format.
+
+Fitur penting:
+
+- Input 2 file: **File A (Master Acuan)** dan **File B (Bahan Pembanding)** mendukung format `KML`, `KMZ`, `CSV`, `TXT`, `XLSX`, dan `XLS`.
+- Deteksi duplikasi berbasis toleransi radius jarak (0m untuk persis sama s.d 100m) atau pembulatan presisi desimal.
+- Target Pembuatan Placemark:
+  - **Titik Master A yang TIDAK Duplikasi (Default)**: Membuat placemark baru di koordinat Master A yang belum ada di Bahan B.
+  - **Titik Master A yang Duplikasi**: Opsi membuat placemark baru di koordinat Master A yang sudah cocok dengan Bahan B.
+- Kustomisasi Placemark Baru:
+  - Template nama dinamis dengan token `{name_master}`, `{n}`, `{lat}`, `{lon}`, `{desc}` serta tombol preset cepat (`[BARU] {name_master}`, `BELUM_TERCOVER-{n}`, dll).
+  - Koleksi ikon Google Earth & telekomunikasi lengkap (Paddle, Pushpin, Tiang, Closure, ODC, ODP, dll) serta opsi URL ikon kustom.
+  - Pengaturan ukuran/skala ikon (`Icon Scale` slider 0.4x - 3.0x) dan skala label teks.
+  - Pewarnaan tint ikon (KML color) dan teks label.
+- Mode Penyisipan Output:
+  - **Sisipkan ke Master Asli**: Mempertahankan 100% struktur jalur kabel, tiang, polygon, dan style bawaan dari file KML Master asli dengan menambahkan folder placemark baru di dalamnya.
+  - **Hanya Placemark Baru**: Mengekspor file KML mandiri berisi placemark baru.
+  - **Ekspor Lengkap Berfolder**: Membagi output ke dalam folder Placemark Baru Master, Duplikat, dan Unik Bahan.
+- Visualisasi peta interaktif (Leaflet) dengan layer toggles untuk titik placemark baru, titik Master asal, titik Bahan asal, dan titik duplikat.
+- Tabel hasil interaktif dengan filter tab (Baru Non-Duplikat, Duplikat, Unik Bahan, Semua Data), pencarian instan, paginasi, dan tombol fokus ke peta.
+- Ekspor lengkap: KML, KMZ, Excel multi-sheet, dan CSV.
+- Fitur instant demo data untuk pengujian langsung.
+
 ## Arsitektur Frontend
 
 Repositori ini sekarang memakai shell frontend sederhana agar semua tool terasa seperti satu aplikasi utuh walau tetap berbasis halaman HTML terpisah.
@@ -298,6 +324,7 @@ Semua dependensi frontend dimuat langsung dari CDN.
 |-- splitline.html
 |-- ukurallpro.html
 |-- pemetaanalpro.html
+|-- cekduplikasi.html
 |-- kml.png
 |-- README.md
 |-- scripts/

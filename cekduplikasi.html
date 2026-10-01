@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Duplikasi Titik</title>
+    <script>
+        if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles/kmltools-pro.css">
+    <script src="scripts/tool-embed.js" defer></script>
+    <style>
+        .input-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .upload-card-sub {
+            background: rgba(3, 10, 22, 0.65);
+            border: 1px dashed rgba(115, 210, 255, 0.25);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .upload-card-sub:hover,
+        .upload-card-sub.dragover {
+            border-color: var(--neon-blue);
+            background: rgba(10, 25, 48, 0.85);
+            box-shadow: 0 0 20px rgba(57, 208, 255, 0.15);
+        }
+
+        .upload-card-sub.master-card {
+            border-color: rgba(57, 208, 255, 0.4);
+        }
+
+        .upload-card-sub.bahan-card {
+            border-color: rgba(255, 156, 74, 0.4);
+        }
+
+        .upload-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: var(--radius-pill);
+            background: rgba(57, 208, 255, 0.12);
+            color: var(--neon-blue);
+            border: 1px solid rgba(57, 208, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .drop-click-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .drop-click-zone:hover {
+            background: rgba(57, 208, 255, 0.05);
+            border-color: rgba(57, 208, 255, 0.25);
+        }
+
+        .drop-click-zone i {
+            font-size: 2rem;
+            color: var(--neon-blue);
+        }
+
+        .drop-click-zone p {
+            margin: 0;
+            font-size: 0.88rem;
+        }
+
+        .file-loaded-info {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            background: rgba(53, 241, 208, 0.08);
+            border: 1px solid rgba(53, 241, 208, 0.25);
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            color: #d2fbf3;
+        }
+
+        .file-loaded-info strong {
+            color: var(--neon-green);
+        }
+
+        .btn-clear-file {
+            background: none;
+            border: none;
+            color: var(--neon-red);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            float: right;
+            transition: var(--transition);
+        }
+
+        .btn-clear-file:hover {
+            background: rgba(255, 95, 138, 0.15);
+        }
+
+        .workflow-callout {
+            background: linear-gradient(135deg, rgba(14, 30, 56, 0.9) 0%, rgba(8, 18, 36, 0.8) 100%);
+            border: 1px solid rgba(53, 241, 208, 0.35);
+            border-radius: var(--radius-md);
+            padding: 1.1rem 1.35rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .workflow-callout i {
+            font-size: 1.5rem;
+            color: var(--neon-green);
+            margin-top: 0.2rem;
+        }
+
+        .token-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.5rem;
+        }
+
+        .token-btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(122, 175, 255, 0.2);
+            border-radius: 8px;
+            color: #c9e2ff;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .token-btn:hover {
+            background: rgba(57, 208, 255, 0.15);
+            border-color: var(--neon-blue);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .preset-name-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.5rem;
+        }
+
+        .preset-name-btn {
+            font-size: 0.78rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 10px;
+            background: rgba(14, 28, 48, 0.75);
+            border: 1px solid rgba(100, 160, 255, 0.2);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .preset-name-btn:hover {
+            background: rgba(24, 48, 80, 0.9);
+            color: #fff;
+            border-color: var(--neon-blue);
+        }
+
+        .icon-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            background: rgba(3, 10, 22, 0.7);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            margin-top: 0.75rem;
+        }
+
+        .icon-preview-img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.25));
+        }
+
+        .stat-grid-5 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card-highlight {
+            padding: 1.15rem 1rem;
+            background: linear-gradient(180deg, rgba(12, 26, 48, 0.9) 0%, rgba(6, 14, 28, 0.85) 100%);
+            border: 1px solid rgba(115, 210, 255, 0.2);
+            border-radius: var(--radius-md);
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card-highlight.match {
+            border-color: rgba(53, 241, 208, 0.55);
+            background: linear-gradient(180deg, rgba(10, 38, 44, 0.95) 0%, rgba(5, 20, 24, 0.9) 100%);
+        }
+
+        .stat-card-highlight.match::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--neon-green);
+            box-shadow: 0 0 12px var(--neon-green);
+        }
+
+        .stat-card-highlight strong {
+            display: block;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-card-highlight span {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .stat-card-highlight.match span {
+            color: var(--neon-green);
+            text-shadow: 0 0 15px rgba(53, 241, 208, 0.4);
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-pill);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .badge-new-target {
+            background: rgba(53, 241, 208, 0.15);
+            color: var(--neon-green);
+            border: 1px solid rgba(53, 241, 208, 0.4);
+        }
+
+        .badge-dup {
+            background: rgba(255, 95, 138, 0.15);
+            color: var(--neon-red);
+            border: 1px solid rgba(255, 95, 138, 0.35);
+        }
+
+        .badge-unique2 {
+            background: rgba(255, 156, 74, 0.15);
+            color: var(--neon-orange);
+            border: 1px solid rgba(255, 156, 74, 0.35);
+        }
+
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-pill);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(120, 180, 255, 0.15);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.84rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .filter-tab-btn.active {
+            background: var(--neon-blue);
+            color: #021221;
+            border-color: var(--neon-blue);
+            box-shadow: 0 4px 14px rgba(57, 208, 255, 0.3);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            background: rgba(2, 8, 18, 0.85);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+            text-align: left;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid rgba(122, 175, 255, 0.09);
+        }
+
+        .data-table th {
+            background: rgba(8, 20, 38, 0.95);
+            color: #cde6ff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(57, 208, 255, 0.06);
+        }
+
+        .table-action-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            background: rgba(57, 208, 255, 0.12);
+            color: var(--neon-blue);
+            border: 1px solid rgba(57, 208, 255, 0.25);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .table-action-btn:hover {
+            background: var(--neon-blue);
+            color: #021221;
+        }
+
+        .range-slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .range-slider-group input[type="range"] {
+            flex: 1;
+            accent-color: var(--neon-blue);
+        }
+
+        .range-val-badge {
+            min-width: 48px;
+            padding: 0.35rem 0.6rem;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(120, 180, 255, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--neon-blue);
+            font-size: 0.9rem;
+        }
+
+        .map-layer-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .layer-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-pill);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .layer-checkbox input {
+            accent-color: var(--neon-blue);
+            cursor: pointer;
+        }
+
+        .radio-card-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            background: rgba(10, 24, 46, 0.6);
+            border: 1px solid rgba(120, 180, 255, 0.15);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .radio-card:hover {
+            background: rgba(18, 40, 75, 0.8);
+            border-color: var(--neon-blue);
+        }
+
+        .radio-card.selected {
+            background: rgba(10, 42, 54, 0.85);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(53, 241, 208, 0.15);
+        }
+
+        .radio-card input[type="radio"] {
+            margin-top: 0.2rem;
+            accent-color: var(--neon-green);
+        }
+
+        .radio-card-text strong {
+            display: block;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .radio-card-text p {
+            margin: 0;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body class="tool-page">
+    <main class="page-shell">
+        <!-- Hero Section -->
+        <section class="tool-hero glass-card">
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow"><i class="fas fa-clone"></i> Deteksi Duplikasi & Insert Placemark Master</span>
+                    <h1 class="display-title">Cek Duplikasi Titik</h1>
+                    <p class="hero-description">
+                        Komparasikan <strong>File A (Master)</strong> dengan <strong>File B (Bahan)</strong>. Sistem akan mendeteksi titik yang cocok dan <strong>meng-insert placemark baru di titik koordinat Master A yang TIDAK duplikasi dengan bahan</strong> (titik master yang belum tercover), lengkap dengan kustomisasi nama, ikon, dan ukuran.
+                    </p>
+                    <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-database"></i> File A: Master Acuan</span>
+                        <span class="status-pill"><i class="fas fa-layer-group"></i> File B: Data Bahan</span>
+                        <span class="status-pill"><i class="fas fa-location-dot" style="color: var(--neon-green)"></i> Insert di Titik Master Non-Duplikat</span>
+                        <span class="status-pill"><i class="fas fa-icons"></i> Kustom Ikon, Nama & Skala</span>
+                    </div>
+                </div>
+                <div class="hero-side">
+                    <div class="status-panel">
+                        <strong>Konsep Komparasi</strong>
+                        <span>Master (A) &times; Bahan (B)</span>
+                        <p class="support-text">
+                            Titik-titik pada File Master (A) yang tidak ditemukan dalam File Bahan (B) akan dibuatkan placemark baru dengan visual ikon khusus dan dapat langsung disisipkan kembali ke dalam file KML Master Anda.
+                        </p>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-stat">
+                            <strong>Master (A)</strong>
+                            <span id="metricF1">0 Titik</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Bahan (B)</strong>
+                            <span id="metricF2">0 Titik</span>
+                        </div>
+                        <div class="hero-stat">
+                            <strong>Baru di Master</strong>
+                            <span id="metricMatch" style="color: var(--neon-green)">0 Titik</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Panel Grid -->
+        <section class="panel-grid">
+            <div class="stack">
+                <!-- Section 1: Upload Files -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Langkah 1</span>
+                        <h2 class="card-title">Upload File A (Master) dan File B (Bahan)</h2>
+                        <p class="card-copy">File A adalah data Master acuan (misal: target rencana jaringan/tiang). File B adalah data Bahan (misal: survey/terpasang).</p>
+                    </div>
+
+                    <div class="input-grid-2">
+                        <!-- Dropzone File A (Master) -->
+                        <div class="upload-card-sub master-card" id="dropzone1">
+                            <div class="upload-header">
+                                <h4><i class="fas fa-database" style="color: var(--neon-blue);"></i> File A (Master)</h4>
+                                <span class="upload-badge">File Master Acuan</span>
+                            </div>
+                            <div class="drop-click-zone" id="zoneClick1">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                                <strong>Pilih / Drag File A (Master)</strong>
+                                <p>KML / KMZ / CSV / Excel</p>
+                            </div>
+                            <input type="file" id="input1" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" style="display:none;">
+                            <div class="file-loaded-info" id="info1">
+                                <button type="button" class="btn-clear-file" id="clear1" title="Hapus file"><i class="fas fa-xmark"></i> Hapus</button>
+                                <div><strong id="name1Text">-</strong></div>
+                                <div id="count1Text" style="font-size:0.78rem; opacity:0.85;">0 titik ditemukan</div>
+                            </div>
+                        </div>
+
+                        <!-- Dropzone File B (Bahan) -->
+                        <div class="upload-card-sub bahan-card" id="dropzone2">
+                            <div class="upload-header">
+                                <h4><i class="fas fa-file-circle-check" style="color: var(--neon-orange);"></i> File B (Bahan)</h4>
+                                <span class="upload-badge" style="color: var(--neon-orange); border-color: rgba(255,156,74,0.3); background: rgba(255,156,74,0.12);">Data Bahan</span>
+                            </div>
+                            <div class="drop-click-zone" id="zoneClick2">
+                                <i class="fas fa-cloud-arrow-up" style="color: var(--neon-orange);"></i>
+                                <strong>Pilih / Drag File B (Bahan)</strong>
+                                <p>KML / KMZ / CSV / Excel</p>
+                            </div>
+                            <input type="file" id="input2" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" style="display:none;">
+                            <div class="file-loaded-info" id="info2">
+                                <button type="button" class="btn-clear-file" id="clear2" title="Hapus file"><i class="fas fa-xmark"></i> Hapus</button>
+                                <div><strong id="name2Text" style="color: var(--neon-orange);">-</strong></div>
+                                <div id="count2Text" style="font-size:0.78rem; opacity:0.85;">0 titik ditemukan</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between; margin-top: 0.5rem;">
+                        <button type="button" id="btnLoadDemo" class="btn-outline" style="font-size: 0.85rem; padding: 0.55rem 1rem;">
+                            <i class="fas fa-wand-magic-sparkles" style="color: var(--neon-green)"></i> Muat Data Demo (Instant Test)
+                        </button>
+                        <button type="button" id="btnDownloadSample" class="btn-outline" style="font-size: 0.85rem; padding: 0.55rem 1rem;">
+                            <i class="fas fa-file-arrow-down" style="color: var(--neon-blue)"></i> Download Contoh CSV (Master & Bahan)
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Section 2: Match Settings -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Langkah 2</span>
+                        <h2 class="card-title">Parameter Pengecekan Duplikasi & Target Insert</h2>
+                        <p class="card-copy">Tentukan kriteria titik yang dianggap sama dan pilih target placemark yang akan digenerate.</p>
+                    </div>
+
+                    <div class="folder-form-grid">
+                        <div class="folder-form-group">
+                            <label for="toleranceMode">Metode Deteksi Jarak</label>
+                            <select id="toleranceMode">
+                                <option value="exact">Titik Persis Sama (Jarak = 0 meter)</option>
+                                <option value="radius" selected>Radius Toleransi Jarak (Meter)</option>
+                                <option value="decimals">Pembulatan Desimal Koordinat</option>
+                            </select>
+                        </div>
+
+                        <div class="folder-form-group" id="radiusGroup">
+                            <label for="toleranceRadius">Radius Toleransi (Meter)</label>
+                            <div class="range-slider-group">
+                                <input type="range" id="toleranceRadius" min="0" max="100" step="0.5" value="1">
+                                <span class="range-val-badge" id="radiusValBadge">1 m</span>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.45rem;">
+                                <button type="button" class="preset-name-btn chip-radius" data-r="0">0m (Persis / 10cm)</button>
+                                <button type="button" class="preset-name-btn chip-radius" data-r="0.5">0.5m</button>
+                                <button type="button" class="preset-name-btn chip-radius" data-r="1">1m (Rekomendasi GE)</button>
+                                <button type="button" class="preset-name-btn chip-radius" data-r="3">3m</button>
+                                <button type="button" class="preset-name-btn chip-radius" data-r="5">5m</button>
+                                <button type="button" class="preset-name-btn chip-radius" data-r="10">10m</button>
+                            </div>
+                            <p style="font-size: 0.76rem; color: var(--text-secondary); margin: 0.4rem 0 0 0;">
+                                <i class="fas fa-circle-info" style="color: var(--neon-blue);"></i> <strong>Tips:</strong> Titik yang menumpuk di Google Earth sering memiliki selisih koordinat mikro (~0.1m s.d 1m) akibat resolusi GPS atau perbedaan digit desimal. Gunakan <strong>1 meter</strong> untuk hasil optimal.
+                            </p>
+                        </div>
+
+                        <div class="folder-form-group" id="decimalsGroup" style="display: none;">
+                            <label for="decimalPlaces">Presisi Desimal Koordinat</label>
+                            <select id="decimalPlaces">
+                                <option value="7">7 Desimal (~1.1 cm presisi)</option>
+                                <option value="6" selected>6 Desimal (~0.11 m presisi)</option>
+                                <option value="5">5 Desimal (~1.1 m presisi)</option>
+                                <option value="4">4 Desimal (~11 m presisi)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Target Selection Cards -->
+                    <div style="margin-top: 1.25rem;">
+                        <label style="font-weight: 700; color: #cde6ff; font-size: 0.88rem;">Target Pembuatan Placemark Baru:</label>
+                        <div class="radio-card-group">
+                            <label class="radio-card selected" id="cardTargetUnmatched">
+                                <input type="radio" name="targetGeneration" id="optTargetUnmatched" value="master_unmatched" checked>
+                                <div class="radio-card-text">
+                                    <strong><i class="fas fa-bullseye" style="color: var(--neon-green);"></i> Titik Master A yang TIDAK Duplikasi (Rekomendasi)</strong>
+                                    <p>Insert placemark baru di koordinat Master A yang belum ada di Bahan B (titik belum tercover/belum disurvey).</p>
+                                </div>
+                            </label>
+
+                            <label class="radio-card" id="cardTargetMatched">
+                                <input type="radio" name="targetGeneration" id="optTargetMatched" value="master_matched">
+                                <div class="radio-card-text">
+                                    <strong><i class="fas fa-check-double" style="color: var(--neon-blue);"></i> Titik Master A yang Duplikasi</strong>
+                                    <p>Insert placemark baru di koordinat Master A yang sudah cocok/teridentifikasi sama di Bahan B.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: New Placemark Customization -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Langkah 3</span>
+                        <h2 class="card-title">Kustomisasi Placemark Baru di Titik Master</h2>
+                        <p class="card-copy">Atur nama placemark baru, pilih ikon, dan tentukan ukuran ikon saat placemark baru disisipkan ke titik master.</p>
+                    </div>
+
+                    <!-- Workflow Info Box -->
+                    <div class="workflow-callout">
+                        <i class="fas fa-location-dot"></i>
+                        <div style="font-size: 0.88rem; color: #d0e7ff; line-height: 1.5;">
+                            <strong>Penempatan Koordinat:</strong> Placemark baru akan <strong>di-insert persis pada titik koordinat File Master A</strong> yang tidak memiliki duplikasi di Bahan B. Seluruh data asli Master tetap terjaga dengan aman.
+                        </div>
+                    </div>
+
+                    <!-- Placemark Name Template -->
+                    <div class="folder-form">
+                        <h4>1. Kustomisasi Format Nama Placemark Baru</h4>
+                        <p class="card-copy">Tentukan format penamaan untuk placemark baru yang disisipkan ke titik master:</p>
+                        
+                        <div class="folder-form-group">
+                            <label for="nameTemplate">Template Nama Placemark</label>
+                            <input type="text" id="nameTemplate" value="[BARU] {name_master}" placeholder="Contoh: [BARU] {name_master}">
+                        </div>
+
+                        <div class="token-list">
+                            <button type="button" class="token-btn" data-token="{name_master}"><i class="fas fa-plus"></i> {name_master} (Nama Master)</button>
+                            <button type="button" class="token-btn" data-token="{n}"><i class="fas fa-plus"></i> {n} (Nomor Urut)</button>
+                            <button type="button" class="token-btn" data-token="{lat}"><i class="fas fa-plus"></i> {lat}</button>
+                            <button type="button" class="token-btn" data-token="{lon}"><i class="fas fa-plus"></i> {lon}</button>
+                            <button type="button" class="token-btn" data-token="{name_bahan}"><i class="fas fa-plus"></i> {name_bahan} (Jika Ada)</button>
+                        </div>
+
+                        <div style="margin-top: 0.85rem;">
+                            <label style="font-size: 0.78rem;">Pilihan Cepat Template:</label>
+                            <div class="preset-name-grid">
+                                <button type="button" class="preset-name-btn preset-tmpl" data-tmpl="[BARU] {name_master}">[BARU] {name_master}</button>
+                                <button type="button" class="preset-name-btn preset-tmpl" data-tmpl="BELUM_TERCOVER-{n} | {name_master}">BELUM_TERCOVER-{n} | {name_master}</button>
+                                <button type="button" class="preset-name-btn preset-tmpl" data-tmpl="{name_master} (NON-DUPLIKAT)">{name_master} (NON-DUPLIKAT)</button>
+                                <button type="button" class="preset-name-btn preset-tmpl" data-tmpl="{name_master}">{name_master} (Nama Asli)</button>
+                                <button type="button" class="preset-name-btn preset-tmpl" data-tmpl="TARGET-{n}">TARGET-{n}</button>
+                            </div>
+                        </div>
+
+                        <div class="folder-form-grid" style="margin-top: 1rem;">
+                            <div class="folder-form-group">
+                                <label for="startSeqNumber">Nomor Mulai Urut ({n})</label>
+                                <input type="number" id="startSeqNumber" min="1" step="1" value="1">
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="zeroPadDigits">Format Angka Urut</label>
+                                <select id="zeroPadDigits">
+                                    <option value="1">1, 2, 3... (Tanpa Nol Depan)</option>
+                                    <option value="2">01, 02, 03... (2 Digit)</option>
+                                    <option value="3" selected>001, 002, 003... (3 Digit)</option>
+                                    <option value="4">0001, 0002, 0003... (4 Digit)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Icon & Size Customization -->
+                    <div class="folder-form" style="margin-top: 1.25rem;">
+                        <h4>2. Pilihan Ikon Placemark Baru & Ukuran (Scale)</h4>
+                        <p class="card-copy">Pilih ikon visual untuk menandai placemark baru yang di-insert ke titik master:</p>
+
+                        <!-- Icon Grid -->
+                        <div class="icon-grid" id="iconGrid"></div>
+
+                        <!-- Custom Icon URL -->
+                        <div class="folder-form-grid" style="margin-top: 1.25rem;">
+                            <div class="folder-form-group" style="grid-column: 1 / -1;">
+                                <label for="customIconUrl">Atau Masukkan URL Ikon Kustom (Opsional)</label>
+                                <input type="text" id="customIconUrl" placeholder="https://example.com/icon.png">
+                            </div>
+                        </div>
+
+                        <!-- Icon Scale & Color Settings -->
+                        <div class="folder-form-grid" style="margin-top: 1rem;">
+                            <div class="folder-form-group">
+                                <label for="iconScale">Ukuran / Skala Ikon (Icon Scale)</label>
+                                <div class="range-slider-group">
+                                    <input type="range" id="iconScale" min="0.4" max="3.0" step="0.1" value="1.3">
+                                    <span class="range-val-badge" id="iconScaleVal">1.3x</span>
+                                </div>
+                            </div>
+
+                            <div class="folder-form-group">
+                                <label for="iconColor">Warna Tint Ikon (Opsional)</label>
+                                <div style="display: flex; gap: 0.6rem; align-items: center;">
+                                    <input type="color" id="iconColor" value="#ffff00" style="width: 55px; height: 46px; padding: 4px; cursor: pointer; border-radius: 12px;">
+                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; text-transform: none; margin: 0;">
+                                        <input type="checkbox" id="enableColorTint" checked> Terapkan Warna Tint
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="folder-form-group">
+                                <label for="labelScale">Ukuran Teks Label (Label Scale)</label>
+                                <div class="range-slider-group">
+                                    <input type="range" id="labelScale" min="0.5" max="2.0" step="0.1" value="1.0">
+                                    <span class="range-val-badge" id="labelScaleVal">1.0x</span>
+                                </div>
+                            </div>
+
+                            <div class="folder-form-group">
+                                <label for="labelColor">Warna Teks Label</label>
+                                <input type="color" id="labelColor" value="#ffffff" style="width: 55px; height: 46px; padding: 4px; cursor: pointer; border-radius: 12px;">
+                            </div>
+                        </div>
+
+                        <!-- Live Icon Preview Box -->
+                        <div class="icon-preview-box">
+                            <img id="activeIconPreview" class="icon-preview-img" src="http://maps.google.com/mapfiles/kml/paddle/grn-stars.png" alt="Icon Preview">
+                            <div>
+                                <strong id="activeIconName" style="color: #fff; font-size: 0.95rem;">Paddle Bintang Hijau</strong>
+                                <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);" id="activeIconDetails">Skala: 1.3x | Siap disisipkan pada titik master</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Options -->
+                    <div class="folder-form" style="margin-top: 1.25rem;">
+                        <h4>3. Mode Penyisipan & Format Output KML</h4>
+                        <div class="folder-form-grid">
+                            <div class="folder-form-group">
+                                <label for="outputMode">Mode Hasil Output KML</label>
+                                <select id="outputMode">
+                                    <option value="insert_into_master" selected>Sisipkan Placemark Baru ke File Master Asli (Gabungan Utuh)</option>
+                                    <option value="new_placemarks_only">Hanya Ekspor Placemark Baru Saja</option>
+                                    <option value="all_categorized">Ekspor Lengkap (Folder: Placemark Baru Master, Duplikat, Unik Bahan)</option>
+                                </select>
+                            </div>
+                            <div class="folder-form-group">
+                                <label for="outputFolderName">Nama Folder Placemark Baru</label>
+                                <input type="text" id="outputFolderName" value="PLACEMARK_BARU_MASTER">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Trigger -->
+                    <div class="tool-actions" style="margin-top: 1.5rem;">
+                        <button id="btnProcess" type="button" class="btn-primary" style="font-size: 1.05rem; padding: 1rem 1.8rem;">
+                            <i class="fas fa-magnifying-glass-location"></i> Komparasi & Insert Placemark Baru di Master
+                        </button>
+                        <button id="btnResetAll" type="button" class="button-muted">
+                            <i class="fas fa-rotate-left"></i> Reset Form
+                        </button>
+                    </div>
+
+                    <div id="loading" style="display:none; margin-top: 1rem;">
+                        <i class="fas fa-spinner fa-spin"></i> Memproses komparasi dan menyisipkan placemark ke titik master...
+                    </div>
+                    <div id="error" class="error" style="display:none; margin-top: 1rem;"></div>
+                </section>
+
+                <!-- Section 4: Results & Downloads (Shown when processed) -->
+                <section class="card" id="resultsSection" style="display: none;">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker" style="background: rgba(53, 241, 208, 0.12); color: var(--neon-green); border-color: rgba(53, 241, 208, 0.3);">Hasil Komparasi</span>
+                        <h2 class="card-title">Ringkasan Komparasi & Unduh File Hasil</h2>
+                        <p class="card-copy">Placemark baru telah berhasil dibuat di titik-titik Master A yang tidak duplikasi dengan Bahan B. Silakan unduh KML master yang telah disisipkan atau lihat visualisasi peta di bawah.</p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="stat-grid-5">
+                        <div class="stat-card-highlight">
+                            <strong>Total Master (A)</strong>
+                            <span id="statTotalF1">0</span>
+                        </div>
+                        <div class="stat-card-highlight">
+                            <strong>Total Bahan (B)</strong>
+                            <span id="statTotalF2">0</span>
+                        </div>
+                        <div class="stat-card-highlight match">
+                            <strong id="labelStatGenerated">Placemark Baru di Master</strong>
+                            <span id="statGenerated">0</span>
+                        </div>
+                        <div class="stat-card-highlight">
+                            <strong>Duplikat / Match</strong>
+                            <span id="statMatched" style="color: var(--neon-blue);">0</span>
+                        </div>
+                        <div class="stat-card-highlight">
+                            <strong>Unik Bahan (B)</strong>
+                            <span id="statUnique2" style="color: var(--neon-orange);">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Download Buttons -->
+                    <div class="tool-actions" style="margin-bottom: 1.5rem;">
+                        <button type="button" id="btnDownloadKML" class="btn-primary">
+                            <i class="fas fa-file-export"></i> Download KML Hasil
+                        </button>
+                        <button type="button" id="btnDownloadKMZ" class="button-success">
+                            <i class="fas fa-file-zipper"></i> Download KMZ Hasil
+                        </button>
+                        <button type="button" id="btnDownloadExcel" class="button-accent">
+                            <i class="fas fa-file-excel"></i> Download Rekap Excel
+                        </button>
+                        <button type="button" id="btnDownloadCSV" class="button-muted">
+                            <i class="fas fa-file-csv"></i> Download CSV
+                        </button>
+                        <button type="button" id="btnToggleMap" class="map-toggle">
+                            <i class="fas fa-map-location-dot"></i> <span id="mapToggleText">Tampilkan di Peta</span>
+                        </button>
+                    </div>
+
+                    <!-- Map Preview Container -->
+                    <div id="mapContainer" style="display: none; margin-top: 1.5rem; margin-bottom: 2rem;">
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h4 style="margin: 0;"><i class="fas fa-map"></i> Preview Peta Hasil</h4>
+                            <div class="map-layer-toggles">
+                                <label class="layer-checkbox"><input type="checkbox" id="layerToggleNew" checked> <span style="color: var(--neon-green)">● Placemark Baru (Titik Master)</span></label>
+                                <label class="layer-checkbox"><input type="checkbox" id="layerToggleF1" checked> <span style="color: var(--neon-blue)">● Master Asal</span></label>
+                                <label class="layer-checkbox"><input type="checkbox" id="layerToggleF2" checked> <span style="color: var(--neon-orange)">● Bahan Asal</span></label>
+                                <label class="layer-checkbox"><input type="checkbox" id="layerToggleDups"> <span>● Titik Duplikat</span></label>
+                                <button type="button" id="btnFitMap" class="btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;"><i class="fas fa-expand"></i> Zoom Semua</button>
+                            </div>
+                        </div>
+                        <div id="map" style="height: 480px; width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-light); z-index: 1;"></div>
+                    </div>
+
+                    <!-- Data Table & Search -->
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
+                            <!-- Filter Tabs -->
+                            <div class="filter-tabs" id="filterTabs">
+                                <button type="button" class="filter-tab-btn active" data-filter="generated">Placemark Baru Master (<span id="cntTabGenerated">0</span>)</button>
+                                <button type="button" class="filter-tab-btn" data-filter="duplicates">Titik Duplikat (<span id="cntTabDuplicates">0</span>)</button>
+                                <button type="button" class="filter-tab-btn" data-filter="unique2">Unik Bahan (<span id="cntTabUniq2">0</span>)</button>
+                                <button type="button" class="filter-tab-btn" data-filter="all">Semua Data (<span id="cntTabAll">0</span>)</button>
+                            </div>
+
+                            <!-- Search Input -->
+                            <div style="min-width: 250px;">
+                                <input type="search" id="tableSearch" placeholder="Cari nama, koordinat, atau status..." style="padding: 0.55rem 0.85rem; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                        <!-- Responsive Table -->
+                        <div class="table-responsive">
+                            <table class="data-table" id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 45px;">No</th>
+                                        <th style="width: 140px;">Status</th>
+                                        <th>Nama Placemark Baru</th>
+                                        <th>Nama Titik Master (A)</th>
+                                        <th>Nama Titik Bahan (B)</th>
+                                        <th>Selisih Jarak</th>
+                                        <th>Koordinat Master (Lat, Lon)</th>
+                                        <th style="width: 90px; text-align: center;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table Pagination -->
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-top: 1rem; gap: 0.8rem;">
+                            <div style="font-size: 0.84rem; color: var(--text-secondary);" id="paginationInfo">
+                                Menampilkan 0 - 0 dari 0 data
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label style="font-size: 0.8rem; margin: 0;">Baris per halaman:</label>
+                                <select id="pageSizeSelect" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.82rem;">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <button type="button" id="btnPrevPage" class="btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" disabled><i class="fas fa-chevron-left"></i></button>
+                                <span id="pageIndicator" style="font-size: 0.84rem; font-weight: 700; min-width: 50px; text-align: center;">1 / 1</span>
+                                <button type="button" id="btnNextPage" class="btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" disabled><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Sidebar Info & Tutorial -->
+            <aside class="stack">
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Alur Kerja</span>
+                        <h2 class="card-title">Cara Komparasi Master & Bahan</h2>
+                    </div>
+                    <ol style="padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.7; color: var(--text-secondary);">
+                        <li><strong>Upload File A (Master):</strong> Data acuan utama jaringan/tiang/ODP.</li>
+                        <li><strong>Upload File B (Bahan):</strong> Data survey atau data terpasang.</li>
+                        <li>Tentukan <strong>toleransi jarak</strong> (0m untuk koordinat persis sama).</li>
+                        <li>Sistem secara default memilih <strong>Titik Master yang TIDAK Duplikasi</strong> untuk dibuatkan placemark baru.</li>
+                        <li>Pilih <strong>ikon, ukuran ikon, dan template nama</strong> untuk placemark baru.</li>
+                        <li>Klik <strong>Komparasi & Insert Placemark</strong>. Placemark baru akan langsung disisipkan pada koordinat titik master yang belum ada di bahan.</li>
+                    </ol>
+                </section>
+
+                <section class="support-card glass-card">
+                    <div class="card-header">
+                        <span class="eyebrow card-kicker">Keunggulan</span>
+                        <h2 class="card-title">Struktur Master Tetap Utuh</h2>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                        <p>Jika File Master berupa KML/KMZ lengkap (berisi jalur kabel, tiang, polygon, dan style bawaan), tool ini akan <strong>mempertahankan seluruh isi file master asli</strong> dan menyisipkan folder placemark baru tepat pada titik koordinat Master.</p>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // Preset KML Icons Library (Google Earth & Telco Shapes)
+        const kmlIconLibrary = [
+            { name: 'Paddle Bintang Hijau', url: 'http://maps.google.com/mapfiles/kml/paddle/grn-stars.png' },
+            { name: 'Paddle Bintang Merah', url: 'http://maps.google.com/mapfiles/kml/paddle/red-stars.png' },
+            { name: 'Paddle Bulat Hijau', url: 'http://maps.google.com/mapfiles/kml/paddle/grn-circle.png' },
+            { name: 'Paddle Bulat Merah', url: 'http://maps.google.com/mapfiles/kml/paddle/red-circle.png' },
+            { name: 'Paddle Bulat Kuning', url: 'http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png' },
+            { name: 'Paddle Bulat Putih', url: 'http://maps.google.com/mapfiles/kml/paddle/wht-circle.png' },
+            { name: 'Pushpin Hijau', url: 'http://maps.google.com/mapfiles/kml/pushpin/grn-pushpin.png' },
+            { name: 'Pushpin Merah', url: 'http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png' },
+            { name: 'Pushpin Kuning', url: 'http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png' },
+            { name: 'Pushpin Biru', url: 'http://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png' },
+            { name: 'TIANG (Circle)', url: 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png' },
+            { name: 'MH / HH (Square)', url: 'http://maps.google.com/mapfiles/kml/shapes/placemark_square.png' },
+            { name: 'ODC (Triangle)', url: 'http://maps.google.com/mapfiles/kml/shapes/triangle.png' },
+            { name: 'CLOSURE (Forbidden)', url: 'http://maps.google.com/mapfiles/kml/shapes/forbidden.png' },
+            { name: 'TARGET / ODP', url: 'http://maps.google.com/mapfiles/kml/shapes/target.png' },
+            { name: 'CROSSING (Arrow)', url: 'http://maps.google.com/mapfiles/kml/shapes/arrow.png' },
+            { name: 'CROSS-HAIRS', url: 'http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png' },
+            { name: 'MINI OLT (Elec)', url: 'http://maps.google.com/mapfiles/kml/shapes/electronics.png' },
+            { name: 'STO / HUB', url: 'http://maps.google.com/mapfiles/kml/shapes/homegardenbusiness.png' }
+        ];
+
+        // State variables
+        let dataset1 = { fileName: '', rawPoints: [], rawKmlText: null, rawKmlDoc: null, isKmlOrKmz: false };
+        let dataset2 = { fileName: '', rawPoints: [] };
+        let selectedIconUrl = kmlIconLibrary[0].url;
+        let selectedIconName = kmlIconLibrary[0].name;
+
+        let processedData = {
+            targetMode: 'master_unmatched', // 'master_unmatched' (default) or 'master_matched'
+            generatedPlacemarks: [],        // Placemarks to be inserted/exported (at Master coordinates)
+            duplicates: [],                 // Pairs of Master & Bahan that matched
+            uniqueBahan: [],                // Points only in Bahan
+            allData: []                     // Combined list for table/export
+        };
+
+        // Table & Pagination state
+        let currentFilter = 'generated';
+        let currentPage = 1;
+        let pageSize = 25;
+        let searchQuery = '';
+
+        // Map state
+        let leafletMap = null;
+        let layerGroupNew = null;
+        let layerGroupF1 = null;
+        let layerGroupF2 = null;
+        let layerGroupDups = null;
+        let markerLookup = new Map();
+
+        // DOM elements
+        const dropzone1 = document.getElementById('dropzone1');
+        const dropzone2 = document.getElementById('dropzone2');
+        const zoneClick1 = document.getElementById('zoneClick1');
+        const zoneClick2 = document.getElementById('zoneClick2');
+        const input1 = document.getElementById('input1');
+        const input2 = document.getElementById('input2');
+        const info1 = document.getElementById('info1');
+        const info2 = document.getElementById('info2');
+        const clear1 = document.getElementById('clear1');
+        const clear2 = document.getElementById('clear2');
+        const name1Text = document.getElementById('name1Text');
+        const name2Text = document.getElementById('name2Text');
+        const count1Text = document.getElementById('count1Text');
+        const count2Text = document.getElementById('count2Text');
+
+        const toleranceModeSelect = document.getElementById('toleranceMode');
+        const radiusGroup = document.getElementById('radiusGroup');
+        const toleranceRadiusInput = document.getElementById('toleranceRadius');
+        const radiusValBadge = document.getElementById('radiusValBadge');
+        const decimalsGroup = document.getElementById('decimalsGroup');
+        const decimalPlacesSelect = document.getElementById('decimalPlaces');
+
+        const optTargetUnmatched = document.getElementById('optTargetUnmatched');
+        const optTargetMatched = document.getElementById('optTargetMatched');
+        const cardTargetUnmatched = document.getElementById('cardTargetUnmatched');
+        const cardTargetMatched = document.getElementById('cardTargetMatched');
+
+        const nameTemplateInput = document.getElementById('nameTemplate');
+        const startSeqNumberInput = document.getElementById('startSeqNumber');
+        const zeroPadDigitsSelect = document.getElementById('zeroPadDigits');
+
+        const iconGrid = document.getElementById('iconGrid');
+        const customIconUrlInput = document.getElementById('customIconUrl');
+        const iconScaleInput = document.getElementById('iconScale');
+        const iconScaleVal = document.getElementById('iconScaleVal');
+        const iconColorInput = document.getElementById('iconColor');
+        const enableColorTintCheckbox = document.getElementById('enableColorTint');
+        const labelScaleInput = document.getElementById('labelScale');
+        const labelScaleVal = document.getElementById('labelScaleVal');
+        const labelColorInput = document.getElementById('labelColor');
+        const activeIconPreview = document.getElementById('activeIconPreview');
+        const activeIconName = document.getElementById('activeIconName');
+        const activeIconDetails = document.getElementById('activeIconDetails');
+
+        const outputModeSelect = document.getElementById('outputMode');
+        const outputFolderNameInput = document.getElementById('outputFolderName');
+
+        const btnProcess = document.getElementById('btnProcess');
+        const btnResetAll = document.getElementById('btnResetAll');
+        const btnLoadDemo = document.getElementById('btnLoadDemo');
+        const btnDownloadSample = document.getElementById('btnDownloadSample');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        const resultsSection = document.getElementById('resultsSection');
+        const statTotalF1 = document.getElementById('statTotalF1');
+        const statTotalF2 = document.getElementById('statTotalF2');
+        const statGenerated = document.getElementById('statGenerated');
+        const statMatched = document.getElementById('statMatched');
+        const statUnique2 = document.getElementById('statUnique2');
+        const labelStatGenerated = document.getElementById('labelStatGenerated');
+
+        const btnDownloadKML = document.getElementById('btnDownloadKML');
+        const btnDownloadKMZ = document.getElementById('btnDownloadKMZ');
+        const btnDownloadExcel = document.getElementById('btnDownloadExcel');
+        const btnDownloadCSV = document.getElementById('btnDownloadCSV');
+        const btnToggleMap = document.getElementById('btnToggleMap');
+        const mapToggleText = document.getElementById('mapToggleText');
+        const mapContainer = document.getElementById('mapContainer');
+        const btnFitMap = document.getElementById('btnFitMap');
+
+        const dataTable = document.getElementById('dataTable');
+        const tableBody = document.getElementById('tableBody');
+        const filterTabs = document.getElementById('filterTabs');
+        const tableSearch = document.getElementById('tableSearch');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const pageIndicator = document.getElementById('pageIndicator');
+
+        const cntTabGenerated = document.getElementById('cntTabGenerated');
+        const cntTabDuplicates = document.getElementById('cntTabDuplicates');
+        const cntTabUniq2 = document.getElementById('cntTabUniq2');
+        const cntTabAll = document.getElementById('cntTabAll');
+
+        // Initialize UI
+        function initApp() {
+            renderIconGrid();
+            setupEventListeners();
+            updateIconPreview();
+        }
+
+        function renderIconGrid() {
+            iconGrid.innerHTML = '';
+            kmlIconLibrary.forEach((icon, idx) => {
+                const item = document.createElement('div');
+                item.className = 'icon-option' + (icon.url === selectedIconUrl ? ' selected' : '');
+                item.innerHTML = `
+                    <img src="${icon.url}" alt="${icon.name}">
+                    <span>${icon.name}</span>
+                `;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedIconUrl = icon.url;
+                    selectedIconName = icon.name;
+                    customIconUrlInput.value = '';
+                    updateIconPreview();
+                });
+                iconGrid.appendChild(item);
+            });
+        }
+
+        function updateIconPreview() {
+            const url = customIconUrlInput.value.trim() || selectedIconUrl;
+            activeIconPreview.src = url;
+            activeIconName.textContent = customIconUrlInput.value.trim() ? 'Ikon Kustom' : selectedIconName;
+            const scale = parseFloat(iconScaleInput.value) || 1.0;
+            activeIconDetails.textContent = `Skala: ${scale.toFixed(1)}x | Siap disisipkan pada titik master`;
+        }
+
+        function setupEventListeners() {
+            // Dropzone 1 (Master)
+            zoneClick1.addEventListener('click', () => input1.click());
+            input1.addEventListener('change', (e) => handleFile(e.target.files[0], 1));
+            setupDragAndDrop(dropzone1, 1);
+            clear1.addEventListener('click', () => clearFile(1));
+
+            // Dropzone 2 (Bahan)
+            zoneClick2.addEventListener('click', () => input2.click());
+            input2.addEventListener('change', (e) => handleFile(e.target.files[0], 2));
+            setupDragAndDrop(dropzone2, 2);
+            clear2.addEventListener('click', () => clearFile(2));
+
+            // Radio Card Target Selection
+            optTargetUnmatched.addEventListener('change', () => {
+                cardTargetUnmatched.classList.add('selected');
+                cardTargetMatched.classList.remove('selected');
+                if (nameTemplateInput.value === '[DUPLIKAT] {name_master} - {name_bahan}') {
+                    nameTemplateInput.value = '[BARU] {name_master}';
+                }
+                outputFolderNameInput.value = 'PLACEMARK_BARU_MASTER';
+            });
+
+            optTargetMatched.addEventListener('change', () => {
+                cardTargetMatched.classList.add('selected');
+                cardTargetUnmatched.classList.remove('selected');
+                if (nameTemplateInput.value === '[BARU] {name_master}') {
+                    nameTemplateInput.value = '[DUPLIKAT] {name_master} - {name_bahan}';
+                }
+                outputFolderNameInput.value = 'PLACEMARK_DUPLIKAT_MASTER';
+            });
+
+            // Tolerance Mode change
+            toleranceModeSelect.addEventListener('change', () => {
+                const mode = toleranceModeSelect.value;
+                if (mode === 'radius') {
+                    radiusGroup.style.display = 'block';
+                    decimalsGroup.style.display = 'none';
+                } else if (mode === 'decimals') {
+                    radiusGroup.style.display = 'none';
+                    decimalsGroup.style.display = 'block';
+                } else {
+                    radiusGroup.style.display = 'none';
+                    decimalsGroup.style.display = 'none';
+                    toleranceRadiusInput.value = '0';
+                    radiusValBadge.textContent = '0 m';
+                }
+            });
+
+            // Tolerance Radius input
+            toleranceRadiusInput.addEventListener('input', () => {
+                radiusValBadge.textContent = `${toleranceRadiusInput.value} m`;
+            });
+
+            // Radius preset chips
+            document.querySelectorAll('.chip-radius').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toleranceRadiusInput.value = btn.dataset.r;
+                    radiusValBadge.textContent = `${btn.dataset.r} m`;
+                });
+            });
+
+            // Token buttons
+            document.querySelectorAll('.token-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    insertAtCursor(nameTemplateInput, btn.dataset.token);
+                });
+            });
+
+            // Preset Template buttons
+            document.querySelectorAll('.preset-tmpl').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    nameTemplateInput.value = btn.dataset.tmpl;
+                });
+            });
+
+            // Scale inputs
+            iconScaleInput.addEventListener('input', () => {
+                iconScaleVal.textContent = `${parseFloat(iconScaleInput.value).toFixed(1)}x`;
+                updateIconPreview();
+            });
+
+            labelScaleInput.addEventListener('input', () => {
+                labelScaleVal.textContent = `${parseFloat(labelScaleInput.value).toFixed(1)}x`;
+            });
+
+            customIconUrlInput.addEventListener('input', () => {
+                updateIconPreview();
+            });
+
+            // Process Button
+            btnProcess.addEventListener('click', runComparisonAndGeneration);
+
+            // Reset Button
+            btnResetAll.addEventListener('click', resetAll);
+
+            // Demo & Sample Data
+            btnLoadDemo.addEventListener('click', loadDemoData);
+            btnDownloadSample.addEventListener('click', downloadSampleFiles);
+
+            // Downloads
+            btnDownloadKML.addEventListener('click', downloadKML);
+            btnDownloadKMZ.addEventListener('click', downloadKMZ);
+            btnDownloadExcel.addEventListener('click', downloadExcel);
+            btnDownloadCSV.addEventListener('click', downloadCSV);
+
+            // Map Toggle
+            btnToggleMap.addEventListener('click', toggleMapVisibility);
+            btnFitMap.addEventListener('click', fitMapBounds);
+
+            // Layer toggles
+            document.getElementById('layerToggleNew').addEventListener('change', updateMapLayers);
+            document.getElementById('layerToggleF1').addEventListener('change', updateMapLayers);
+            document.getElementById('layerToggleF2').addEventListener('change', updateMapLayers);
+            document.getElementById('layerToggleDups').addEventListener('change', updateMapLayers);
+
+            // Table Filters
+            filterTabs.querySelectorAll('.filter-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterTabs.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    currentPage = 1;
+                    renderTable();
+                });
+            });
+
+            // Table Search
+            tableSearch.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Pagination
+            pageSizeSelect.addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value, 10);
+                currentPage = 1;
+                renderTable();
+            });
+
+            btnPrevPage.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+
+            btnNextPage.addEventListener('click', () => {
+                currentPage++;
+                renderTable();
+            });
+        }
+
+        function setupDragAndDrop(element, slot) {
+            element.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.add('dragover');
+            });
+            element.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.remove('dragover');
+            });
+            element.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                element.classList.remove('dragover');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFile(e.dataTransfer.files[0], slot);
+                }
+            });
+        }
+
+        function insertAtCursor(input, textToInsert) {
+            const start = input.selectionStart || 0;
+            const end = input.selectionEnd || 0;
+            const text = input.value;
+            input.value = text.substring(0, start) + textToInsert + text.substring(end);
+            input.selectionStart = input.selectionEnd = start + textToInsert.length;
+            input.focus();
+        }
+
+        function showError(msg) {
+            if (!msg) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+                return;
+            }
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = msg;
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Generic File Parser
+        async function handleFile(file, slot) {
+            if (!file) return;
+            showError('');
+            loadingDiv.style.display = 'block';
+            const label = slot === 1 ? 'File A (Master)' : 'File B (Bahan)';
+            loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Membaca ${label}: ${escapeHtml(file.name)}...`;
+
+            try {
+                const parsed = await parseGenericSpatialFile(file);
+                if (!parsed.points || parsed.points.length === 0) {
+                    throw new Error(`Tidak ditemukan titik koordinat (Point Placemark) dalam ${label} (${file.name})`);
+                }
+
+                if (slot === 1) {
+                    dataset1 = { 
+                        fileName: file.name, 
+                        rawPoints: parsed.points,
+                        rawKmlText: parsed.rawKmlText || null,
+                        rawKmlDoc: parsed.rawKmlDoc || null,
+                        isKmlOrKmz: parsed.isKmlOrKmz || false
+                    };
+                    zoneClick1.style.display = 'none';
+                    info1.style.display = 'block';
+                    name1Text.textContent = file.name;
+                    count1Text.textContent = `${parsed.points.length} titik ditemukan (${(file.size / 1024).toFixed(1)} KB)`;
+                    document.getElementById('metricF1').textContent = `${parsed.points.length} Titik`;
+                } else {
+                    dataset2 = { 
+                        fileName: file.name, 
+                        rawPoints: parsed.points 
+                    };
+                    zoneClick2.style.display = 'none';
+                    info2.style.display = 'block';
+                    name2Text.textContent = file.name;
+                    count2Text.textContent = `${parsed.points.length} titik ditemukan (${(file.size / 1024).toFixed(1)} KB)`;
+                    document.getElementById('metricF2').textContent = `${parsed.points.length} Titik`;
+                }
+            } catch (err) {
+                console.error('Error parsing file:', err);
+                showError(`Gagal membaca ${label}: ${err.message}`);
+                clearFile(slot);
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function clearFile(slot) {
+            if (slot === 1) {
+                dataset1 = { fileName: '', rawPoints: [], rawKmlText: null, rawKmlDoc: null, isKmlOrKmz: false };
+                input1.value = '';
+                zoneClick1.style.display = 'flex';
+                info1.style.display = 'none';
+                name1Text.textContent = '-';
+                count1Text.textContent = '0 titik';
+                document.getElementById('metricF1').textContent = '0 Titik';
+            } else {
+                dataset2 = { fileName: '', rawPoints: [] };
+                input2.value = '';
+                zoneClick2.style.display = 'flex';
+                info2.style.display = 'none';
+                name2Text.textContent = '-';
+                count2Text.textContent = '0 titik';
+                document.getElementById('metricF2').textContent = '0 Titik';
+            }
+            resultsSection.style.display = 'none';
+            document.getElementById('metricMatch').textContent = '0 Titik';
+        }
+
+        function resetAll() {
+            clearFile(1);
+            clearFile(2);
+            showError('');
+            optTargetUnmatched.checked = true;
+            cardTargetUnmatched.classList.add('selected');
+            cardTargetMatched.classList.remove('selected');
+            nameTemplateInput.value = '[BARU] {name_master}';
+            toleranceRadiusInput.value = '1';
+            radiusValBadge.textContent = '1 m';
+            toleranceModeSelect.value = 'radius';
+            radiusGroup.style.display = 'block';
+            decimalsGroup.style.display = 'none';
+            outputFolderNameInput.value = 'PLACEMARK_BARU_MASTER';
+            resultsSection.style.display = 'none';
+            if (leafletMap) {
+                leafletMap.remove();
+                leafletMap = null;
+            }
+        }
+
+        async function parseGenericSpatialFile(file) {
+            const lowerName = file.name.toLowerCase();
+
+            if (lowerName.endsWith('.kmz')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
+                const kmlEntry = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+                if (!kmlEntry) throw new Error('File KMZ tidak berisi file KML di dalamnya.');
+                const kmlText = await zip.file(kmlEntry).async('string');
+                const parsedKml = parseKmlString(kmlText);
+                return { 
+                    fileName: file.name, 
+                    points: parsedKml.points,
+                    rawKmlText: kmlText,
+                    rawKmlDoc: parsedKml.xmlDoc,
+                    isKmlOrKmz: true
+                };
+            }
+
+            if (lowerName.endsWith('.kml')) {
+                const text = await file.text();
+                const parsedKml = parseKmlString(text);
+                return { 
+                    fileName: file.name, 
+                    points: parsedKml.points,
+                    rawKmlText: text,
+                    rawKmlDoc: parsedKml.xmlDoc,
+                    isKmlOrKmz: true
+                };
+            }
+
+            if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                if (!firstSheetName) throw new Error('File Excel tidak memiliki sheet data.');
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
+                return { fileName: file.name, points: parseTabularRows(rows), isKmlOrKmz: false };
+            }
+
+            if (lowerName.endsWith('.csv') || lowerName.endsWith('.txt')) {
+                const text = await file.text();
+                const rows = parseCsvText(text);
+                return { fileName: file.name, points: parseTabularRows(rows), isKmlOrKmz: false };
+            }
+
+            throw new Error('Format file tidak didukung. Harap upload KML, KMZ, CSV, TXT, atau Excel.');
+        }
+
+        function parseKmlString(kmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
+            const parserErrors = xmlDoc.getElementsByTagName('parsererror');
+            if (parserErrors.length > 0) {
+                throw new Error('Format XML/KML tidak valid: ' + parserErrors[0].textContent.substring(0, 100));
+            }
+
+            const placemarks = xmlDoc.getElementsByTagName('Placemark');
+            const points = [];
+
+            for (let i = 0; i < placemarks.length; i++) {
+                const pm = placemarks[i];
+                const pointElem = pm.getElementsByTagName('Point')[0];
+                if (!pointElem) continue;
+
+                const coordElem = pointElem.getElementsByTagName('coordinates')[0];
+                if (!coordElem) continue;
+
+                const rawCoordText = coordElem.textContent.trim();
+                const parts = rawCoordText.split(',').map(s => parseFloat(s.trim()));
+                if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) continue;
+
+                const lon = parts[0];
+                const lat = parts[1];
+                const alt = parts[2] || 0;
+
+                const nameElem = pm.getElementsByTagName('name')[0];
+                const name = nameElem ? nameElem.textContent.trim() : `Point ${points.length + 1}`;
+
+                const descElem = pm.getElementsByTagName('description')[0];
+                const desc = descElem ? descElem.textContent.trim() : '';
+
+                const extraData = {};
+                const dataNodes = pm.getElementsByTagName('Data');
+                for (let d = 0; d < dataNodes.length; d++) {
+                    const k = dataNodes[d].getAttribute('name');
+                    const v = dataNodes[d].getElementsByTagName('value')[0];
+                    if (k && v) extraData[k] = v.textContent.trim();
+                }
+                const simpleDataNodes = pm.getElementsByTagName('SimpleData');
+                for (let s = 0; s < simpleDataNodes.length; s++) {
+                    const k = simpleDataNodes[s].getAttribute('name');
+                    if (k) extraData[k] = simpleDataNodes[s].textContent.trim();
+                }
+
+                points.push({
+                    id: `p_${points.length + 1}`,
+                    name: name,
+                    lat: lat,
+                    lon: lon,
+                    alt: alt,
+                    desc: desc,
+                    extraData: extraData,
+                    rawPlacemarkElem: pm
+                });
+            }
+
+            return { points, xmlDoc };
+        }
+
+        function parseCsvText(text) {
+            const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) return [];
+
+            const firstLine = lines[0];
+            let delimiter = ',';
+            if (firstLine.split(';').length > firstLine.split(',').length) delimiter = ';';
+            if (firstLine.split('\t').length > firstLine.split(delimiter).length) delimiter = '\t';
+
+            function splitLine(line, delim) {
+                const row = [];
+                let cell = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (c === '"' && line[i + 1] === '"' && inQuotes) {
+                        cell += '"';
+                        i++;
+                    } else if (c === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (c === delim && !inQuotes) {
+                        row.push(cell.trim());
+                        cell = '';
+                    } else {
+                        cell += c;
+                    }
+                }
+                row.push(cell.trim());
+                return row;
+            }
+
+            const headers = splitLine(lines[0], delimiter).map(h => h.replace(/^["']|["']$/g, '').trim());
+            const rows = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = splitLine(lines[i], delimiter);
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h] = values[idx] !== undefined ? values[idx].replace(/^["']|["']$/g, '').trim() : '';
+                });
+                rows.push(obj);
+            }
+            return rows;
+        }
+
+        function parseTabularRows(rows) {
+            if (!Array.isArray(rows) || rows.length === 0) return [];
+
+            const sample = rows[0];
+            const keys = Object.keys(sample);
+
+            function findKey(patterns) {
+                return keys.find(k => {
+                    const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return patterns.some(p => clean === p || clean.includes(p));
+                });
+            }
+
+            const latKey = findKey(['lat', 'latitude', 'lintang', 'y', 'latdd', 'koordinaty']);
+            const lonKey = findKey(['lon', 'lng', 'longitude', 'bujur', 'x', 'longdd', 'koordinatx']);
+            const nameKey = findKey(['name', 'nama', 'namatitik', 'label', 'siteid', 'id', 'placemark', 'sitename']);
+            const descKey = findKey(['desc', 'description', 'deskripsi', 'keterangan', 'remark', 'alamat']);
+
+            if (!latKey || !lonKey) {
+                throw new Error(`Kolom koordinat tidak ditemukan. Pastikan ada kolom 'latitude' dan 'longitude' (atau 'lat'/'lon'). Kolom yang ada: ${keys.join(', ')}`);
+            }
+
+            const points = [];
+            rows.forEach((row, idx) => {
+                const rawLat = parseFloat(String(row[latKey]).replace(',', '.'));
+                const rawLon = parseFloat(String(row[lonKey]).replace(',', '.'));
+
+                if (!isNaN(rawLat) && !isNaN(rawLon) && Math.abs(rawLat) <= 90 && Math.abs(rawLon) <= 180) {
+                    const name = (nameKey && row[nameKey] !== undefined && String(row[nameKey]).trim() !== '') 
+                        ? String(row[nameKey]).trim() 
+                        : `Titik ${idx + 1}`;
+                    const desc = (descKey && row[descKey] !== undefined) ? String(row[descKey]).trim() : '';
+
+                    points.push({
+                        id: `p_${idx + 1}`,
+                        name: name,
+                        lat: rawLat,
+                        lon: rawLon,
+                        alt: 0,
+                        desc: desc,
+                        extraData: row
+                    });
+                }
+            });
+
+            return points;
+        }
+
+        function calculateHaversineMeters(lat1, lon1, lat2, lon2) {
+            const dLatDeg = Math.abs(lat2 - lat1);
+            const dLonDeg = Math.abs(lon2 - lon1);
+            if (dLatDeg < 1e-9 && dLonDeg < 1e-9) return 0;
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Core Comparison & Generation Engine
+        function runComparisonAndGeneration() {
+            showError('');
+
+            if (!dataset1.rawPoints || dataset1.rawPoints.length === 0) {
+                showError('Harap upload File A (Master) terlebih dahulu.');
+                return;
+            }
+            if (!dataset2.rawPoints || dataset2.rawPoints.length === 0) {
+                showError('Harap upload File B (Bahan) terlebih dahulu.');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membandingkan Master A & Bahan B, menyiapkan placemark baru di titik koordinat Master A...';
+
+            setTimeout(() => {
+                try {
+                    const toleranceMode = toleranceModeSelect.value;
+                    let radiusMeters = 1;
+                    let decimalPrecision = null;
+
+                    if (toleranceMode === 'radius') {
+                        radiusMeters = parseFloat(toleranceRadiusInput.value);
+                        if (isNaN(radiusMeters)) radiusMeters = 1;
+                    } else if (toleranceMode === 'decimals') {
+                        decimalPrecision = parseInt(decimalPlacesSelect.value, 10) || 6;
+                    }
+
+                    const isTargetUnmatched = optTargetUnmatched.checked;
+                    const template = nameTemplateInput.value.trim() || (isTargetUnmatched ? '[BARU] {name_master}' : '[DUPLIKAT] {name_master} - {name_bahan}');
+                    const startSeq = parseInt(startSeqNumberInput.value, 10) || 1;
+                    const padDigits = parseInt(zeroPadDigitsSelect.value, 10) || 1;
+
+                    const matchedPairs = [];
+                    const matchedMasterIds = new Set();
+                    const matchedBahanIds = new Set();
+
+                    const masterPoints = dataset1.rawPoints;
+                    const bahanPoints = dataset2.rawPoints;
+
+                    // 1. Identify all Duplicates between Master and Bahan
+                    for (let i = 0; i < masterPoints.length; i++) {
+                        const pMaster = masterPoints[i];
+                        let bestMatch = null;
+                        let minDistance = Infinity;
+
+                        for (let j = 0; j < bahanPoints.length; j++) {
+                            const pBahan = bahanPoints[j];
+                            let isDuplicate = false;
+                            const dist = calculateHaversineMeters(pMaster.lat, pMaster.lon, pBahan.lat, pBahan.lon);
+
+                            if (toleranceMode === 'exact') {
+                                // Toleransi mikro 0.15 meter (~15 cm) untuk mengatasi selisih floating-point & perbedaan 6/7 digit desimal
+                                if (dist <= 0.15 || (Math.abs(pMaster.lat - pBahan.lat) < 1e-6 && Math.abs(pMaster.lon - pBahan.lon) < 1e-6)) {
+                                    isDuplicate = true;
+                                }
+                            } else if (toleranceMode === 'decimals') {
+                                const factor = Math.pow(10, decimalPrecision);
+                                const lat1R = Math.round(pMaster.lat * factor);
+                                const lon1R = Math.round(pMaster.lon * factor);
+                                const lat2R = Math.round(pBahan.lat * factor);
+                                const lon2R = Math.round(pBahan.lon * factor);
+                                if (lat1R === lat2R && lon1R === lon2R) {
+                                    isDuplicate = true;
+                                }
+                            } else {
+                                // Mode Radius: Jika radius 0, gunakan toleransi mikro 0.15 meter agar titik yang menumpuk di GE tetap terdeteksi
+                                const effectiveRadius = radiusMeters <= 0.05 ? 0.15 : radiusMeters;
+                                if (dist <= effectiveRadius) {
+                                    isDuplicate = true;
+                                }
+                            }
+
+                            if (isDuplicate && dist < minDistance) {
+                                minDistance = dist;
+                                bestMatch = { pBahan, dist };
+                            }
+                        }
+
+                        if (bestMatch) {
+                            matchedMasterIds.add(pMaster.id);
+                            matchedBahanIds.add(bestMatch.pBahan.id);
+
+                            matchedPairs.push({
+                                matchId: `m_${matchedPairs.length + 1}`,
+                                index: matchedPairs.length + 1,
+                                pMaster: pMaster,
+                                pBahan: bestMatch.pBahan,
+                                dist: bestMatch.dist,
+                                newName: `[DUPLIKAT] ${pMaster.name} - ${bestMatch.pBahan.name}`,
+                                lat: pMaster.lat,
+                                lon: pMaster.lon,
+                                alt: pMaster.alt || 0,
+                                status: 'DUPLIKAT'
+                            });
+                        }
+                    }
+
+                    // 2. Identify Non-Duplicate Master Points (Master A points NOT in Bahan B)
+                    const unmatchedMaster = masterPoints.filter(p => !matchedMasterIds.has(p.id));
+
+                    // 3. Identify Unique Bahan Points (Bahan B points NOT in Master A)
+                    const uniqueBahan = bahanPoints.filter(p => !matchedBahanIds.has(p.id)).map((p, idx) => ({
+                        index: idx + 1,
+                        pMaster: null,
+                        pBahan: p,
+                        dist: null,
+                        newName: p.name,
+                        lat: p.lat,
+                        lon: p.lon,
+                        status: 'UNIK_BAHAN'
+                    }));
+
+                    // 4. Generate the Target Placemarks (at Master coordinates)
+                    let generatedPlacemarks = [];
+
+                    if (isTargetUnmatched) {
+                        // PRIMARY: Placemark Baru di Titik Koordinat Master A yang TIDAK DUPLIKASI
+                        unmatchedMaster.forEach((pMaster, idx) => {
+                            const seqNum = String(startSeq + idx).padStart(padDigits, '0');
+                            const newName = template
+                                .replace(/{name_master}/g, pMaster.name)
+                                .replace(/{name}/g, pMaster.name)
+                                .replace(/{name1}/g, pMaster.name)
+                                .replace(/{name_bahan}/g, '')
+                                .replace(/{name2}/g, '')
+                                .replace(/{n}/g, seqNum)
+                                .replace(/{lat}/g, pMaster.lat.toFixed(6))
+                                .replace(/{lon}/g, pMaster.lon.toFixed(6))
+                                .replace(/{desc}/g, pMaster.desc || '');
+
+                            generatedPlacemarks.push({
+                                id: `gen_${idx + 1}`,
+                                index: idx + 1,
+                                pMaster: pMaster,
+                                pBahan: null,
+                                dist: null,
+                                newName: newName,
+                                lat: pMaster.lat,
+                                lon: pMaster.lon,
+                                alt: pMaster.alt || 0,
+                                status: 'BARU_MASTER_NON_DUPLIKAT'
+                            });
+                        });
+                    } else {
+                        // SECONDARY OPTION: Placemark Baru di Titik Master A yang DUPLIKASI
+                        matchedPairs.forEach((m, idx) => {
+                            const seqNum = String(startSeq + idx).padStart(padDigits, '0');
+                            const newName = template
+                                .replace(/{name_master}/g, m.pMaster.name)
+                                .replace(/{name}/g, m.pMaster.name)
+                                .replace(/{name1}/g, m.pMaster.name)
+                                .replace(/{name_bahan}/g, m.pBahan.name)
+                                .replace(/{name2}/g, m.pBahan.name)
+                                .replace(/{n}/g, seqNum)
+                                .replace(/{dist}/g, `${m.dist.toFixed(2)}m`)
+                                .replace(/{lat}/g, m.lat.toFixed(6))
+                                .replace(/{lon}/g, m.lon.toFixed(6))
+                                .replace(/{desc}/g, m.pMaster.desc || '');
+
+                            generatedPlacemarks.push({
+                                id: `gen_${idx + 1}`,
+                                index: idx + 1,
+                                pMaster: m.pMaster,
+                                pBahan: m.pBahan,
+                                dist: m.dist,
+                                newName: newName,
+                                lat: m.lat,
+                                lon: m.lon,
+                                alt: m.alt || 0,
+                                status: 'BARU_MASTER_DUPLIKAT'
+                            });
+                        });
+                    }
+
+                    // Combined list for search & table view
+                    const allData = [...generatedPlacemarks, ...matchedPairs, ...uniqueBahan];
+
+                    processedData = {
+                        targetMode: isTargetUnmatched ? 'master_unmatched' : 'master_matched',
+                        generatedPlacemarks: generatedPlacemarks,
+                        duplicates: matchedPairs,
+                        uniqueBahan: uniqueBahan,
+                        allData: allData
+                    };
+
+                    // Update UI Statistics
+                    statTotalF1.textContent = masterPoints.length;
+                    statTotalF2.textContent = bahanPoints.length;
+                    statGenerated.textContent = generatedPlacemarks.length;
+                    statMatched.textContent = matchedPairs.length;
+                    statUnique2.textContent = uniqueBahan.length;
+
+                    labelStatGenerated.textContent = isTargetUnmatched 
+                        ? 'Placemark Baru (Master Non-Duplikat)' 
+                        : 'Placemark Baru (Master Duplikat)';
+
+                    document.getElementById('metricMatch').textContent = `${generatedPlacemarks.length} Titik`;
+
+                    cntTabGenerated.textContent = generatedPlacemarks.length;
+                    cntTabDuplicates.textContent = matchedPairs.length;
+                    cntTabUniq2.textContent = uniqueBahan.length;
+                    cntTabAll.textContent = allData.length;
+
+                    // Show Results Section
+                    resultsSection.style.display = 'block';
+                    currentFilter = 'generated';
+                    filterTabs.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+                    filterTabs.querySelector('[data-filter="generated"]').classList.add('active');
+                    currentPage = 1;
+                    renderTable();
+                    initOrUpdateMap();
+
+                    resultsSection.scrollIntoView({ behavior: 'smooth' });
+                } catch (err) {
+                    console.error('Error in comparison & generation:', err);
+                    showError('Terjadi kesalahan saat memproses data: ' + err.message);
+                } finally {
+                    loadingDiv.style.display = 'none';
+                }
+            }, 50);
+        }
+
+        // Render Table with Pagination & Filtering
+        function renderTable() {
+            let data = [];
+            if (currentFilter === 'generated') data = processedData.generatedPlacemarks;
+            else if (currentFilter === 'duplicates') data = processedData.duplicates;
+            else if (currentFilter === 'unique2') data = processedData.uniqueBahan;
+            else data = processedData.allData;
+
+            if (searchQuery) {
+                data = data.filter(item => {
+                    const name1 = item.pMaster ? item.pMaster.name.toLowerCase() : '';
+                    const name2 = item.pBahan ? item.pBahan.name.toLowerCase() : '';
+                    const newName = item.newName ? item.newName.toLowerCase() : '';
+                    const coords = `${item.lat.toFixed(6)}, ${item.lon.toFixed(6)}`;
+                    return name1.includes(searchQuery) || name2.includes(searchQuery) || newName.includes(searchQuery) || coords.includes(searchQuery);
+                });
+            }
+
+            const totalRows = data.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const pageData = data.slice(startIndex, startIndex + pageSize);
+
+            tableBody.innerHTML = '';
+
+            if (pageData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Tidak ada data yang cocok dengan kriteria filter/pencarian.</td></tr>`;
+            } else {
+                pageData.forEach((row, i) => {
+                    const tr = document.createElement('tr');
+                    const globalIdx = startIndex + i + 1;
+
+                    let badgeHtml = '';
+                    if (row.status === 'BARU_MASTER_NON_DUPLIKAT') {
+                        badgeHtml = '<span class="badge-status badge-new-target"><i class="fas fa-sparkles"></i> Baru (Non-Duplikat)</span>';
+                    } else if (row.status === 'BARU_MASTER_DUPLIKAT') {
+                        badgeHtml = '<span class="badge-status badge-new-target"><i class="fas fa-check-double"></i> Baru (Duplikat)</span>';
+                    } else if (row.status === 'DUPLIKAT') {
+                        badgeHtml = '<span class="badge-status badge-dup"><i class="fas fa-check-double"></i> Duplikat</span>';
+                    } else {
+                        badgeHtml = '<span class="badge-status badge-unique2"><i class="fas fa-file"></i> Unik Bahan</span>';
+                    }
+
+                    const nameMasterDisplay = row.pMaster ? escapeHtml(row.pMaster.name) : '<span style="color:var(--text-muted);">-</span>';
+                    const nameBahanDisplay = row.pBahan ? escapeHtml(row.pBahan.name) : '<span style="color:var(--text-muted);">-</span>';
+                    const distDisplay = (row.dist !== null && row.dist !== undefined) ? `${row.dist.toFixed(2)} m` : '-';
+                    const coordDisplay = `${row.lat.toFixed(6)}, ${row.lon.toFixed(6)}`;
+
+                    tr.innerHTML = `
+                        <td>${globalIdx}</td>
+                        <td>${badgeHtml}</td>
+                        <td><strong style="color:#fff;">${escapeHtml(row.newName)}</strong></td>
+                        <td>${nameMasterDisplay}</td>
+                        <td>${nameBahanDisplay}</td>
+                        <td>${distDisplay}</td>
+                        <td style="font-family: monospace; font-size: 0.8rem;">${coordDisplay}</td>
+                        <td style="text-align: center;">
+                            <button type="button" class="table-action-btn" title="Fokuskan ke Peta" onclick="zoomToTableRow(${row.lat}, ${row.lon}, '${escapeJs(row.newName)}')">
+                                <i class="fas fa-location-crosshairs"></i> Lihat
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            const endIdx = Math.min(startIndex + pageSize, totalRows);
+            paginationInfo.textContent = totalRows > 0 ? `Menampilkan ${startIndex + 1} - ${endIdx} dari ${totalRows} data` : `Menampilkan 0 dari 0 data`;
+            pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+            btnPrevPage.disabled = currentPage <= 1;
+            btnNextPage.disabled = currentPage >= totalPages;
+        }
+
+        window.zoomToTableRow = function (lat, lon, title) {
+            if (mapContainer.style.display === 'none') {
+                toggleMapVisibility();
+            }
+            if (leafletMap) {
+                mapContainer.scrollIntoView({ behavior: 'smooth' });
+                leafletMap.setView([lat, lon], 18);
+                const marker = markerLookup.get(`${lat.toFixed(6)},${lon.toFixed(6)}`);
+                if (marker) {
+                    marker.openPopup();
+                }
+            }
+        };
+
+        function initOrUpdateMap() {
+            if (!leafletMap) {
+                leafletMap = L.map('map').setView([-6.175392, 106.827153], 13);
+
+                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(leafletMap);
+
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '&copy; Esri &mdash; World Imagery'
+                });
+
+                const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; CartoDB Dark'
+                });
+
+                L.control.layers({
+                    'OpenStreetMap': osmLayer,
+                    'Satelit Esri': satelliteLayer,
+                    'Dark Matter': darkLayer
+                }).addTo(leafletMap);
+
+                layerGroupNew = L.layerGroup().addTo(leafletMap);
+                layerGroupF1 = L.layerGroup().addTo(leafletMap);
+                layerGroupF2 = L.layerGroup().addTo(leafletMap);
+                layerGroupDups = L.layerGroup().addTo(leafletMap);
+            }
+
+            layerGroupNew.clearLayers();
+            layerGroupF1.clearLayers();
+            layerGroupF2.clearLayers();
+            layerGroupDups.clearLayers();
+            markerLookup.clear();
+
+            const allBounds = [];
+            const iconUrl = customIconUrlInput.value.trim() || selectedIconUrl;
+            const scale = parseFloat(iconScaleInput.value) || 1.3;
+            const markerSize = Math.round(34 * (scale / 1.0));
+
+            const newPlacemarkIcon = L.icon({
+                iconUrl: iconUrl,
+                iconSize: [markerSize, markerSize],
+                iconAnchor: [markerSize / 2, markerSize],
+                popupAnchor: [0, -markerSize]
+            });
+
+            // 1. Render Newly Generated Placemarks (at Master Coordinates)
+            processedData.generatedPlacemarks.forEach(item => {
+                const marker = L.marker([item.lat, item.lon], { icon: newPlacemarkIcon });
+                const popupContent = `
+                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 250px; color: #222;">
+                        <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #021e3f; border-bottom: 2px solid #35f1d0; padding-bottom: 4px;">
+                            ${escapeHtml(item.newName)}
+                        </div>
+                        <div style="margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #0b9e76; font-weight:700;">PLACEMARK BARU DI TITIK MASTER</span></div>
+                        <div style="margin-bottom: 4px;"><strong>Nama Master Asal:</strong> ${escapeHtml(item.pMaster.name)}</div>
+                        <div style="margin-bottom: 4px;"><strong>Kondisi:</strong> Tidak Duplikasi di Bahan B</div>
+                        <div style="margin-bottom: 4px;"><strong>Koordinat:</strong> ${item.lat.toFixed(6)}, ${item.lon.toFixed(6)}</div>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                layerGroupNew.addLayer(marker);
+                markerLookup.set(`${item.lat.toFixed(6)},${item.lon.toFixed(6)}`, marker);
+                allBounds.push([item.lat, item.lon]);
+            });
+
+            // 2. Render Master Points
+            dataset1.rawPoints.forEach(p => {
+                const c1 = L.circleMarker([p.lat, p.lon], {
+                    radius: 4.5,
+                    fillColor: '#39d0ff',
+                    color: '#ffffff',
+                    weight: 1.5,
+                    opacity: 0.9,
+                    fillOpacity: 0.8
+                }).bindPopup(`<b>Master (A):</b> ${escapeHtml(p.name)}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
+                layerGroupF1.addLayer(c1);
+                allBounds.push([p.lat, p.lon]);
+            });
+
+            // 3. Render Bahan Points
+            dataset2.rawPoints.forEach(p => {
+                const c2 = L.circleMarker([p.lat, p.lon], {
+                    radius: 4.5,
+                    fillColor: '#ff9c4a',
+                    color: '#ffffff',
+                    weight: 1.5,
+                    opacity: 0.9,
+                    fillOpacity: 0.8
+                }).bindPopup(`<b>Bahan (B):</b> ${escapeHtml(p.name)}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
+                layerGroupF2.addLayer(c2);
+                allBounds.push([p.lat, p.lon]);
+            });
+
+            // 4. Render Duplicates
+            processedData.duplicates.forEach(d => {
+                const dMarker = L.circleMarker([d.lat, d.lon], {
+                    radius: 6,
+                    fillColor: '#ff5f8a',
+                    color: '#ffffff',
+                    weight: 2,
+                    fillOpacity: 0.9
+                }).bindPopup(`<b>Duplikat Terdeteksi:</b><br>Master: ${escapeHtml(d.pMaster.name)}<br>Bahan: ${escapeHtml(d.pBahan.name)}<br>Selisih: ${d.dist.toFixed(2)} m`);
+                layerGroupDups.addLayer(dMarker);
+            });
+
+            if (allBounds.length > 0) {
+                leafletMap.fitBounds(allBounds, { padding: [30, 30] });
+            }
+        }
+
+        function updateMapLayers() {
+            if (!leafletMap) return;
+            const showNew = document.getElementById('layerToggleNew').checked;
+            const showF1 = document.getElementById('layerToggleF1').checked;
+            const showF2 = document.getElementById('layerToggleF2').checked;
+            const showDups = document.getElementById('layerToggleDups').checked;
+
+            if (showNew) leafletMap.addLayer(layerGroupNew); else leafletMap.removeLayer(layerGroupNew);
+            if (showF1) leafletMap.addLayer(layerGroupF1); else leafletMap.removeLayer(layerGroupF1);
+            if (showF2) leafletMap.addLayer(layerGroupF2); else leafletMap.removeLayer(layerGroupF2);
+            if (showDups) leafletMap.addLayer(layerGroupDups); else leafletMap.removeLayer(layerGroupDups);
+        }
+
+        function toggleMapVisibility() {
+            if (mapContainer.style.display === 'none') {
+                mapContainer.style.display = 'block';
+                mapToggleText.textContent = 'Sembunyikan Peta';
+                setTimeout(() => {
+                    if (leafletMap) leafletMap.invalidateSize();
+                    fitMapBounds();
+                }, 100);
+            } else {
+                mapContainer.style.display = 'none';
+                mapToggleText.textContent = 'Tampilkan di Peta';
+            }
+        }
+
+        function fitMapBounds() {
+            if (!leafletMap) return;
+            const allBounds = [];
+            processedData.allData.forEach(item => allBounds.push([item.lat, item.lon]));
+            if (allBounds.length > 0) {
+                leafletMap.fitBounds(allBounds, { padding: [30, 30] });
+            }
+        }
+
+        function hexToKmlColor(hex, opacityPct = 100) {
+            const cleanHex = hex.replace('#', '').trim();
+            const r = cleanHex.substring(0, 2) || 'ff';
+            const g = cleanHex.substring(2, 4) || 'ff';
+            const b = cleanHex.substring(4, 6) || 'ff';
+            const a = Math.round((Math.max(0, Math.min(100, opacityPct)) / 100) * 255);
+            const aHex = a.toString(16).padStart(2, '0');
+            return `${aHex}${b}${g}${r}`.toLowerCase();
+        }
+
+        // KML Output Generation (Injects into Master or Generates Fresh KML)
+        function generateKmlContent() {
+            const folderName = outputFolderNameInput.value.trim() || 'PLACEMARK_BARU_MASTER';
+            const iconUrl = customIconUrlInput.value.trim() || selectedIconUrl;
+            const iconScale = parseFloat(iconScaleInput.value) || 1.3;
+            const applyColor = enableColorTintCheckbox.checked;
+            const iconColorKml = applyColor ? hexToKmlColor(iconColorInput.value, 100) : 'ffffffff';
+            const labelScale = parseFloat(labelScaleInput.value) || 1.0;
+            const labelColorKml = hexToKmlColor(labelColorInput.value, 100);
+            const outputMode = outputModeSelect.value;
+
+            // Strategy 1: Inject into original Master XML DOM if KML/KMZ was uploaded
+            if (outputMode === 'insert_into_master' && dataset1.rawKmlDoc) {
+                try {
+                    const clonedDoc = dataset1.rawKmlDoc.cloneNode(true);
+                    let docElem = clonedDoc.getElementsByTagName('Document')[0];
+                    if (!docElem) {
+                        docElem = clonedDoc.getElementsByTagName('kml')[0] || clonedDoc.documentElement;
+                    }
+
+                    const styleElem = clonedDoc.createElement('Style');
+                    styleElem.setAttribute('id', 'newPlacemarkMasterStyle');
+                    styleElem.innerHTML = `
+                        <IconStyle>
+                            <scale>${iconScale.toFixed(2)}</scale>
+                            <color>${iconColorKml}</color>
+                            <Icon><href>${escapeXml(iconUrl)}</href></Icon>
+                        </IconStyle>
+                        <LabelStyle>
+                            <scale>${labelScale.toFixed(2)}</scale>
+                            <color>${labelColorKml}</color>
+                        </LabelStyle>
+                    `;
+                    docElem.insertBefore(styleElem, docElem.firstChild);
+
+                    const newFolderElem = clonedDoc.createElement('Folder');
+                    const folderNameElem = clonedDoc.createElement('name');
+                    folderNameElem.textContent = `${folderName} (${processedData.generatedPlacemarks.length})`;
+                    newFolderElem.appendChild(folderNameElem);
+
+                    const folderDescElem = clonedDoc.createElement('description');
+                    folderDescElem.textContent = `Placemark baru yang diinsert sesuai titik koordinat Master (${dataset1.fileName}) yang tidak duplikasi dengan Bahan (${dataset2.fileName})`;
+                    newFolderElem.appendChild(folderDescElem);
+
+                    processedData.generatedPlacemarks.forEach(item => {
+                        const pm = clonedDoc.createElement('Placemark');
+                        
+                        const nameNode = clonedDoc.createElement('name');
+                        nameNode.textContent = item.newName;
+                        pm.appendChild(nameNode);
+
+                        const descNode = clonedDoc.createElement('description');
+                        descNode.innerHTML = `<![CDATA[
+                            <div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5;">
+                                <h4 style="color:#0b2447; margin:0 0 6px 0; border-bottom: 2px solid #35f1d0; padding-bottom: 3px;">${escapeXml(item.newName)}</h4>
+                                <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; width:100%; border-color:#ddd;">
+                                    <tr style="background-color:#eef8ff;"><td><b>Status</b></td><td style="color:#008855; font-weight:bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
+                                    <tr><td><b>Titik Master Asal</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
+                                    <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
+                                    <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
+                                </table>
+                            </div>
+                        ]]>`;
+                        pm.appendChild(descNode);
+
+                        const styleUrlNode = clonedDoc.createElement('styleUrl');
+                        styleUrlNode.textContent = '#newPlacemarkMasterStyle';
+                        pm.appendChild(styleUrlNode);
+
+                        const pointNode = clonedDoc.createElement('Point');
+                        const coordNode = clonedDoc.createElement('coordinates');
+                        coordNode.textContent = `${item.lon.toFixed(7)},${item.lat.toFixed(7)},${item.alt || 0}`;
+                        pointNode.appendChild(coordNode);
+                        pm.appendChild(pointNode);
+
+                        newFolderElem.appendChild(pm);
+                    });
+
+                    docElem.appendChild(newFolderElem);
+
+                    const serializer = new XMLSerializer();
+                    return '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(clonedDoc);
+                } catch (e) {
+                    console.warn('Fallback to standard KML generation:', e);
+                }
+            }
+
+            // Strategy 2: Generate clean standalone KML
+            let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${escapeXml(folderName)}</name>
+    <open>1</open>
+    <description>Dihasilkan oleh KML Tools - Cek Duplikasi Titik pada ${new Date().toLocaleString('id-ID')}</description>
+
+    <!-- Style Placemark Baru di Titik Master -->
+    <Style id="newPlacemarkMasterStyle">
+      <IconStyle>
+        <scale>${iconScale.toFixed(2)}</scale>
+        <color>${iconColorKml}</color>
+        <Icon>
+          <href>${escapeXml(iconUrl)}</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>${labelScale.toFixed(2)}</scale>
+        <color>${labelColorKml}</color>
+      </LabelStyle>
+    </Style>
+
+    <!-- Style Master Asal -->
+    <Style id="masterOriginStyle">
+      <IconStyle>
+        <scale>0.9</scale>
+        <color>ffffaa00</color>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.8</scale>
+      </LabelStyle>
+    </Style>
+
+    <!-- Style Duplikat -->
+    <Style id="duplicateStyle">
+      <IconStyle>
+        <scale>0.9</scale>
+        <color>ff5555ff</color>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.8</scale>
+      </LabelStyle>
+    </Style>
+`;
+
+            kml += `
+    <Folder>
+      <name>${escapeXml(folderName)} (${processedData.generatedPlacemarks.length})</name>
+      <open>1</open>
+      <description>Placemark baru di titik koordinat File Master (${escapeXml(dataset1.fileName)}) yang tidak duplikasi dengan File Bahan (${escapeXml(dataset2.fileName)})</description>
+`;
+
+            processedData.generatedPlacemarks.forEach(item => {
+                const descHtml = `<![CDATA[
+<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5;">
+  <h3 style="color: #0b2447; margin-bottom: 8px; border-bottom: 2px solid #35f1d0; padding-bottom: 4px;">${escapeXml(item.newName)}</h3>
+  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; border-color: #ddd;">
+    <tr style="background-color: #f0f7ff;"><td><b>Status</b></td><td style="color: #008855; font-weight: bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
+    <tr><td><b>Nama Titik Master (A)</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
+    <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
+    <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
+  </table>
+</div>
+]]>`;
+
+                kml += `      <Placemark>
+        <name>${escapeXml(item.newName)}</name>
+        <description>${descHtml}</description>
+        <styleUrl>#newPlacemarkMasterStyle</styleUrl>
+        <Point>
+          <coordinates>${item.lon.toFixed(7)},${item.lat.toFixed(7)},${item.alt || 0}</coordinates>
+        </Point>
+      </Placemark>
+`;
+            });
+
+            kml += `    </Folder>\n`;
+
+            if (outputMode === 'all_categorized') {
+                if (processedData.duplicates.length > 0) {
+                    kml += `
+    <Folder>
+      <name>TITIK DUPLIKAT MATCH (${processedData.duplicates.length})</name>
+      <open>0</open>
+      <description>Titik Master yang cocok/duplikat dengan Bahan</description>
+`;
+                    processedData.duplicates.forEach(d => {
+                        kml += `      <Placemark>
+        <name>${escapeXml(d.pMaster.name)} (MATCH ${escapeXml(d.pBahan.name)})</name>
+        <description><![CDATA[Duplikat dengan: ${escapeXml(d.pBahan.name)} (Selisih: ${d.dist.toFixed(2)} m)]]></description>
+        <styleUrl>#duplicateStyle</styleUrl>
+        <Point>
+          <coordinates>${d.lon.toFixed(7)},${d.lat.toFixed(7)},0</coordinates>
+        </Point>
+      </Placemark>
+`;
+                    });
+                    kml += `    </Folder>\n`;
+                }
+
+                if (processedData.uniqueBahan.length > 0) {
+                    kml += `
+    <Folder>
+      <name>TITIK UNIK BAHAN (${processedData.uniqueBahan.length})</name>
+      <open>0</open>
+      <description>Titik yang hanya ada di File Bahan (${escapeXml(dataset2.fileName)})</description>
+`;
+                    processedData.uniqueBahan.forEach(u => {
+                        kml += `      <Placemark>
+        <name>${escapeXml(u.newName)}</name>
+        <description><![CDATA[Titik Unik Bahan: ${escapeXml(dataset2.fileName)}]]></description>
+        <styleUrl>#duplicateStyle</styleUrl>
+        <Point>
+          <coordinates>${u.lon.toFixed(7)},${u.lat.toFixed(7)},0</coordinates>
+        </Point>
+      </Placemark>
+`;
+                    });
+                    kml += `    </Folder>\n`;
+                }
+            }
+
+            kml += `  </Document>
+</kml>`;
+            return kml;
+        }
+
+        function downloadKML() {
+            if (!processedData.generatedPlacemarks || processedData.generatedPlacemarks.length === 0) {
+                showError('Belum ada placemark baru untuk diunduh.');
+                return;
+            }
+            const kmlContent = generateKmlContent();
+            const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
+            const docName = (outputFolderNameInput.value.trim() || 'PLACEMARK_BARU_MASTER').replace(/[^a-zA-Z0-9_-]/g, '_');
+            triggerDownload(blob, `${docName}.kml`);
+        }
+
+        async function downloadKMZ() {
+            if (!processedData.generatedPlacemarks || processedData.generatedPlacemarks.length === 0) {
+                showError('Belum ada placemark baru untuk diunduh.');
+                return;
+            }
+            try {
+                const kmlContent = generateKmlContent();
+                const zip = new JSZip();
+                zip.file('doc.kml', kmlContent);
+                const kmzBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                const docName = (outputFolderNameInput.value.trim() || 'PLACEMARK_BARU_MASTER').replace(/[^a-zA-Z0-9_-]/g, '_');
+                triggerDownload(kmzBlob, `${docName}.kmz`);
+            } catch (err) {
+                console.error('Error creating KMZ:', err);
+                showError('Gagal membuat file KMZ: ' + err.message);
+            }
+        }
+
+        function downloadExcel() {
+            if (!processedData.generatedPlacemarks || processedData.generatedPlacemarks.length === 0) {
+                showError('Belum ada data untuk diunduh.');
+                return;
+            }
+            try {
+                const wb = XLSX.utils.book_new();
+
+                const genRows = processedData.generatedPlacemarks.map((m, idx) => ({
+                    'No': idx + 1,
+                    'Nama Placemark Baru': m.newName,
+                    'Nama Titik Master (A)': m.pMaster.name,
+                    'Status': 'PLACEMARK BARU DI TITIK MASTER (NON-DUPLIKAT)',
+                    'Latitude Titik Master': m.lat,
+                    'Longitude Titik Master': m.lon,
+                    'Deskripsi Master': m.pMaster.desc || ''
+                }));
+                const wsGen = XLSX.utils.json_to_sheet(genRows);
+                XLSX.utils.book_append_sheet(wb, wsGen, 'Placemark Baru Master');
+
+                const dupRows = processedData.duplicates.map((d, idx) => ({
+                    'No': idx + 1,
+                    'Nama Master (A)': d.pMaster.name,
+                    'Nama Bahan (B)': d.pBahan.name,
+                    'Selisih Jarak (meter)': parseFloat(d.dist.toFixed(2)),
+                    'Latitude Master': d.lat,
+                    'Longitude Master': d.lon,
+                    'Latitude Bahan': d.pBahan.lat,
+                    'Longitude Bahan': d.pBahan.lon
+                }));
+                const wsDups = XLSX.utils.json_to_sheet(dupRows);
+                XLSX.utils.book_append_sheet(wb, wsDups, 'Titik Duplikat');
+
+                const uniq2Rows = processedData.uniqueBahan.map((u, idx) => ({
+                    'No': idx + 1,
+                    'Nama': u.newName,
+                    'Latitude': u.lat,
+                    'Longitude': u.lon,
+                    'Deskripsi': u.pBahan ? (u.pBahan.desc || '') : ''
+                }));
+                const wsUniq2 = XLSX.utils.json_to_sheet(uniq2Rows);
+                XLSX.utils.book_append_sheet(wb, wsUniq2, 'Unik Bahan');
+
+                const summaryRows = [
+                    { 'Parameter': 'File Master (A)', 'Nilai': dataset1.fileName },
+                    { 'Parameter': 'Total Titik Master', 'Nilai': dataset1.rawPoints.length },
+                    { 'Parameter': 'File Bahan (B)', 'Nilai': dataset2.fileName },
+                    { 'Parameter': 'Total Titik Bahan', 'Nilai': dataset2.rawPoints.length },
+                    { 'Parameter': 'Placemark Baru Dibuat di Master', 'Nilai': processedData.generatedPlacemarks.length },
+                    { 'Parameter': 'Titik Duplikat (Match)', 'Nilai': processedData.duplicates.length },
+                    { 'Parameter': 'Titik Unik Bahan', 'Nilai': processedData.uniqueBahan.length },
+                    { 'Parameter': 'Toleransi Radius', 'Nilai': `${toleranceRadiusInput.value} meter` },
+                    { 'Parameter': 'Waktu Komparasi', 'Nilai': new Date().toLocaleString('id-ID') }
+                ];
+                const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+                XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+
+                const docName = (outputFolderNameInput.value.trim() || 'REKAP_KOMPARASI_MASTER_BAHAN').replace(/[^a-zA-Z0-9_-]/g, '_');
+                XLSX.writeFile(wb, `${docName}.xlsx`);
+            } catch (err) {
+                console.error('Error downloading Excel:', err);
+                showError('Gagal membuat file Excel: ' + err.message);
+            }
+        }
+
+        function downloadCSV() {
+            if (!processedData.generatedPlacemarks || processedData.generatedPlacemarks.length === 0) {
+                showError('Belum ada data untuk diunduh.');
+                return;
+            }
+            const rows = [
+                ['No', 'Nama_Placemark_Baru', 'Nama_Master_A', 'Status', 'Latitude_Master', 'Longitude_Master', 'Desc_Master']
+            ];
+            processedData.generatedPlacemarks.forEach((m, idx) => {
+                rows.push([
+                    idx + 1,
+                    m.newName,
+                    m.pMaster.name,
+                    'PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)',
+                    m.lat,
+                    m.lon,
+                    m.pMaster.desc || ''
+                ]);
+            });
+            const csvText = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+            const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+            const docName = (outputFolderNameInput.value.trim() || 'PLACEMARK_BARU_MASTER').replace(/[^a-zA-Z0-9_-]/g, '_');
+            triggerDownload(blob, `${docName}.csv`);
+        }
+
+        function triggerDownload(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 200);
+        }
+
+        function loadDemoData() {
+            const demoMaster = [
+                { id: 'm_1', name: 'TIANG-MASTER-01', lat: -6.175392, lon: 106.827153, alt: 0, desc: 'Tiang Master Monas Barat' },
+                { id: 'm_2', name: 'ODP-MASTER-HI', lat: -6.194444, lon: 106.822956, alt: 0, desc: 'ODP Master Bundaran HI' },
+                { id: 'm_3', name: 'TIANG-MASTER-03', lat: -6.186486, lon: 106.822999, alt: 0, desc: 'Tiang Master Sarinah' },
+                { id: 'm_4', name: 'TIANG-MASTER-04', lat: -6.170166, lon: 106.831375, alt: 0, desc: 'Tiang Master Istiqlal (Belum Tercover)' },
+                { id: 'm_5', name: 'CLOSURE-MASTER-01', lat: -6.208763, lon: 106.845599, alt: 0, desc: 'Closure Master Manggarai (Belum Tercover)' }
+            ];
+
+            const demoBahan = [
+                { id: 'b_1', name: 'SURVEY-BAHAN-MONAS', lat: -6.175392, lon: 106.827153, alt: 0, desc: 'Survey Lapangan Monas (Duplikat)' },
+                { id: 'b_2', name: 'SURVEY-BAHAN-HI', lat: -6.194444, lon: 106.822956, alt: 0, desc: 'Survey Lapangan Bundaran HI (Duplikat)' },
+                { id: 'b_3', name: 'SURVEY-BAHAN-SARINAH', lat: -6.186490, lon: 106.823004, alt: 0, desc: 'Survey Sarinah (Duplikat)' },
+                { id: 'b_4', name: 'SURVEY-BAHAN-GBK', lat: -6.218333, lon: 106.802222, alt: 0, desc: 'Titik Baru GBK (Hanya di Bahan)' },
+                { id: 'b_5', name: 'SURVEY-BAHAN-KUNINGAN', lat: -6.224167, lon: 106.829444, alt: 0, desc: 'Titik Baru Kuningan (Hanya di Bahan)' }
+            ];
+
+            dataset1 = { fileName: 'Data_Master_Jaringan.kml', rawPoints: demoMaster, isKmlOrKmz: false };
+            zoneClick1.style.display = 'none';
+            info1.style.display = 'block';
+            name1Text.textContent = dataset1.fileName;
+            count1Text.textContent = `${demoMaster.length} titik ditemukan (Data Demo Master)`;
+            document.getElementById('metricF1').textContent = `${demoMaster.length} Titik`;
+
+            dataset2 = { fileName: 'Data_Bahan_Survey.csv', rawPoints: demoBahan };
+            zoneClick2.style.display = 'none';
+            info2.style.display = 'block';
+            name2Text.textContent = dataset2.fileName;
+            count2Text.textContent = `${demoBahan.length} titik ditemukan (Data Demo Bahan)`;
+            document.getElementById('metricF2').textContent = `${demoBahan.length} Titik`;
+
+            toleranceRadiusInput.value = '5';
+            radiusValBadge.textContent = '5 m';
+            toleranceModeSelect.value = 'radius';
+            radiusGroup.style.display = 'block';
+            decimalsGroup.style.display = 'none';
+
+            runComparisonAndGeneration();
+        }
+
+        function downloadSampleFiles() {
+            const csv1 = `name,latitude,longitude,description
+TIANG-MASTER-01,-6.175392,106.827153,Tiang Master Monas
+ODP-MASTER-HI,-6.194444,106.822956,ODP Master Bundaran HI
+TIANG-MASTER-03,-6.186486,106.822999,Tiang Master Sarinah
+TIANG-MASTER-04,-6.170166,106.831375,Tiang Master Istiqlal
+ODC-MASTER-01,-6.208763,106.845599,ODC Master Manggarai`;
+
+            const csv2 = `name,latitude,longitude,description
+SURVEY-BAHAN-01,-6.175392,106.827153,Survey Monas (Duplikat dengan Master)
+SURVEY-BAHAN-02,-6.194444,106.822956,Survey Bundaran HI (Duplikat dengan Master)
+SURVEY-BAHAN-03,-6.218333,106.802222,Titik Baru GBK Senayan
+SURVEY-BAHAN-04,-6.224167,106.829444,Titik Baru Mega Kuningan`;
+
+            const zip = new JSZip();
+            zip.file('File_A_Master_Contoh.csv', csv1);
+            zip.file('File_B_Bahan_Contoh.csv', csv2);
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                triggerDownload(blob, 'Contoh_File_Master_dan_Bahan.zip');
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escapeXml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function escapeJs(str) {
+            if (!str) return '';
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+
+</html>

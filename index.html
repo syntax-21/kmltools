@@ -125,6 +125,15 @@
             <span class="nav-title"><i class="fas fa-network-wired"></i> Pemetaan Alpro</span>
             <span class="nav-copy">Visualisasi dan rekap material Alpro per area Polygon.</span>
           </button>
+
+          <button class="nav-item" type="button" role="tab" aria-selected="false" data-tab="cekduplikasi"
+            data-title="Cek Duplikasi Titik"
+            data-description="Deteksi titik koordinat duplikat antara File 1 dan File 2, hasilkan placemark baru dengan kustomisasi nama, ikon, dan ukuran."
+            data-badge="Deteksi Duplikasi" data-status="Siapkan File 1 dan File 2 (KML, KMZ, CSV, Excel) untuk dicek duplikasi."
+            data-url="cekduplikasi.html?tool=cekduplikasi" data-meta="KML, KMZ, CSV, Excel">
+            <span class="nav-title"><i class="fas fa-clone"></i> Cek Duplikasi Titik</span>
+            <span class="nav-copy">Deteksi koordinat sama antara 2 file & buat placemark baru custom.</span>
+          </button>
         </div>
       </aside>
 
@@ -198,6 +207,11 @@
         <div id="pemetaanalpro" class="tab-content" data-tool-panel aria-hidden="true">
           <div class="tool-stage">
             <iframe data-src="pemetaanalpro.html?tool=pemetaanalpro" title="Pemetaan Alpro" scrolling="no"></iframe>
+          </div>
+        </div>
+        <div id="cekduplikasi" class="tab-content" data-tool-panel aria-hidden="true">
+          <div class="tool-stage">
+            <iframe data-src="cekduplikasi.html?tool=cekduplikasi" title="Cek Duplikasi Titik" scrolling="no"></iframe>
           </div>
         </div>
 
