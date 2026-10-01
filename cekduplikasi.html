@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cek Duplikasi Titik</title>
+    <title>Cek Duplikasi Titik (Multiple Files)</title>
     <script>
         if (window.self !== window.top) document.documentElement.classList.add('embedded-tool');
     </script>
@@ -27,6 +27,8 @@
             padding: 1.25rem;
             position: relative;
             transition: var(--transition);
+            display: flex;
+            flex-direction: column;
         }
 
         .upload-card-sub:hover,
@@ -76,60 +78,133 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem 1rem;
+            padding: 1.25rem 1rem;
             border-radius: var(--radius-sm);
             cursor: pointer;
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.12);
             text-align: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             transition: var(--transition);
         }
 
         .drop-click-zone:hover {
-            background: rgba(57, 208, 255, 0.05);
-            border-color: rgba(57, 208, 255, 0.25);
+            background: rgba(57, 208, 255, 0.06);
+            border-color: rgba(57, 208, 255, 0.35);
         }
 
         .drop-click-zone i {
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: var(--neon-blue);
         }
 
         .drop-click-zone p {
             margin: 0;
-            font-size: 0.88rem;
-        }
-
-        .file-loaded-info {
-            display: none;
-            margin-top: 0.75rem;
-            padding: 0.65rem 0.85rem;
-            background: rgba(53, 241, 208, 0.08);
-            border: 1px solid rgba(53, 241, 208, 0.25);
-            border-radius: var(--radius-sm);
             font-size: 0.84rem;
-            color: #d2fbf3;
         }
 
-        .file-loaded-info strong {
-            color: var(--neon-green);
+        .file-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-top: 0.75rem;
+            max-height: 220px;
+            overflow-y: auto;
         }
 
-        .btn-clear-file {
+        .file-item-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: rgba(8, 24, 46, 0.85);
+            border: 1px solid rgba(115, 210, 255, 0.2);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            gap: 0.6rem;
+            transition: var(--transition);
+        }
+
+        .file-item-chip:hover {
+            border-color: var(--neon-blue);
+            background: rgba(12, 32, 60, 0.95);
+        }
+
+        .file-item-chip.bahan-item {
+            border-color: rgba(255, 156, 74, 0.25);
+            background: rgba(30, 20, 10, 0.75);
+        }
+
+        .file-item-chip.bahan-item:hover {
+            border-color: var(--neon-orange);
+            background: rgba(45, 28, 14, 0.9);
+        }
+
+        .file-item-name {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .file-item-meta {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .file-item-remove {
             background: none;
             border: none;
             color: var(--neon-red);
             cursor: pointer;
-            font-size: 0.8rem;
-            padding: 0.2rem 0.5rem;
+            padding: 0.2rem 0.4rem;
             border-radius: 4px;
-            float: right;
+            font-size: 0.8rem;
             transition: var(--transition);
         }
 
-        .btn-clear-file:hover {
-            background: rgba(255, 95, 138, 0.15);
+        .file-item-remove:hover {
+            background: rgba(255, 95, 138, 0.2);
+        }
+
+        .files-summary-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.45rem 0.75rem;
+            background: rgba(53, 241, 208, 0.08);
+            border: 1px solid rgba(53, 241, 208, 0.25);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            color: #d2fbf3;
+            margin-top: 0.6rem;
+        }
+
+        .files-summary-bar.bahan-summary {
+            background: rgba(255, 156, 74, 0.08);
+            border-color: rgba(255, 156, 74, 0.25);
+            color: #ffe6d0;
+        }
+
+        .btn-clear-all {
+            background: none;
+            border: none;
+            color: var(--neon-red);
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .btn-clear-all:hover {
+            background: rgba(255, 95, 138, 0.18);
         }
 
         .workflow-callout {
@@ -485,21 +560,21 @@
                     <span class="eyebrow"><i class="fas fa-clone"></i> Deteksi Duplikasi & Insert Placemark Master</span>
                     <h1 class="display-title">Cek Duplikasi Titik</h1>
                     <p class="hero-description">
-                        Komparasikan <strong>File A (Master)</strong> dengan <strong>File B (Bahan)</strong>. Sistem akan mendeteksi titik yang cocok dan <strong>meng-insert placemark baru di titik koordinat Master A yang TIDAK duplikasi dengan bahan</strong> (titik master yang belum tercover), lengkap dengan kustomisasi nama, ikon, dan ukuran.
+                        Komparasikan <strong>File A (Master)</strong> dengan <strong>File B (Bahan)</strong>. Mendukung <strong>Multiple File</strong> (upload banyak file sekaligus untuk Master & Bahan). Sistem akan mendeteksi titik yang cocok dan <strong>meng-insert placemark baru di titik koordinat Master A yang TIDAK duplikasi dengan bahan</strong>, lengkap dengan kustomisasi nama, ikon, dan ukuran.
                     </p>
                     <div class="status-strip">
+                        <span class="status-pill"><i class="fas fa-layer-group" style="color: var(--neon-blue)"></i> Support Multiple File</span>
                         <span class="status-pill"><i class="fas fa-database"></i> File A: Master Acuan</span>
-                        <span class="status-pill"><i class="fas fa-layer-group"></i> File B: Data Bahan</span>
+                        <span class="status-pill"><i class="fas fa-file-circle-check"></i> File B: Data Bahan</span>
                         <span class="status-pill"><i class="fas fa-location-dot" style="color: var(--neon-green)"></i> Insert di Titik Master Non-Duplikat</span>
-                        <span class="status-pill"><i class="fas fa-icons"></i> Kustom Ikon, Nama & Skala</span>
                     </div>
                 </div>
                 <div class="hero-side">
                     <div class="status-panel">
                         <strong>Konsep Komparasi</strong>
-                        <span>Master (A) &times; Bahan (B)</span>
+                        <span>Master (A) &times; Bahan (B) [Multi-File]</span>
                         <p class="support-text">
-                            Titik-titik pada File Master (A) yang tidak ditemukan dalam File Bahan (B) akan dibuatkan placemark baru dengan visual ikon khusus dan dapat langsung disisipkan kembali ke dalam file KML Master Anda.
+                            Upload satu atau banyak file Master dan Bahan. Titik Master (A) yang tidak ditemukan dalam semua file Bahan (B) akan dibuatkan placemark baru dengan visual ikon khusus.
                         </p>
                     </div>
                     <div class="hero-metrics">
@@ -523,12 +598,12 @@
         <!-- Main Panel Grid -->
         <section class="panel-grid">
             <div class="stack">
-                <!-- Section 1: Upload Files -->
+                <!-- Section 1: Upload Files (Supports Multiple Files) -->
                 <section class="card">
                     <div class="card-header">
                         <span class="eyebrow card-kicker">Langkah 1</span>
                         <h2 class="card-title">Upload File A (Master) dan File B (Bahan)</h2>
-                        <p class="card-copy">File A adalah data Master acuan (misal: target rencana jaringan/tiang). File B adalah data Bahan (misal: survey/terpasang).</p>
+                        <p class="card-copy">Anda dapat mengunggah <strong>satu atau banyak file sekaligus (Multiple Files)</strong> untuk Master (A) maupun Bahan (B). Format: KML, KMZ, CSV, TXT, Excel.</p>
                     </div>
 
                     <div class="input-grid-2">
@@ -536,18 +611,20 @@
                         <div class="upload-card-sub master-card" id="dropzone1">
                             <div class="upload-header">
                                 <h4><i class="fas fa-database" style="color: var(--neon-blue);"></i> File A (Master)</h4>
-                                <span class="upload-badge">File Master Acuan</span>
+                                <span class="upload-badge"><i class="fas fa-layer-group"></i> Multi-File</span>
                             </div>
                             <div class="drop-click-zone" id="zoneClick1">
                                 <i class="fas fa-cloud-arrow-up"></i>
-                                <strong>Pilih / Drag File A (Master)</strong>
+                                <strong>Pilih / Drag File Master (Bisa Banyak)</strong>
                                 <p>KML / KMZ / CSV / Excel</p>
                             </div>
-                            <input type="file" id="input1" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" style="display:none;">
-                            <div class="file-loaded-info" id="info1">
-                                <button type="button" class="btn-clear-file" id="clear1" title="Hapus file"><i class="fas fa-xmark"></i> Hapus</button>
-                                <div><strong id="name1Text">-</strong></div>
-                                <div id="count1Text" style="font-size:0.78rem; opacity:0.85;">0 titik ditemukan</div>
+                            <input type="file" id="input1" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" multiple style="display:none;">
+                            
+                            <!-- Multiple Files List Container 1 -->
+                            <div class="file-items-list" id="fileListContainer1"></div>
+                            <div class="files-summary-bar" id="summaryBar1" style="display: none;">
+                                <div><strong id="summaryCount1">0 File</strong> (<span id="summaryPoints1">0 Titik</span>)</div>
+                                <button type="button" class="btn-clear-all" id="clearAll1"><i class="fas fa-trash"></i> Hapus Semua</button>
                             </div>
                         </div>
 
@@ -555,18 +632,20 @@
                         <div class="upload-card-sub bahan-card" id="dropzone2">
                             <div class="upload-header">
                                 <h4><i class="fas fa-file-circle-check" style="color: var(--neon-orange);"></i> File B (Bahan)</h4>
-                                <span class="upload-badge" style="color: var(--neon-orange); border-color: rgba(255,156,74,0.3); background: rgba(255,156,74,0.12);">Data Bahan</span>
+                                <span class="upload-badge" style="color: var(--neon-orange); border-color: rgba(255,156,74,0.3); background: rgba(255,156,74,0.12);"><i class="fas fa-layer-group"></i> Multi-File</span>
                             </div>
                             <div class="drop-click-zone" id="zoneClick2">
                                 <i class="fas fa-cloud-arrow-up" style="color: var(--neon-orange);"></i>
-                                <strong>Pilih / Drag File B (Bahan)</strong>
+                                <strong>Pilih / Drag File Bahan (Bisa Banyak)</strong>
                                 <p>KML / KMZ / CSV / Excel</p>
                             </div>
-                            <input type="file" id="input2" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" style="display:none;">
-                            <div class="file-loaded-info" id="info2">
-                                <button type="button" class="btn-clear-file" id="clear2" title="Hapus file"><i class="fas fa-xmark"></i> Hapus</button>
-                                <div><strong id="name2Text" style="color: var(--neon-orange);">-</strong></div>
-                                <div id="count2Text" style="font-size:0.78rem; opacity:0.85;">0 titik ditemukan</div>
+                            <input type="file" id="input2" accept=".kml,.kmz,.csv,.txt,.xlsx,.xls" multiple style="display:none;">
+                            
+                            <!-- Multiple Files List Container 2 -->
+                            <div class="file-items-list" id="fileListContainer2"></div>
+                            <div class="files-summary-bar bahan-summary" id="summaryBar2" style="display: none;">
+                                <div><strong id="summaryCount2">0 File</strong> (<span id="summaryPoints2">0 Titik</span>)</div>
+                                <button type="button" class="btn-clear-all" id="clearAll2"><i class="fas fa-trash"></i> Hapus Semua</button>
                             </div>
                         </div>
                     </div>
@@ -576,7 +655,7 @@
                             <i class="fas fa-wand-magic-sparkles" style="color: var(--neon-green)"></i> Muat Data Demo (Instant Test)
                         </button>
                         <button type="button" id="btnDownloadSample" class="btn-outline" style="font-size: 0.85rem; padding: 0.55rem 1rem;">
-                            <i class="fas fa-file-arrow-down" style="color: var(--neon-blue)"></i> Download Contoh CSV (Master & Bahan)
+                            <i class="fas fa-file-arrow-down" style="color: var(--neon-blue)"></i> Download Contoh File (Master & Bahan)
                         </button>
                     </div>
                 </section>
@@ -593,7 +672,7 @@
                         <div class="folder-form-group">
                             <label for="toleranceMode">Metode Deteksi Jarak</label>
                             <select id="toleranceMode">
-                                <option value="exact">Titik Persis Sama (Jarak = 0 meter)</option>
+                                <option value="exact">Titik Persis Sama (Jarak = 0 meter / Micro-Tolerance)</option>
                                 <option value="radius" selected>Radius Toleransi Jarak (Meter)</option>
                                 <option value="decimals">Pembulatan Desimal Koordinat</option>
                             </select>
@@ -637,7 +716,7 @@
                                 <input type="radio" name="targetGeneration" id="optTargetUnmatched" value="master_unmatched" checked>
                                 <div class="radio-card-text">
                                     <strong><i class="fas fa-bullseye" style="color: var(--neon-green);"></i> Titik Master A yang TIDAK Duplikasi (Rekomendasi)</strong>
-                                    <p>Insert placemark baru di koordinat Master A yang belum ada di Bahan B (titik belum tercover/belum disurvey).</p>
+                                    <p>Insert placemark baru di koordinat Master A yang belum ada di semua file Bahan B (titik belum tercover/belum disurvey).</p>
                                 </div>
                             </label>
 
@@ -645,7 +724,7 @@
                                 <input type="radio" name="targetGeneration" id="optTargetMatched" value="master_matched">
                                 <div class="radio-card-text">
                                     <strong><i class="fas fa-check-double" style="color: var(--neon-blue);"></i> Titik Master A yang Duplikasi</strong>
-                                    <p>Insert placemark baru di koordinat Master A yang sudah cocok/teridentifikasi sama di Bahan B.</p>
+                                    <p>Insert placemark baru di koordinat Master A yang sudah cocok/teridentifikasi sama di file Bahan B.</p>
                                 </div>
                             </label>
                         </div>
@@ -683,7 +762,8 @@
                             <button type="button" class="token-btn" data-token="{n}"><i class="fas fa-plus"></i> {n} (Nomor Urut)</button>
                             <button type="button" class="token-btn" data-token="{lat}"><i class="fas fa-plus"></i> {lat}</button>
                             <button type="button" class="token-btn" data-token="{lon}"><i class="fas fa-plus"></i> {lon}</button>
-                            <button type="button" class="token-btn" data-token="{name_bahan}"><i class="fas fa-plus"></i> {name_bahan} (Jika Ada)</button>
+                            <button type="button" class="token-btn" data-token="{file_master}"><i class="fas fa-plus"></i> {file_master} (File Asal)</button>
+                            <button type="button" class="token-btn" data-token="{name_bahan}"><i class="fas fa-plus"></i> {name_bahan}</button>
                         </div>
 
                         <div style="margin-top: 0.85rem;">
@@ -888,7 +968,7 @@
 
                             <!-- Search Input -->
                             <div style="min-width: 250px;">
-                                <input type="search" id="tableSearch" placeholder="Cari nama, koordinat, atau status..." style="padding: 0.55rem 0.85rem; font-size: 0.85rem;">
+                                <input type="search" id="tableSearch" placeholder="Cari nama, file asal, koordinat, status..." style="padding: 0.55rem 0.85rem; font-size: 0.85rem;">
                             </div>
                         </div>
 
@@ -901,7 +981,9 @@
                                         <th style="width: 140px;">Status</th>
                                         <th>Nama Placemark Baru</th>
                                         <th>Nama Titik Master (A)</th>
+                                        <th>File Master Asal</th>
                                         <th>Nama Titik Bahan (B)</th>
+                                        <th>File Bahan Asal</th>
                                         <th>Selisih Jarak</th>
                                         <th>Koordinat Master (Lat, Lon)</th>
                                         <th style="width: 90px; text-align: center;">Aksi</th>
@@ -940,25 +1022,24 @@
                 <section class="support-card glass-card">
                     <div class="card-header">
                         <span class="eyebrow card-kicker">Alur Kerja</span>
-                        <h2 class="card-title">Cara Komparasi Master & Bahan</h2>
+                        <h2 class="card-title">Multiple Files Komparasi</h2>
                     </div>
                     <ol style="padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.7; color: var(--text-secondary);">
-                        <li><strong>Upload File A (Master):</strong> Data acuan utama jaringan/tiang/ODP.</li>
-                        <li><strong>Upload File B (Bahan):</strong> Data survey atau data terpasang.</li>
-                        <li>Tentukan <strong>toleransi jarak</strong> (0m untuk koordinat persis sama).</li>
-                        <li>Sistem secara default memilih <strong>Titik Master yang TIDAK Duplikasi</strong> untuk dibuatkan placemark baru.</li>
-                        <li>Pilih <strong>ikon, ukuran ikon, dan template nama</strong> untuk placemark baru.</li>
-                        <li>Klik <strong>Komparasi & Insert Placemark</strong>. Placemark baru akan langsung disisipkan pada koordinat titik master yang belum ada di bahan.</li>
+                        <li><strong>File A (Master):</strong> Upload 1 atau beberapa file KML/CSV master target sekaligus.</li>
+                        <li><strong>File B (Bahan):</strong> Upload 1 atau beberapa file survey / data terpasang dari berbagai tim lapangan.</li>
+                        <li>Tentukan <strong>toleransi radius</strong> (default 1 meter untuk hasil Google Earth optimal).</li>
+                        <li>Sistem otomatis menggabungkan seluruh titik master dan membandingkannya dengan seluruh file bahan.</li>
+                        <li>Placemark baru akan dibuat pada titik Master yang <strong>belum ada di SEMUA file bahan</strong>.</li>
                     </ol>
                 </section>
 
                 <section class="support-card glass-card">
                     <div class="card-header">
                         <span class="eyebrow card-kicker">Keunggulan</span>
-                        <h2 class="card-title">Struktur Master Tetap Utuh</h2>
+                        <h2 class="card-title">Traceability File Lengkap</h2>
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                        <p>Jika File Master berupa KML/KMZ lengkap (berisi jalur kabel, tiang, polygon, dan style bawaan), tool ini akan <strong>mempertahankan seluruh isi file master asli</strong> dan menyisipkan folder placemark baru tepat pada titik koordinat Master.</p>
+                        <p>Setiap titik tetap menyimpan informasi nama file asalnya (misal: <em>File Master Asal</em> dan <em>File Bahan Asal</em>), sehingga saat diekspor ke Excel atau KML Anda dapat mengetahui asal-usul tiap titik dengan jelas.</p>
                     </div>
                 </section>
             </aside>
@@ -994,9 +1075,17 @@
             { name: 'STO / HUB', url: 'http://maps.google.com/mapfiles/kml/shapes/homegardenbusiness.png' }
         ];
 
-        // State variables
-        let dataset1 = { fileName: '', rawPoints: [], rawKmlText: null, rawKmlDoc: null, isKmlOrKmz: false };
-        let dataset2 = { fileName: '', rawPoints: [] };
+        // State variables (Multiple Files Model)
+        let dataset1 = {
+            files: [],      // Array of { id, name, size, rawPoints, rawKmlDoc, rawKmlText, isKmlOrKmz }
+            allPoints: []   // Combined array of all Master points
+        };
+
+        let dataset2 = {
+            files: [],      // Array of { id, name, size, rawPoints }
+            allPoints: []   // Combined array of all Bahan points
+        };
+
         let selectedIconUrl = kmlIconLibrary[0].url;
         let selectedIconName = kmlIconLibrary[0].name;
 
@@ -1029,14 +1118,17 @@
         const zoneClick2 = document.getElementById('zoneClick2');
         const input1 = document.getElementById('input1');
         const input2 = document.getElementById('input2');
-        const info1 = document.getElementById('info1');
-        const info2 = document.getElementById('info2');
-        const clear1 = document.getElementById('clear1');
-        const clear2 = document.getElementById('clear2');
-        const name1Text = document.getElementById('name1Text');
-        const name2Text = document.getElementById('name2Text');
-        const count1Text = document.getElementById('count1Text');
-        const count2Text = document.getElementById('count2Text');
+        
+        const fileListContainer1 = document.getElementById('fileListContainer1');
+        const fileListContainer2 = document.getElementById('fileListContainer2');
+        const summaryBar1 = document.getElementById('summaryBar1');
+        const summaryBar2 = document.getElementById('summaryBar2');
+        const summaryCount1 = document.getElementById('summaryCount1');
+        const summaryCount2 = document.getElementById('summaryCount2');
+        const summaryPoints1 = document.getElementById('summaryPoints1');
+        const summaryPoints2 = document.getElementById('summaryPoints2');
+        const clearAll1 = document.getElementById('clearAll1');
+        const clearAll2 = document.getElementById('clearAll2');
 
         const toleranceModeSelect = document.getElementById('toleranceMode');
         const radiusGroup = document.getElementById('radiusGroup');
@@ -1148,15 +1240,15 @@
         function setupEventListeners() {
             // Dropzone 1 (Master)
             zoneClick1.addEventListener('click', () => input1.click());
-            input1.addEventListener('change', (e) => handleFile(e.target.files[0], 1));
+            input1.addEventListener('change', (e) => handleFiles(e.target.files, 1));
             setupDragAndDrop(dropzone1, 1);
-            clear1.addEventListener('click', () => clearFile(1));
+            clearAll1.addEventListener('click', () => clearAllFiles(1));
 
             // Dropzone 2 (Bahan)
             zoneClick2.addEventListener('click', () => input2.click());
-            input2.addEventListener('change', (e) => handleFile(e.target.files[0], 2));
+            input2.addEventListener('change', (e) => handleFiles(e.target.files, 2));
             setupDragAndDrop(dropzone2, 2);
-            clear2.addEventListener('click', () => clearFile(2));
+            clearAll2.addEventListener('click', () => clearAllFiles(2));
 
             // Radio Card Target Selection
             optTargetUnmatched.addEventListener('change', () => {
@@ -1315,7 +1407,7 @@
                 e.stopPropagation();
                 element.classList.remove('dragover');
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    handleFile(e.dataTransfer.files[0], slot);
+                    handleFiles(e.dataTransfer.files, slot);
                 }
             });
         }
@@ -1340,78 +1432,148 @@
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Generic File Parser
-        async function handleFile(file, slot) {
-            if (!file) return;
+        // Generic Multiple File Upload Handler
+        async function handleFiles(fileList, slot) {
+            if (!fileList || fileList.length === 0) return;
             showError('');
             loadingDiv.style.display = 'block';
             const label = slot === 1 ? 'File A (Master)' : 'File B (Bahan)';
-            loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Membaca ${label}: ${escapeHtml(file.name)}...`;
+            loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Membaca ${fileList.length} file untuk ${label}...`;
 
-            try {
-                const parsed = await parseGenericSpatialFile(file);
-                if (!parsed.points || parsed.points.length === 0) {
-                    throw new Error(`Tidak ditemukan titik koordinat (Point Placemark) dalam ${label} (${file.name})`);
-                }
+            const targetDataset = slot === 1 ? dataset1 : dataset2;
+            let successCount = 0;
+            const errors = [];
 
-                if (slot === 1) {
-                    dataset1 = { 
-                        fileName: file.name, 
-                        rawPoints: parsed.points,
+            for (let i = 0; i < fileList.length; i++) {
+                const file = fileList[i];
+                try {
+                    const parsed = await parseGenericSpatialFile(file);
+                    if (!parsed.points || parsed.points.length === 0) {
+                        errors.push(`${file.name}: Tidak ditemukan titik koordinat`);
+                        continue;
+                    }
+
+                    const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+                    
+                    // Tag points with origin file metadata
+                    const taggedPoints = parsed.points.map((p, idx) => ({
+                        ...p,
+                        id: `${fileId}_${idx + 1}`,
+                        sourceFileName: file.name,
+                        sourceFileId: fileId
+                    }));
+
+                    targetDataset.files.push({
+                        id: fileId,
+                        name: file.name,
+                        size: file.size,
+                        rawPoints: taggedPoints,
                         rawKmlText: parsed.rawKmlText || null,
                         rawKmlDoc: parsed.rawKmlDoc || null,
                         isKmlOrKmz: parsed.isKmlOrKmz || false
-                    };
-                    zoneClick1.style.display = 'none';
-                    info1.style.display = 'block';
-                    name1Text.textContent = file.name;
-                    count1Text.textContent = `${parsed.points.length} titik ditemukan (${(file.size / 1024).toFixed(1)} KB)`;
-                    document.getElementById('metricF1').textContent = `${parsed.points.length} Titik`;
-                } else {
-                    dataset2 = { 
-                        fileName: file.name, 
-                        rawPoints: parsed.points 
-                    };
-                    zoneClick2.style.display = 'none';
-                    info2.style.display = 'block';
-                    name2Text.textContent = file.name;
-                    count2Text.textContent = `${parsed.points.length} titik ditemukan (${(file.size / 1024).toFixed(1)} KB)`;
-                    document.getElementById('metricF2').textContent = `${parsed.points.length} Titik`;
+                    });
+
+                    successCount++;
+                } catch (err) {
+                    console.error('Error parsing file:', file.name, err);
+                    errors.push(`${file.name}: ${err.message}`);
                 }
-            } catch (err) {
-                console.error('Error parsing file:', err);
-                showError(`Gagal membaca ${label}: ${err.message}`);
-                clearFile(slot);
-            } finally {
-                loadingDiv.style.display = 'none';
+            }
+
+            // Rebuild allPoints
+            rebuildDatasetPoints(slot);
+            renderFileListUI(slot);
+
+            loadingDiv.style.display = 'none';
+            if (errors.length > 0) {
+                showError(`Peringatan beberapa file gagal dibaca:\n- ` + errors.join('\n- '));
             }
         }
 
-        function clearFile(slot) {
+        function rebuildDatasetPoints(slot) {
+            const targetDataset = slot === 1 ? dataset1 : dataset2;
+            const combined = [];
+            targetDataset.files.forEach(f => {
+                f.rawPoints.forEach(p => combined.push(p));
+            });
+            targetDataset.allPoints = combined;
+
             if (slot === 1) {
-                dataset1 = { fileName: '', rawPoints: [], rawKmlText: null, rawKmlDoc: null, isKmlOrKmz: false };
-                input1.value = '';
-                zoneClick1.style.display = 'flex';
-                info1.style.display = 'none';
-                name1Text.textContent = '-';
-                count1Text.textContent = '0 titik';
-                document.getElementById('metricF1').textContent = '0 Titik';
+                document.getElementById('metricF1').textContent = `${combined.length} Titik`;
             } else {
-                dataset2 = { fileName: '', rawPoints: [] };
-                input2.value = '';
-                zoneClick2.style.display = 'flex';
-                info2.style.display = 'none';
-                name2Text.textContent = '-';
-                count2Text.textContent = '0 titik';
-                document.getElementById('metricF2').textContent = '0 Titik';
+                document.getElementById('metricF2').textContent = `${combined.length} Titik`;
             }
+        }
+
+        function renderFileListUI(slot) {
+            const targetDataset = slot === 1 ? dataset1 : dataset2;
+            const container = slot === 1 ? fileListContainer1 : fileListContainer2;
+            const summaryBar = slot === 1 ? summaryBar1 : summaryBar2;
+            const summaryCount = slot === 1 ? summaryCount1 : summaryCount2;
+            const summaryPoints = slot === 1 ? summaryPoints1 : summaryPoints2;
+
+            container.innerHTML = '';
+
+            if (targetDataset.files.length === 0) {
+                summaryBar.style.display = 'none';
+                return;
+            }
+
+            summaryBar.style.display = 'flex';
+            summaryCount.textContent = `${targetDataset.files.length} File`;
+            summaryPoints.textContent = `${targetDataset.allPoints.length} Titik Total`;
+
+            targetDataset.files.forEach((f, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-item-chip' + (slot === 2 ? ' bahan-item' : '');
+
+                let fileIcon = 'fa-file-code';
+                if (f.name.endsWith('.kml') || f.name.endsWith('.kmz')) fileIcon = 'fa-map-location-dot';
+                else if (f.name.endsWith('.xlsx') || f.name.endsWith('.xls')) fileIcon = 'fa-file-excel';
+                else if (f.name.endsWith('.csv') || f.name.endsWith('.txt')) fileIcon = 'fa-file-csv';
+
+                const sizeStr = (f.size / 1024).toFixed(1) + ' KB';
+
+                item.innerHTML = `
+                    <div class="file-item-name" title="${escapeHtml(f.name)}">
+                        <i class="fas ${fileIcon}" style="color: ${slot === 1 ? 'var(--neon-blue)' : 'var(--neon-orange)'}"></i>
+                        <span>${escapeHtml(f.name)}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span class="file-item-meta">${f.rawPoints.length} titik | ${sizeStr}</span>
+                        <button type="button" class="file-item-remove" title="Hapus file ini" onclick="removeSingleFile(${slot}, '${f.id}')">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        window.removeSingleFile = function (slot, fileId) {
+            const targetDataset = slot === 1 ? dataset1 : dataset2;
+            targetDataset.files = targetDataset.files.filter(f => f.id !== fileId);
+            rebuildDatasetPoints(slot);
+            renderFileListUI(slot);
+            resultsSection.style.display = 'none';
+            document.getElementById('metricMatch').textContent = '0 Titik';
+        };
+
+        function clearAllFiles(slot) {
+            const targetDataset = slot === 1 ? dataset1 : dataset2;
+            targetDataset.files = [];
+            targetDataset.allPoints = [];
+            if (slot === 1) input1.value = '';
+            else input2.value = '';
+            rebuildDatasetPoints(slot);
+            renderFileListUI(slot);
             resultsSection.style.display = 'none';
             document.getElementById('metricMatch').textContent = '0 Titik';
         }
 
         function resetAll() {
-            clearFile(1);
-            clearFile(2);
+            clearAllFiles(1);
+            clearAllFiles(2);
             showError('');
             optTargetUnmatched.checked = true;
             cardTargetUnmatched.classList.add('selected');
@@ -1648,21 +1810,21 @@
             return R * c;
         }
 
-        // Core Comparison & Generation Engine
+        // Core Comparison & Generation Engine across Multiple Files
         function runComparisonAndGeneration() {
             showError('');
 
-            if (!dataset1.rawPoints || dataset1.rawPoints.length === 0) {
-                showError('Harap upload File A (Master) terlebih dahulu.');
+            if (!dataset1.allPoints || dataset1.allPoints.length === 0) {
+                showError('Harap upload minimal satu File A (Master) terlebih dahulu.');
                 return;
             }
-            if (!dataset2.rawPoints || dataset2.rawPoints.length === 0) {
-                showError('Harap upload File B (Bahan) terlebih dahulu.');
+            if (!dataset2.allPoints || dataset2.allPoints.length === 0) {
+                showError('Harap upload minimal satu File B (Bahan) terlebih dahulu.');
                 return;
             }
 
             loadingDiv.style.display = 'block';
-            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membandingkan Master A & Bahan B, menyiapkan placemark baru di titik koordinat Master A...';
+            loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Membandingkan ${dataset1.allPoints.length} titik Master (${dataset1.files.length} file) terhadap ${dataset2.allPoints.length} titik Bahan (${dataset2.files.length} file)...`;
 
             setTimeout(() => {
                 try {
@@ -1686,10 +1848,10 @@
                     const matchedMasterIds = new Set();
                     const matchedBahanIds = new Set();
 
-                    const masterPoints = dataset1.rawPoints;
-                    const bahanPoints = dataset2.rawPoints;
+                    const masterPoints = dataset1.allPoints;
+                    const bahanPoints = dataset2.allPoints;
 
-                    // 1. Identify all Duplicates between Master and Bahan
+                    // 1. Match Master Points against all Bahan Points
                     for (let i = 0; i < masterPoints.length; i++) {
                         const pMaster = masterPoints[i];
                         let bestMatch = null;
@@ -1701,7 +1863,7 @@
                             const dist = calculateHaversineMeters(pMaster.lat, pMaster.lon, pBahan.lat, pBahan.lon);
 
                             if (toleranceMode === 'exact') {
-                                // Toleransi mikro 0.15 meter (~15 cm) untuk mengatasi selisih floating-point & perbedaan 6/7 digit desimal
+                                // Micro-tolerance 0.15m to handle rounding & floating point
                                 if (dist <= 0.15 || (Math.abs(pMaster.lat - pBahan.lat) < 1e-6 && Math.abs(pMaster.lon - pBahan.lon) < 1e-6)) {
                                     isDuplicate = true;
                                 }
@@ -1715,7 +1877,6 @@
                                     isDuplicate = true;
                                 }
                             } else {
-                                // Mode Radius: Jika radius 0, gunakan toleransi mikro 0.15 meter agar titik yang menumpuk di GE tetap terdeteksi
                                 const effectiveRadius = radiusMeters <= 0.05 ? 0.15 : radiusMeters;
                                 if (dist <= effectiveRadius) {
                                     isDuplicate = true;
@@ -1742,15 +1903,17 @@
                                 lat: pMaster.lat,
                                 lon: pMaster.lon,
                                 alt: pMaster.alt || 0,
+                                sourceFileMaster: pMaster.sourceFileName || '-',
+                                sourceFileBahan: bestMatch.pBahan.sourceFileName || '-',
                                 status: 'DUPLIKAT'
                             });
                         }
                     }
 
-                    // 2. Identify Non-Duplicate Master Points (Master A points NOT in Bahan B)
+                    // 2. Identify Non-Duplicate Master Points
                     const unmatchedMaster = masterPoints.filter(p => !matchedMasterIds.has(p.id));
 
-                    // 3. Identify Unique Bahan Points (Bahan B points NOT in Master A)
+                    // 3. Identify Unique Bahan Points
                     const uniqueBahan = bahanPoints.filter(p => !matchedBahanIds.has(p.id)).map((p, idx) => ({
                         index: idx + 1,
                         pMaster: null,
@@ -1759,6 +1922,8 @@
                         newName: p.name,
                         lat: p.lat,
                         lon: p.lon,
+                        sourceFileMaster: '-',
+                        sourceFileBahan: p.sourceFileName || '-',
                         status: 'UNIK_BAHAN'
                     }));
 
@@ -1766,13 +1931,13 @@
                     let generatedPlacemarks = [];
 
                     if (isTargetUnmatched) {
-                        // PRIMARY: Placemark Baru di Titik Koordinat Master A yang TIDAK DUPLIKASI
                         unmatchedMaster.forEach((pMaster, idx) => {
                             const seqNum = String(startSeq + idx).padStart(padDigits, '0');
                             const newName = template
                                 .replace(/{name_master}/g, pMaster.name)
                                 .replace(/{name}/g, pMaster.name)
                                 .replace(/{name1}/g, pMaster.name)
+                                .replace(/{file_master}/g, pMaster.sourceFileName || '')
                                 .replace(/{name_bahan}/g, '')
                                 .replace(/{name2}/g, '')
                                 .replace(/{n}/g, seqNum)
@@ -1790,17 +1955,19 @@
                                 lat: pMaster.lat,
                                 lon: pMaster.lon,
                                 alt: pMaster.alt || 0,
+                                sourceFileMaster: pMaster.sourceFileName || '-',
+                                sourceFileBahan: '-',
                                 status: 'BARU_MASTER_NON_DUPLIKAT'
                             });
                         });
                     } else {
-                        // SECONDARY OPTION: Placemark Baru di Titik Master A yang DUPLIKASI
                         matchedPairs.forEach((m, idx) => {
                             const seqNum = String(startSeq + idx).padStart(padDigits, '0');
                             const newName = template
                                 .replace(/{name_master}/g, m.pMaster.name)
                                 .replace(/{name}/g, m.pMaster.name)
                                 .replace(/{name1}/g, m.pMaster.name)
+                                .replace(/{file_master}/g, m.pMaster.sourceFileName || '')
                                 .replace(/{name_bahan}/g, m.pBahan.name)
                                 .replace(/{name2}/g, m.pBahan.name)
                                 .replace(/{n}/g, seqNum)
@@ -1819,6 +1986,8 @@
                                 lat: m.lat,
                                 lon: m.lon,
                                 alt: m.alt || 0,
+                                sourceFileMaster: m.sourceFileMaster,
+                                sourceFileBahan: m.sourceFileBahan,
                                 status: 'BARU_MASTER_DUPLIKAT'
                             });
                         });
@@ -1836,8 +2005,8 @@
                     };
 
                     // Update UI Statistics
-                    statTotalF1.textContent = masterPoints.length;
-                    statTotalF2.textContent = bahanPoints.length;
+                    statTotalF1.textContent = `${masterPoints.length} (${dataset1.files.length} File)`;
+                    statTotalF2.textContent = `${bahanPoints.length} (${dataset2.files.length} File)`;
                     statGenerated.textContent = generatedPlacemarks.length;
                     statMatched.textContent = matchedPairs.length;
                     statUnique2.textContent = uniqueBahan.length;
@@ -1872,7 +2041,7 @@
             }, 50);
         }
 
-        // Render Table with Pagination & Filtering
+        // Render Table with Multi-File Source info
         function renderTable() {
             let data = [];
             if (currentFilter === 'generated') data = processedData.generatedPlacemarks;
@@ -1885,8 +2054,10 @@
                     const name1 = item.pMaster ? item.pMaster.name.toLowerCase() : '';
                     const name2 = item.pBahan ? item.pBahan.name.toLowerCase() : '';
                     const newName = item.newName ? item.newName.toLowerCase() : '';
+                    const file1 = item.sourceFileMaster ? item.sourceFileMaster.toLowerCase() : '';
+                    const file2 = item.sourceFileBahan ? item.sourceFileBahan.toLowerCase() : '';
                     const coords = `${item.lat.toFixed(6)}, ${item.lon.toFixed(6)}`;
-                    return name1.includes(searchQuery) || name2.includes(searchQuery) || newName.includes(searchQuery) || coords.includes(searchQuery);
+                    return name1.includes(searchQuery) || name2.includes(searchQuery) || newName.includes(searchQuery) || file1.includes(searchQuery) || file2.includes(searchQuery) || coords.includes(searchQuery);
                 });
             }
 
@@ -1900,7 +2071,7 @@
             tableBody.innerHTML = '';
 
             if (pageData.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Tidak ada data yang cocok dengan kriteria filter/pencarian.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">Tidak ada data yang cocok dengan kriteria filter/pencarian.</td></tr>`;
             } else {
                 pageData.forEach((row, i) => {
                     const tr = document.createElement('tr');
@@ -1918,7 +2089,15 @@
                     }
 
                     const nameMasterDisplay = row.pMaster ? escapeHtml(row.pMaster.name) : '<span style="color:var(--text-muted);">-</span>';
+                    const fileMasterDisplay = (row.sourceFileMaster && row.sourceFileMaster !== '-') 
+                        ? `<span style="font-size:0.75rem; color:#8ec5fc;"><i class="fas fa-file"></i> ${escapeHtml(row.sourceFileMaster)}</span>` 
+                        : '<span style="color:var(--text-muted);">-</span>';
+                    
                     const nameBahanDisplay = row.pBahan ? escapeHtml(row.pBahan.name) : '<span style="color:var(--text-muted);">-</span>';
+                    const fileBahanDisplay = (row.sourceFileBahan && row.sourceFileBahan !== '-') 
+                        ? `<span style="font-size:0.75rem; color:#ffc08a;"><i class="fas fa-file"></i> ${escapeHtml(row.sourceFileBahan)}</span>` 
+                        : '<span style="color:var(--text-muted);">-</span>';
+
                     const distDisplay = (row.dist !== null && row.dist !== undefined) ? `${row.dist.toFixed(2)} m` : '-';
                     const coordDisplay = `${row.lat.toFixed(6)}, ${row.lon.toFixed(6)}`;
 
@@ -1927,7 +2106,9 @@
                         <td>${badgeHtml}</td>
                         <td><strong style="color:#fff;">${escapeHtml(row.newName)}</strong></td>
                         <td>${nameMasterDisplay}</td>
+                        <td>${fileMasterDisplay}</td>
                         <td>${nameBahanDisplay}</td>
+                        <td>${fileBahanDisplay}</td>
                         <td>${distDisplay}</td>
                         <td style="font-family: monospace; font-size: 0.8rem;">${coordDisplay}</td>
                         <td style="text-align: center;">
@@ -2016,8 +2197,9 @@
                             ${escapeHtml(item.newName)}
                         </div>
                         <div style="margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #0b9e76; font-weight:700;">PLACEMARK BARU DI TITIK MASTER</span></div>
-                        <div style="margin-bottom: 4px;"><strong>Nama Master Asal:</strong> ${escapeHtml(item.pMaster.name)}</div>
-                        <div style="margin-bottom: 4px;"><strong>Kondisi:</strong> Tidak Duplikasi di Bahan B</div>
+                        <div style="margin-bottom: 4px;"><strong>Nama Master:</strong> ${escapeHtml(item.pMaster.name)}</div>
+                        <div style="margin-bottom: 4px;"><strong>File Master Asal:</strong> ${escapeHtml(item.sourceFileMaster)}</div>
+                        <div style="margin-bottom: 4px;"><strong>Kondisi:</strong> Tidak Duplikasi di Bahan</div>
                         <div style="margin-bottom: 4px;"><strong>Koordinat:</strong> ${item.lat.toFixed(6)}, ${item.lon.toFixed(6)}</div>
                     </div>
                 `;
@@ -2028,7 +2210,7 @@
             });
 
             // 2. Render Master Points
-            dataset1.rawPoints.forEach(p => {
+            dataset1.allPoints.forEach(p => {
                 const c1 = L.circleMarker([p.lat, p.lon], {
                     radius: 4.5,
                     fillColor: '#39d0ff',
@@ -2036,13 +2218,13 @@
                     weight: 1.5,
                     opacity: 0.9,
                     fillOpacity: 0.8
-                }).bindPopup(`<b>Master (A):</b> ${escapeHtml(p.name)}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
+                }).bindPopup(`<b>Master (A):</b> ${escapeHtml(p.name)}<br>File: ${escapeHtml(p.sourceFileName || '-')}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
                 layerGroupF1.addLayer(c1);
                 allBounds.push([p.lat, p.lon]);
             });
 
             // 3. Render Bahan Points
-            dataset2.rawPoints.forEach(p => {
+            dataset2.allPoints.forEach(p => {
                 const c2 = L.circleMarker([p.lat, p.lon], {
                     radius: 4.5,
                     fillColor: '#ff9c4a',
@@ -2050,7 +2232,7 @@
                     weight: 1.5,
                     opacity: 0.9,
                     fillOpacity: 0.8
-                }).bindPopup(`<b>Bahan (B):</b> ${escapeHtml(p.name)}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
+                }).bindPopup(`<b>Bahan (B):</b> ${escapeHtml(p.name)}<br>File: ${escapeHtml(p.sourceFileName || '-')}<br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}`);
                 layerGroupF2.addLayer(c2);
                 allBounds.push([p.lat, p.lon]);
             });
@@ -2063,7 +2245,7 @@
                     color: '#ffffff',
                     weight: 2,
                     fillOpacity: 0.9
-                }).bindPopup(`<b>Duplikat Terdeteksi:</b><br>Master: ${escapeHtml(d.pMaster.name)}<br>Bahan: ${escapeHtml(d.pBahan.name)}<br>Selisih: ${d.dist.toFixed(2)} m`);
+                }).bindPopup(`<b>Duplikat Terdeteksi:</b><br>Master: ${escapeHtml(d.pMaster.name)} (${escapeHtml(d.sourceFileMaster)})<br>Bahan: ${escapeHtml(d.pBahan.name)} (${escapeHtml(d.sourceFileBahan)})<br>Selisih: ${d.dist.toFixed(2)} m`);
                 layerGroupDups.addLayer(dMarker);
             });
 
@@ -2129,10 +2311,10 @@
             const labelColorKml = hexToKmlColor(labelColorInput.value, 100);
             const outputMode = outputModeSelect.value;
 
-            // Strategy 1: Inject into original Master XML DOM if KML/KMZ was uploaded
-            if (outputMode === 'insert_into_master' && dataset1.rawKmlDoc) {
+            // Strategy 1: If exactly 1 Master file with KML DOM is loaded, inject into it
+            if (outputMode === 'insert_into_master' && dataset1.files.length === 1 && dataset1.files[0].rawKmlDoc) {
                 try {
-                    const clonedDoc = dataset1.rawKmlDoc.cloneNode(true);
+                    const clonedDoc = dataset1.files[0].rawKmlDoc.cloneNode(true);
                     let docElem = clonedDoc.getElementsByTagName('Document')[0];
                     if (!docElem) {
                         docElem = clonedDoc.getElementsByTagName('kml')[0] || clonedDoc.documentElement;
@@ -2159,7 +2341,7 @@
                     newFolderElem.appendChild(folderNameElem);
 
                     const folderDescElem = clonedDoc.createElement('description');
-                    folderDescElem.textContent = `Placemark baru yang diinsert sesuai titik koordinat Master (${dataset1.fileName}) yang tidak duplikasi dengan Bahan (${dataset2.fileName})`;
+                    folderDescElem.textContent = `Placemark baru yang diinsert sesuai titik koordinat Master (${dataset1.files[0].name}) yang tidak duplikasi dengan file Bahan`;
                     newFolderElem.appendChild(folderDescElem);
 
                     processedData.generatedPlacemarks.forEach(item => {
@@ -2176,6 +2358,7 @@
                                 <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; width:100%; border-color:#ddd;">
                                     <tr style="background-color:#eef8ff;"><td><b>Status</b></td><td style="color:#008855; font-weight:bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
                                     <tr><td><b>Titik Master Asal</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
+                                    <tr><td><b>File Master Asal</b></td><td>${escapeXml(item.sourceFileMaster)}</td></tr>
                                     <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
                                     <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
                                 </table>
@@ -2211,7 +2394,7 @@
   <Document>
     <name>${escapeXml(folderName)}</name>
     <open>1</open>
-    <description>Dihasilkan oleh KML Tools - Cek Duplikasi Titik pada ${new Date().toLocaleString('id-ID')}</description>
+    <description>Dihasilkan oleh KML Tools - Cek Duplikasi Titik (Multi-File) pada ${new Date().toLocaleString('id-ID')}</description>
 
     <!-- Style Placemark Baru di Titik Master -->
     <Style id="newPlacemarkMasterStyle">
@@ -2261,7 +2444,7 @@
     <Folder>
       <name>${escapeXml(folderName)} (${processedData.generatedPlacemarks.length})</name>
       <open>1</open>
-      <description>Placemark baru di titik koordinat File Master (${escapeXml(dataset1.fileName)}) yang tidak duplikasi dengan File Bahan (${escapeXml(dataset2.fileName)})</description>
+      <description>Placemark baru di titik koordinat File Master yang tidak duplikasi dengan File Bahan</description>
 `;
 
             processedData.generatedPlacemarks.forEach(item => {
@@ -2271,6 +2454,7 @@
   <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; border-color: #ddd;">
     <tr style="background-color: #f0f7ff;"><td><b>Status</b></td><td style="color: #008855; font-weight: bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
     <tr><td><b>Nama Titik Master (A)</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
+    <tr><td><b>File Master Asal</b></td><td>${escapeXml(item.sourceFileMaster)}</td></tr>
     <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
     <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
   </table>
@@ -2301,7 +2485,7 @@
                     processedData.duplicates.forEach(d => {
                         kml += `      <Placemark>
         <name>${escapeXml(d.pMaster.name)} (MATCH ${escapeXml(d.pBahan.name)})</name>
-        <description><![CDATA[Duplikat dengan: ${escapeXml(d.pBahan.name)} (Selisih: ${d.dist.toFixed(2)} m)]]></description>
+        <description><![CDATA[Master: ${escapeXml(d.sourceFileMaster)} | Bahan: ${escapeXml(d.sourceFileBahan)} (Selisih: ${d.dist.toFixed(2)} m)]]></description>
         <styleUrl>#duplicateStyle</styleUrl>
         <Point>
           <coordinates>${d.lon.toFixed(7)},${d.lat.toFixed(7)},0</coordinates>
@@ -2317,12 +2501,12 @@
     <Folder>
       <name>TITIK UNIK BAHAN (${processedData.uniqueBahan.length})</name>
       <open>0</open>
-      <description>Titik yang hanya ada di File Bahan (${escapeXml(dataset2.fileName)})</description>
+      <description>Titik yang hanya ada di File Bahan</description>
 `;
                     processedData.uniqueBahan.forEach(u => {
                         kml += `      <Placemark>
         <name>${escapeXml(u.newName)}</name>
-        <description><![CDATA[Titik Unik Bahan: ${escapeXml(dataset2.fileName)}]]></description>
+        <description><![CDATA[Titik Unik Bahan: ${escapeXml(u.sourceFileBahan)}]]></description>
         <styleUrl>#duplicateStyle</styleUrl>
         <Point>
           <coordinates>${u.lon.toFixed(7)},${u.lat.toFixed(7)},0</coordinates>
@@ -2380,6 +2564,7 @@
                     'No': idx + 1,
                     'Nama Placemark Baru': m.newName,
                     'Nama Titik Master (A)': m.pMaster.name,
+                    'File Master Asal': m.sourceFileMaster,
                     'Status': 'PLACEMARK BARU DI TITIK MASTER (NON-DUPLIKAT)',
                     'Latitude Titik Master': m.lat,
                     'Longitude Titik Master': m.lon,
@@ -2391,7 +2576,9 @@
                 const dupRows = processedData.duplicates.map((d, idx) => ({
                     'No': idx + 1,
                     'Nama Master (A)': d.pMaster.name,
+                    'File Master Asal': d.sourceFileMaster,
                     'Nama Bahan (B)': d.pBahan.name,
+                    'File Bahan Asal': d.sourceFileBahan,
                     'Selisih Jarak (meter)': parseFloat(d.dist.toFixed(2)),
                     'Latitude Master': d.lat,
                     'Longitude Master': d.lon,
@@ -2404,6 +2591,7 @@
                 const uniq2Rows = processedData.uniqueBahan.map((u, idx) => ({
                     'No': idx + 1,
                     'Nama': u.newName,
+                    'File Bahan Asal': u.sourceFileBahan,
                     'Latitude': u.lat,
                     'Longitude': u.lon,
                     'Deskripsi': u.pBahan ? (u.pBahan.desc || '') : ''
@@ -2412,10 +2600,12 @@
                 XLSX.utils.book_append_sheet(wb, wsUniq2, 'Unik Bahan');
 
                 const summaryRows = [
-                    { 'Parameter': 'File Master (A)', 'Nilai': dataset1.fileName },
-                    { 'Parameter': 'Total Titik Master', 'Nilai': dataset1.rawPoints.length },
-                    { 'Parameter': 'File Bahan (B)', 'Nilai': dataset2.fileName },
-                    { 'Parameter': 'Total Titik Bahan', 'Nilai': dataset2.rawPoints.length },
+                    { 'Parameter': 'Total File Master (A)', 'Nilai': `${dataset1.files.length} File` },
+                    { 'Parameter': 'Total Titik Master', 'Nilai': dataset1.allPoints.length },
+                    { 'Parameter': 'Daftar File Master', 'Nilai': dataset1.files.map(f => f.name).join(', ') },
+                    { 'Parameter': 'Total File Bahan (B)', 'Nilai': `${dataset2.files.length} File` },
+                    { 'Parameter': 'Total Titik Bahan', 'Nilai': dataset2.allPoints.length },
+                    { 'Parameter': 'Daftar File Bahan', 'Nilai': dataset2.files.map(f => f.name).join(', ') },
                     { 'Parameter': 'Placemark Baru Dibuat di Master', 'Nilai': processedData.generatedPlacemarks.length },
                     { 'Parameter': 'Titik Duplikat (Match)', 'Nilai': processedData.duplicates.length },
                     { 'Parameter': 'Titik Unik Bahan', 'Nilai': processedData.uniqueBahan.length },
@@ -2439,13 +2629,14 @@
                 return;
             }
             const rows = [
-                ['No', 'Nama_Placemark_Baru', 'Nama_Master_A', 'Status', 'Latitude_Master', 'Longitude_Master', 'Desc_Master']
+                ['No', 'Nama_Placemark_Baru', 'Nama_Master_A', 'File_Master_Asal', 'Status', 'Latitude_Master', 'Longitude_Master', 'Desc_Master']
             ];
             processedData.generatedPlacemarks.forEach((m, idx) => {
                 rows.push([
                     idx + 1,
                     m.newName,
                     m.pMaster.name,
+                    m.sourceFileMaster,
                     'PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)',
                     m.lat,
                     m.lon,
@@ -2472,38 +2663,68 @@
         }
 
         function loadDemoData() {
-            const demoMaster = [
+            clearAllFiles(1);
+            clearAllFiles(2);
+
+            const demoMaster1 = [
                 { id: 'm_1', name: 'TIANG-MASTER-01', lat: -6.175392, lon: 106.827153, alt: 0, desc: 'Tiang Master Monas Barat' },
                 { id: 'm_2', name: 'ODP-MASTER-HI', lat: -6.194444, lon: 106.822956, alt: 0, desc: 'ODP Master Bundaran HI' },
-                { id: 'm_3', name: 'TIANG-MASTER-03', lat: -6.186486, lon: 106.822999, alt: 0, desc: 'Tiang Master Sarinah' },
+                { id: 'm_3', name: 'TIANG-MASTER-03', lat: -6.186486, lon: 106.822999, alt: 0, desc: 'Tiang Master Sarinah' }
+            ];
+
+            const demoMaster2 = [
                 { id: 'm_4', name: 'TIANG-MASTER-04', lat: -6.170166, lon: 106.831375, alt: 0, desc: 'Tiang Master Istiqlal (Belum Tercover)' },
                 { id: 'm_5', name: 'CLOSURE-MASTER-01', lat: -6.208763, lon: 106.845599, alt: 0, desc: 'Closure Master Manggarai (Belum Tercover)' }
             ];
 
-            const demoBahan = [
-                { id: 'b_1', name: 'SURVEY-BAHAN-MONAS', lat: -6.175392, lon: 106.827153, alt: 0, desc: 'Survey Lapangan Monas (Duplikat)' },
-                { id: 'b_2', name: 'SURVEY-BAHAN-HI', lat: -6.194444, lon: 106.822956, alt: 0, desc: 'Survey Lapangan Bundaran HI (Duplikat)' },
-                { id: 'b_3', name: 'SURVEY-BAHAN-SARINAH', lat: -6.186490, lon: 106.823004, alt: 0, desc: 'Survey Sarinah (Duplikat)' },
-                { id: 'b_4', name: 'SURVEY-BAHAN-GBK', lat: -6.218333, lon: 106.802222, alt: 0, desc: 'Titik Baru GBK (Hanya di Bahan)' },
-                { id: 'b_5', name: 'SURVEY-BAHAN-KUNINGAN', lat: -6.224167, lon: 106.829444, alt: 0, desc: 'Titik Baru Kuningan (Hanya di Bahan)' }
+            const demoBahan1 = [
+                { id: 'b_1', name: 'SURVEY-TIM-A-MONAS', lat: -6.175392, lon: 106.827153, alt: 0, desc: 'Survey Lapangan Monas (Duplikat)' },
+                { id: 'b_2', name: 'SURVEY-TIM-A-HI', lat: -6.194444, lon: 106.822956, alt: 0, desc: 'Survey Lapangan Bundaran HI (Duplikat)' }
             ];
 
-            dataset1 = { fileName: 'Data_Master_Jaringan.kml', rawPoints: demoMaster, isKmlOrKmz: false };
-            zoneClick1.style.display = 'none';
-            info1.style.display = 'block';
-            name1Text.textContent = dataset1.fileName;
-            count1Text.textContent = `${demoMaster.length} titik ditemukan (Data Demo Master)`;
-            document.getElementById('metricF1').textContent = `${demoMaster.length} Titik`;
+            const demoBahan2 = [
+                { id: 'b_3', name: 'SURVEY-TIM-B-SARINAH', lat: -6.186490, lon: 106.823004, alt: 0, desc: 'Survey Sarinah (Duplikat)' },
+                { id: 'b_4', name: 'SURVEY-TIM-B-GBK', lat: -6.218333, lon: 106.802222, alt: 0, desc: 'Titik Baru GBK (Hanya di Bahan)' },
+                { id: 'b_5', name: 'SURVEY-TIM-B-KUNINGAN', lat: -6.224167, lon: 106.829444, alt: 0, desc: 'Titik Baru Kuningan (Hanya di Bahan)' }
+            ];
 
-            dataset2 = { fileName: 'Data_Bahan_Survey.csv', rawPoints: demoBahan };
-            zoneClick2.style.display = 'none';
-            info2.style.display = 'block';
-            name2Text.textContent = dataset2.fileName;
-            count2Text.textContent = `${demoBahan.length} titik ditemukan (Data Demo Bahan)`;
-            document.getElementById('metricF2').textContent = `${demoBahan.length} Titik`;
+            dataset1.files = [
+                {
+                    id: 'f_m_1',
+                    name: 'Master_Wilayah_Pusat.kml',
+                    size: 15400,
+                    rawPoints: demoMaster1.map(p => ({ ...p, sourceFileName: 'Master_Wilayah_Pusat.kml' }))
+                },
+                {
+                    id: 'f_m_2',
+                    name: 'Master_Wilayah_Selatan.kml',
+                    size: 12800,
+                    rawPoints: demoMaster2.map(p => ({ ...p, sourceFileName: 'Master_Wilayah_Selatan.kml' }))
+                }
+            ];
 
-            toleranceRadiusInput.value = '5';
-            radiusValBadge.textContent = '5 m';
+            dataset2.files = [
+                {
+                    id: 'f_b_1',
+                    name: 'Survey_Tim_Alpha.csv',
+                    size: 8900,
+                    rawPoints: demoBahan1.map(p => ({ ...p, sourceFileName: 'Survey_Tim_Alpha.csv' }))
+                },
+                {
+                    id: 'f_b_2',
+                    name: 'Survey_Tim_Beta.xlsx',
+                    size: 14200,
+                    rawPoints: demoBahan2.map(p => ({ ...p, sourceFileName: 'Survey_Tim_Beta.xlsx' }))
+                }
+            ];
+
+            rebuildDatasetPoints(1);
+            renderFileListUI(1);
+            rebuildDatasetPoints(2);
+            renderFileListUI(2);
+
+            toleranceRadiusInput.value = '1';
+            radiusValBadge.textContent = '1 m';
             toleranceModeSelect.value = 'radius';
             radiusGroup.style.display = 'block';
             decimalsGroup.style.display = 'none';
@@ -2515,21 +2736,27 @@
             const csv1 = `name,latitude,longitude,description
 TIANG-MASTER-01,-6.175392,106.827153,Tiang Master Monas
 ODP-MASTER-HI,-6.194444,106.822956,ODP Master Bundaran HI
-TIANG-MASTER-03,-6.186486,106.822999,Tiang Master Sarinah
+TIANG-MASTER-03,-6.186486,106.822999,Tiang Master Sarinah`;
+
+            const csv2 = `name,latitude,longitude,description
 TIANG-MASTER-04,-6.170166,106.831375,Tiang Master Istiqlal
 ODC-MASTER-01,-6.208763,106.845599,ODC Master Manggarai`;
 
-            const csv2 = `name,latitude,longitude,description
-SURVEY-BAHAN-01,-6.175392,106.827153,Survey Monas (Duplikat dengan Master)
-SURVEY-BAHAN-02,-6.194444,106.822956,Survey Bundaran HI (Duplikat dengan Master)
-SURVEY-BAHAN-03,-6.218333,106.802222,Titik Baru GBK Senayan
-SURVEY-BAHAN-04,-6.224167,106.829444,Titik Baru Mega Kuningan`;
+            const csv3 = `name,latitude,longitude,description
+SURVEY-TIM-A-01,-6.175392,106.827153,Survey Monas (Duplikat)
+SURVEY-TIM-A-02,-6.194444,106.822956,Survey Bundaran HI (Duplikat)`;
+
+            const csv4 = `name,latitude,longitude,description
+SURVEY-TIM-B-01,-6.186490,106.823004,Survey Sarinah (Duplikat)
+SURVEY-TIM-B-02,-6.218333,106.802222,Titik Baru GBK Senayan`;
 
             const zip = new JSZip();
-            zip.file('File_A_Master_Contoh.csv', csv1);
-            zip.file('File_B_Bahan_Contoh.csv', csv2);
+            zip.file('Master_Wilayah_1.csv', csv1);
+            zip.file('Master_Wilayah_2.csv', csv2);
+            zip.file('Bahan_Survey_Tim_A.csv', csv3);
+            zip.file('Bahan_Survey_Tim_B.csv', csv4);
             zip.generateAsync({ type: 'blob' }).then(blob => {
-                triggerDownload(blob, 'Contoh_File_Master_dan_Bahan.zip');
+                triggerDownload(blob, 'Contoh_Multiple_Files_Master_dan_Bahan.zip');
             });
         }
 

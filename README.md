@@ -237,13 +237,14 @@ Tool ini membandingkan **File A (Master)** dengan **File B (Bahan)** untuk mende
 
 Fitur penting:
 
-- Input 2 file: **File A (Master Acuan)** dan **File B (Bahan Pembanding)** mendukung format `KML`, `KMZ`, `CSV`, `TXT`, `XLSX`, dan `XLS`.
+- **Dukungan Multiple Files**: Dapat mengunggah dan menggabungkan **banyak file sekaligus** baik pada sisi Master (File A) maupun Bahan (File B). Setiap file dapat dihapus secara individual atau sekaligus.
+- Input file mendukung format `KML`, `KMZ`, `CSV`, `TXT`, `XLSX`, dan `XLS`.
 - Deteksi duplikasi berbasis toleransi radius jarak (0m untuk persis sama s.d 100m) atau pembulatan presisi desimal.
 - Target Pembuatan Placemark:
-  - **Titik Master A yang TIDAK Duplikasi (Default)**: Membuat placemark baru di koordinat Master A yang belum ada di Bahan B.
+  - **Titik Master A yang TIDAK Duplikasi (Default)**: Membuat placemark baru di koordinat Master A yang belum ada di SEMUA file Bahan B.
   - **Titik Master A yang Duplikasi**: Opsi membuat placemark baru di koordinat Master A yang sudah cocok dengan Bahan B.
 - Kustomisasi Placemark Baru:
-  - Template nama dinamis dengan token `{name_master}`, `{n}`, `{lat}`, `{lon}`, `{desc}` serta tombol preset cepat (`[BARU] {name_master}`, `BELUM_TERCOVER-{n}`, dll).
+  - Template nama dinamis dengan token `{name_master}`, `{file_master}`, `{n}`, `{lat}`, `{lon}`, `{desc}` serta tombol preset cepat (`[BARU] {name_master}`, `BELUM_TERCOVER-{n}`, dll).
   - Koleksi ikon Google Earth & telekomunikasi lengkap (Paddle, Pushpin, Tiang, Closure, ODC, ODP, dll) serta opsi URL ikon kustom.
   - Pengaturan ukuran/skala ikon (`Icon Scale` slider 0.4x - 3.0x) dan skala label teks.
   - Pewarnaan tint ikon (KML color) dan teks label.
@@ -252,9 +253,9 @@ Fitur penting:
   - **Hanya Placemark Baru**: Mengekspor file KML mandiri berisi placemark baru.
   - **Ekspor Lengkap Berfolder**: Membagi output ke dalam folder Placemark Baru Master, Duplikat, dan Unik Bahan.
 - Visualisasi peta interaktif (Leaflet) dengan layer toggles untuk titik placemark baru, titik Master asal, titik Bahan asal, dan titik duplikat.
-- Tabel hasil interaktif dengan filter tab (Baru Non-Duplikat, Duplikat, Unik Bahan, Semua Data), pencarian instan, paginasi, dan tombol fokus ke peta.
-- Ekspor lengkap: KML, KMZ, Excel multi-sheet, dan CSV.
-- Fitur instant demo data untuk pengujian langsung.
+- Tabel hasil interaktif dengan pelacakan asal file (`File Master Asal` & `File Bahan Asal`), filter tab, pencarian instan, paginasi, dan tombol fokus ke peta.
+- Ekspor lengkap: KML, KMZ, Excel multi-sheet (termasuk daftar file), dan CSV.
+- Fitur instant demo data (Multiple Master & Multiple Bahan) untuk pengujian langsung.
 
 ## Arsitektur Frontend
 
