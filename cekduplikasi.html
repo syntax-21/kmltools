@@ -2340,10 +2340,6 @@
                     folderNameElem.textContent = `${folderName} (${processedData.generatedPlacemarks.length})`;
                     newFolderElem.appendChild(folderNameElem);
 
-                    const folderDescElem = clonedDoc.createElement('description');
-                    folderDescElem.textContent = `Placemark baru yang diinsert sesuai titik koordinat Master (${dataset1.files[0].name}) yang tidak duplikasi dengan file Bahan`;
-                    newFolderElem.appendChild(folderDescElem);
-
                     processedData.generatedPlacemarks.forEach(item => {
                         const pm = clonedDoc.createElement('Placemark');
                         
@@ -2351,20 +2347,7 @@
                         nameNode.textContent = item.newName;
                         pm.appendChild(nameNode);
 
-                        const descNode = clonedDoc.createElement('description');
-                        descNode.innerHTML = `<![CDATA[
-                            <div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5;">
-                                <h4 style="color:#0b2447; margin:0 0 6px 0; border-bottom: 2px solid #35f1d0; padding-bottom: 3px;">${escapeXml(item.newName)}</h4>
-                                <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; width:100%; border-color:#ddd;">
-                                    <tr style="background-color:#eef8ff;"><td><b>Status</b></td><td style="color:#008855; font-weight:bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
-                                    <tr><td><b>Titik Master Asal</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
-                                    <tr><td><b>File Master Asal</b></td><td>${escapeXml(item.sourceFileMaster)}</td></tr>
-                                    <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
-                                    <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
-                                </table>
-                            </div>
-                        ]]>`;
-                        pm.appendChild(descNode);
+                        // Tidak perlu deskripsi (sesuai permintaan user)
 
                         const styleUrlNode = clonedDoc.createElement('styleUrl');
                         styleUrlNode.textContent = '#newPlacemarkMasterStyle';
@@ -2382,7 +2365,10 @@
                     docElem.appendChild(newFolderElem);
 
                     const serializer = new XMLSerializer();
-                    return '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(clonedDoc);
+                    let serialized = serializer.serializeToString(clonedDoc).trim();
+                    // Bersihkan XML declaration yang ada di serialized agar tidak duplikat di baris 2
+                    serialized = serialized.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+                    return `<?xml version="1.0" encoding="UTF-8"?>\n${serialized}`;
                 } catch (e) {
                     console.warn('Fallback to standard KML generation:', e);
                 }
@@ -2394,7 +2380,6 @@
   <Document>
     <name>${escapeXml(folderName)}</name>
     <open>1</open>
-    <description>Dihasilkan oleh KML Tools - Cek Duplikasi Titik (Multi-File) pada ${new Date().toLocaleString('id-ID')}</description>
 
     <!-- Style Placemark Baru di Titik Master -->
     <Style id="newPlacemarkMasterStyle">
@@ -2444,26 +2429,11 @@
     <Folder>
       <name>${escapeXml(folderName)} (${processedData.generatedPlacemarks.length})</name>
       <open>1</open>
-      <description>Placemark baru di titik koordinat File Master yang tidak duplikasi dengan File Bahan</description>
 `;
 
             processedData.generatedPlacemarks.forEach(item => {
-                const descHtml = `<![CDATA[
-<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5;">
-  <h3 style="color: #0b2447; margin-bottom: 8px; border-bottom: 2px solid #35f1d0; padding-bottom: 4px;">${escapeXml(item.newName)}</h3>
-  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; border-color: #ddd;">
-    <tr style="background-color: #f0f7ff;"><td><b>Status</b></td><td style="color: #008855; font-weight: bold;">PLACEMARK BARU (TITIK MASTER NON-DUPLIKAT)</td></tr>
-    <tr><td><b>Nama Titik Master (A)</b></td><td>${escapeXml(item.pMaster.name)}</td></tr>
-    <tr><td><b>File Master Asal</b></td><td>${escapeXml(item.sourceFileMaster)}</td></tr>
-    <tr><td><b>Koordinat Master</b></td><td>${item.lat.toFixed(7)}, ${item.lon.toFixed(7)}</td></tr>
-    <tr><td><b>Deskripsi Master</b></td><td>${escapeXml(item.pMaster.desc || '-')}</td></tr>
-  </table>
-</div>
-]]>`;
-
                 kml += `      <Placemark>
         <name>${escapeXml(item.newName)}</name>
-        <description>${descHtml}</description>
         <styleUrl>#newPlacemarkMasterStyle</styleUrl>
         <Point>
           <coordinates>${item.lon.toFixed(7)},${item.lat.toFixed(7)},${item.alt || 0}</coordinates>
@@ -2480,12 +2450,10 @@
     <Folder>
       <name>TITIK DUPLIKAT MATCH (${processedData.duplicates.length})</name>
       <open>0</open>
-      <description>Titik Master yang cocok/duplikat dengan Bahan</description>
 `;
                     processedData.duplicates.forEach(d => {
                         kml += `      <Placemark>
         <name>${escapeXml(d.pMaster.name)} (MATCH ${escapeXml(d.pBahan.name)})</name>
-        <description><![CDATA[Master: ${escapeXml(d.sourceFileMaster)} | Bahan: ${escapeXml(d.sourceFileBahan)} (Selisih: ${d.dist.toFixed(2)} m)]]></description>
         <styleUrl>#duplicateStyle</styleUrl>
         <Point>
           <coordinates>${d.lon.toFixed(7)},${d.lat.toFixed(7)},0</coordinates>
@@ -2501,12 +2469,10 @@
     <Folder>
       <name>TITIK UNIK BAHAN (${processedData.uniqueBahan.length})</name>
       <open>0</open>
-      <description>Titik yang hanya ada di File Bahan</description>
 `;
                     processedData.uniqueBahan.forEach(u => {
                         kml += `      <Placemark>
         <name>${escapeXml(u.newName)}</name>
-        <description><![CDATA[Titik Unik Bahan: ${escapeXml(u.sourceFileBahan)}]]></description>
         <styleUrl>#duplicateStyle</styleUrl>
         <Point>
           <coordinates>${u.lon.toFixed(7)},${u.lat.toFixed(7)},0</coordinates>
