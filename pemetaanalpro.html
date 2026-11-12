@@ -253,7 +253,13 @@
         }
 
         function parseXml(text, fileName) {
-            const doc = new DOMParser().parseFromString(text, 'text/xml');
+            // Strip undefined XML namespaces like <ns0:drawOrder> that break standard DOMParser
+            const cleanText = text.replace(/<(\/?)[a-zA-Z0-9_-]+:([^>]+)>/g, (m, slash, rest) => {
+                const prefix = m.match(/<(\/?)([a-zA-Z0-9_-]+):/)?.[2];
+                if (['gx', 'atom', 'kml'].includes(prefix)) return m;
+                return `<${slash}${rest}>`;
+            });
+            const doc = new DOMParser().parseFromString(cleanText, 'text/xml');
             if (doc.getElementsByTagName('parsererror').length) {
                 throw new Error(`${fileName} bukan KML valid.`);
             }
